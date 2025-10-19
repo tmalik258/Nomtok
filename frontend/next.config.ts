@@ -54,6 +54,30 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  async headers() {
+    return [
+      {
+        // This handles all sitemap files, including sitemap.xml and sitemap-0.xml
+        source: '/sitemap:path*.xml',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/xml',
+          },
+        ],
+      },
+      {
+        // It's also good practice to set the correct type for robots.txt
+        source: '/robots.txt',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/plain',
+          },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     // API routing configuration
     if (process.env.NODE_ENV === 'development') {
@@ -68,7 +92,18 @@ const nextConfig: NextConfig = {
     }
     // In production (Vercel), API routes are handled by serverless functions
     return []
-  }
+  },
+  async redirects() {
+    return [
+      {
+        // This rule redirects the non-www domain to the www domain
+        source: '/:path*',
+        has: [{ type: 'host', value: 'nomtok.com' }],
+        destination: 'https://www.nomtok.com/:path*',
+        permanent: true, // This is a 301 redirect
+      },
+    ];
+  },
 };
 
 export default nextConfig;
