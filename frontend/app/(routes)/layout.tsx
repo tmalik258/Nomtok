@@ -1,6 +1,6 @@
-import { Navbar } from "@/components/navbar";
+import { Navbar } from "@/components/layout/navbar";
 import ErrorBoundary from "@/components/error-boundary";
-import Footer from "@/components/footer";
+import Footer from "@/components/layout/footer";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (

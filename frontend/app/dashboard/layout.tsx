@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { AuthProvider } from '@/lib/contexts/auth-context';
 import { DashboardRealtimeProvider } from '@/lib/contexts/dashboard-realtime-context';
-import { Sidebar } from './_components/sidebar';
 import { ProtectedRoute } from '@/components/protected-route';
+import { Sidebar } from './_components/sidebar';
 
 export default function DashboardLayout({
   children,
@@ -22,7 +22,7 @@ export default function DashboardLayout({
       <ProtectedRoute>
         <DashboardRealtimeProvider>
           <div className="min-h-screen bg-background flex">
-            <Sidebar 
+            <Sidebar
               isMobileOpen={isMobileSidebarOpen}
               onMobileToggle={toggleMobileSidebar}
               className="fixed m-2 rounded-lg inset-y-0 left-0 shadow-xl z-50"

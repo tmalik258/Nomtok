@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { MapPin, Home, Users, Menu, X } from 'lucide-react';
 import { useState } from 'react';
+import Image from 'next/image';
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,8 +27,13 @@ export function Navbar() {
             className="flex items-center gap-1.5 md:gap-2 text-lg md:text-2xl font-bold text-slate-300 tracking-tight hover:text-slate-200 transition-colors"
             onClick={closeMobileMenu}
           >
-            <MapPin className="w-6 h-6 md:w-8 md:h-8 text-orange-500" />
-            <span className="hidden xs:inline">Nomtok</span>
+            <Image
+              height={150}
+              width={150}
+              src="/logo-transparent-white.png"
+              alt="Logo"
+              className="w-auto h-10 object-contain"
+            />
           </Link>
 
           {/* Desktop Navigation Links */}
