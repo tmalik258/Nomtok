@@ -15,7 +15,6 @@ import { RestaurantGridView } from "./restaurant-grid-view";
 import { RestaurantMapView } from "./restaurant-map-view";
 import { RestaurantLatestListings } from "./restaurant-latest-listings";
 import RestaurantsPagination from "./restaurants-pagination";
-import ErrorCard from "@/components/error-card";
 
 export function RestaurantsContent() {
   const searchParams = useSearchParams();
@@ -175,13 +174,11 @@ export function RestaurantsContent() {
   const {
     restaurants,
     loading,
-    error,
     page,
     limit,
     totalPages,
     goToPage,
     setCityFilter,
-    refetch,
     setInfluencerFilter,
     setSortBy,
     setSearchQuery: setBackendSearchQuery,
@@ -195,10 +192,6 @@ export function RestaurantsContent() {
     page: pageParam,
     limit: limitParam,
   });
-
-  const handleRefresh = () => {
-    refetch();
-  };
 
   // Keep hook in sync with influencer selection
   useEffect(() => {

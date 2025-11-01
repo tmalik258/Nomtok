@@ -10,6 +10,8 @@ interface PaginatedTagsResponse {
   total: number;
 }
 
+type TagsListResponse = Tag[] | { tags?: Tag[] };
+
 export const tagActions = {
   /**
    * Get tags with optional filters
@@ -22,9 +24,9 @@ export const tagActions = {
     limit?: number;
   }): Promise<Tag[]> {
     try {
-      const { data } = await cachedApiGet('/tags/', { params }, { ttlMs: 5 * 60 * 1000, keySuffix: 'tags-list', namespace: 'tags' });
+      const { data } = await cachedApiGet<TagsListResponse>('/tags/', { params }, { ttlMs: 5 * 60 * 1000, keySuffix: 'tags-list', namespace: 'tags' });
       // Handle both old and new response formats for backward compatibility
-      return Array.isArray(data) ? data : (data as any).tags;
+      return Array.isArray(data) ? data : (data.tags ?? []);
     } catch (error) {
       console.error('Error fetching tags:', error);
       throw error;
@@ -99,13 +101,13 @@ export const tagActions = {
       if (allTagsCache && allTagsCacheKey === cacheKey) {
         return allTagsCache;
       }
-      const { data } = await cachedApiGet('/tags/', {
+      const { data } = await cachedApiGet<TagsListResponse>('/tags/', {
         params: {
           limit,
           city,
         },
       }, { ttlMs: 60 * 60 * 1000, keySuffix: 'tags-all', namespace: 'tags' });
-      const tags = Array.isArray(data) ? data : (data as any)?.tags ?? [];
+      const tags = Array.isArray(data) ? data : (data.tags ?? []);
       allTagsCache = tags;
       allTagsCacheKey = cacheKey;
       return tags;

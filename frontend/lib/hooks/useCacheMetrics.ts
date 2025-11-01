@@ -11,6 +11,16 @@ interface CacheMetrics {
   redis_enabled: boolean;
 }
 
+interface ApiError extends Error {
+  response?: {
+    data?: {
+      message?: string;
+      [key: string]: unknown;
+    };
+    status?: number;
+  };
+}
+
 type MetricsResponse = CacheMetrics | Record<string, CacheMetrics>;
 
 interface UseCacheMetricsOptions {
@@ -32,8 +42,9 @@ export const useCacheMetrics = (options: UseCacheMetricsOptions = {}) => {
     try {
       const resp = await api.get<MetricsResponse>("/cache/metrics", { params });
       setData(resp.data);
-    } catch (e: any) {
-      setError(e?.message || "Failed to load cache metrics");
+    } catch (e) {
+      const error = e as ApiError;
+      setError(error.response?.data?.message || error.message || "Failed to load cache metrics");
     } finally {
       setLoading(false);
     }

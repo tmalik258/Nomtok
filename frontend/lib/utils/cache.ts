@@ -1,4 +1,4 @@
-import type { AxiosInstance, AxiosRequestConfig } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
 
 type StorageType = 'local' | 'session';
 
@@ -41,12 +41,19 @@ const metrics = {
   lastNetworkDurationMs: 0,
 };
 
+interface CacheDebug {
+  metrics: typeof getMetrics;
+  clearAll: (options?: CacheOptions) => void;
+  invalidatePrefix: (prefix: string, options?: CacheOptions) => void;
+  DEFAULTS: typeof DEFAULTS;
+}
+
 function getStore(storage: StorageType): Storage {
   if (storage === 'session') return window.sessionStorage;
   return window.localStorage;
 }
 
-function stableStringify(obj: any): string {
+function stableStringify(obj: Record<string, unknown>): string {
   try {
     return JSON.stringify(obj, Object.keys(obj).sort());
   } catch {
@@ -54,7 +61,7 @@ function stableStringify(obj: any): string {
   }
 }
 
-function buildKey(namespace: string, url: string, params?: Record<string, any>, suffix?: string): string {
+function buildKey(namespace: string, url: string, params?: Record<string, unknown>, suffix?: string): string {
   const origin = url.replace(/^https?:\/\/[^/]+/, '');
   const paramsStr = params ? stableStringify(params) : '';
   const sfx = suffix ? `:${suffix}` : '';
@@ -68,7 +75,7 @@ function readEntry<T>(opts: Required<CacheOptions>, key: string): CacheEntry<T> 
     if (!raw) return null;
     const parsed = JSON.parse(raw) as CacheEntry<T>;
     return parsed;
-  } catch (e) {
+  } catch {
     metrics.errors++;
     return null;
   }
@@ -80,7 +87,7 @@ function writeEntry<T>(opts: Required<CacheOptions>, key: string, entry: CacheEn
     store.setItem(key, JSON.stringify(entry));
     metrics.sets++;
     enforceMaxKeys(opts);
-  } catch (e) {
+  } catch {
     metrics.errors++;
   }
 }
@@ -174,7 +181,7 @@ export async function cachedAxiosGet<T>(
   try {
     const resp = await axios.get<T>(url, { ...config, headers });
     metrics.lastNetworkDurationMs = performance.now() - startNet;
-    const etag = (resp.headers as any)?.etag as string | undefined;
+    const etag = resp.headers?.etag as string | undefined;
     const newEntry: CacheEntry<T> = {
       data: resp.data,
       etag,
@@ -185,9 +192,9 @@ export async function cachedAxiosGet<T>(
     metrics.misses += entry && !fresh ? 1 : (entry ? 0 : 1);
     metrics.lastGetDurationMs = performance.now() - startGet;
     return { data: resp.data, fromCache: false, isStale: false, etag };
-  } catch (err: any) {
+  } catch (err: unknown) {
     // Handle 304 Not Modified: use cache
-    const status = err?.response?.status;
+    const status = (err as AxiosError)?.response?.status;
     if (status === 304 && entry) {
       metrics.hits++;
       metrics.lastNetworkDurationMs = performance.now() - startNet;
@@ -211,7 +218,7 @@ export async function cachedAxiosGet<T>(
 
 // Dev helpers
 declare global {
-  interface Window { __cacheDebug?: any }
+  interface Window { __cacheDebug?: CacheDebug }
 }
 
 if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {

@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, X } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { CreateListingFormData, EditListingFormData } from "@/lib/validations/listing-create";
+import { ReviewSections } from "@/lib/types";
 
 interface ReviewSectionsFormProps {
   form: UseFormReturn<CreateListingFormData | EditListingFormData>;
@@ -21,7 +22,7 @@ interface ReviewSectionsFormProps {
 export function ReviewSectionsForm({ form }: ReviewSectionsFormProps) {
   const reviewSections = form.watch("review_sections");
   
-  const updateReviewSection = (field: string, value: any) => {
+  const updateReviewSection = <K extends keyof ReviewSections>(field: K, value: ReviewSections[K]) => {
     const currentSections = reviewSections || {};
     form.setValue("review_sections", {
       ...currentSections,

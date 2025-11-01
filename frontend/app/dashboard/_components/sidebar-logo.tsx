@@ -3,8 +3,6 @@
 import React, { memo } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import logoCompact from "@/public/logo-transparent-black-without-name.png";
-import logoFull from "@/public/logo-transparent-black.png";
 
 interface SidebarLogoProps {
   isCollapsed: boolean;

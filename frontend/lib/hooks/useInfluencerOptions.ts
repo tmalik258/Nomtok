@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import type { SearchableOption } from '@/components/ui/async-searchable-select';
 import { influencerActions } from '@/lib/actions/influencer-actions';
+import { Influencer } from '../types';
 
 export const useInfluencerOptions = () => {
   const fetchInfluencerOptions = useCallback(async (query: string): Promise<SearchableOption[]> => {
@@ -14,7 +15,7 @@ export const useInfluencerOptions = () => {
           if (influencer) {
             return [{ id: influencer.slug, name: influencer.name }];
           }
-        } catch (e) {
+        } catch {
           // Ignore and fall back to name search
         }
       }
@@ -27,7 +28,7 @@ export const useInfluencerOptions = () => {
         include_video_details: false,
       });
 
-      return influencers.map((i: any) => ({ id: i.slug, name: i.name }));
+      return influencers.map((i: Influencer) => ({ id: i.slug, name: i.name }));
     } catch (error) {
       console.error('Failed to fetch influencers:', error);
       return [];

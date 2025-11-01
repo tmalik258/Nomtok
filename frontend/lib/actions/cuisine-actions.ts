@@ -10,6 +10,8 @@ interface PaginatedCuisinesResponse {
   total: number;
 }
 
+type CuisinesListResponse = Cuisine[] | { cuisines?: Cuisine[] };
+
 export const cuisineActions = {
   /**
    * Get cuisines with optional filters
@@ -22,9 +24,9 @@ export const cuisineActions = {
     limit?: number;
   }): Promise<Cuisine[]> {
     try {
-      const { data } = await cachedApiGet('/cuisines/', { params }, { ttlMs: 5 * 60 * 1000, keySuffix: 'cuisines-list' });
+      const { data } = await cachedApiGet<CuisinesListResponse>('/cuisines/', { params }, { ttlMs: 5 * 60 * 1000, keySuffix: 'cuisines-list' });
       // Handle both old and new response formats for backward compatibility
-      return Array.isArray(data) ? data : (data as any).cuisines;
+      return Array.isArray(data) ? data : (data.cuisines ?? []);
     } catch (error) {
       console.error('Error fetching cuisines:', error);
       throw error;
@@ -99,13 +101,13 @@ export const cuisineActions = {
       if (allCuisinesCache && allCuisinesCacheKey === cacheKey) {
         return allCuisinesCache;
       }
-      const { data } = await cachedApiGet('/cuisines/', {
+      const { data } = await cachedApiGet<CuisinesListResponse>('/cuisines/', {
         params: {
           limit,
           city,
         },
       }, { ttlMs: 60 * 60 * 1000, keySuffix: 'cuisines-all' });
-      const cuisines = Array.isArray(data) ? data : (data as any)?.cuisines ?? [];
+      const cuisines = Array.isArray(data) ? data : (data.cuisines ?? []);
       allCuisinesCache = cuisines;
       allCuisinesCacheKey = cacheKey;
       return cuisines;
