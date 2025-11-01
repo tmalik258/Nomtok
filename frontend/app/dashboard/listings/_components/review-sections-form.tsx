@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   FormField,
   FormItem,
@@ -8,12 +7,14 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, X } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
-import { CreateListingFormData, EditListingFormData } from "@/lib/validations/listing-create";
+import {
+  CreateListingFormData,
+  EditListingFormData,
+} from "@/lib/validations/listing-create";
 import { ReviewSections } from "@/lib/types";
+import { ListEditor } from "@/components/list-editor";
 
 interface ReviewSectionsFormProps {
   form: UseFormReturn<CreateListingFormData | EditListingFormData>;
@@ -21,49 +22,16 @@ interface ReviewSectionsFormProps {
 
 export function ReviewSectionsForm({ form }: ReviewSectionsFormProps) {
   const reviewSections = form.watch("review_sections");
-  
-  const updateReviewSection = <K extends keyof ReviewSections>(field: K, value: ReviewSections[K]) => {
+
+  const updateReviewSection = <K extends keyof ReviewSections>(
+    field: K,
+    value: ReviewSections[K]
+  ) => {
     const currentSections = reviewSections || {};
     form.setValue("review_sections", {
       ...currentSections,
       [field]: value,
     });
-  };
-
-  const addWhatTheyAteItem = () => {
-    const currentItems = reviewSections?.what_they_ate || [];
-    updateReviewSection("what_they_ate", [...currentItems, ""]);
-  };
-
-  const updateWhatTheyAteItem = (index: number, value: string) => {
-    const currentItems = reviewSections?.what_they_ate || [];
-    const newItems = [...currentItems];
-    newItems[index] = value;
-    updateReviewSection("what_they_ate", newItems);
-  };
-
-  const removeWhatTheyAteItem = (index: number) => {
-    const currentItems = reviewSections?.what_they_ate || [];
-    const newItems = currentItems.filter((_, i) => i !== index);
-    updateReviewSection("what_they_ate", newItems);
-  };
-
-  const addVerbatimQuote = () => {
-    const currentQuotes = reviewSections?.verbatim_quotes || [];
-    updateReviewSection("verbatim_quotes", [...currentQuotes, ""]);
-  };
-
-  const updateVerbatimQuote = (index: number, value: string) => {
-    const currentQuotes = reviewSections?.verbatim_quotes || [];
-    const newQuotes = [...currentQuotes];
-    newQuotes[index] = value;
-    updateReviewSection("verbatim_quotes", newQuotes);
-  };
-
-  const removeVerbatimQuote = (index: number) => {
-    const currentQuotes = reviewSections?.verbatim_quotes || [];
-    const newQuotes = currentQuotes.filter((_, i) => i !== index);
-    updateReviewSection("verbatim_quotes", newQuotes);
   };
 
   return (
@@ -82,7 +50,9 @@ export function ReviewSectionsForm({ form }: ReviewSectionsFormProps) {
                   className="min-h-[100px] bg-white shadow-lg border-none"
                   {...field}
                   value={field.value || ""}
-                  onChange={(e) => updateReviewSection("history_context", e.target.value)}
+                  onChange={(e) =>
+                    updateReviewSection("history_context", e.target.value)
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -103,7 +73,9 @@ export function ReviewSectionsForm({ form }: ReviewSectionsFormProps) {
                   className="min-h-[100px] bg-white shadow-lg border-none"
                   {...field}
                   value={field.value || ""}
-                  onChange={(e) => updateReviewSection("overview", e.target.value)}
+                  onChange={(e) =>
+                    updateReviewSection("overview", e.target.value)
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -115,47 +87,27 @@ export function ReviewSectionsForm({ form }: ReviewSectionsFormProps) {
       {/* What They Ate */}
       <div className="space-y-4">
         <FormLabel>What They Ate</FormLabel>
-        <div className="space-y-2">
-          {(reviewSections?.what_they_ate || []).map((item: string, index: number) => (
-            <div key={index} className="flex items-center gap-2">
-              <Input
-                value={item}
-                onChange={(e) => updateWhatTheyAteItem(index, e.target.value)}
-                placeholder="Add dish or item..."
-                className="bg-white shadow-lg border-none"
-              />
-              <Button type="button" variant="ghost" size="icon" onClick={() => removeWhatTheyAteItem(index)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-          <Button type="button" variant="outline" onClick={addWhatTheyAteItem}>
-            <Plus className="h-4 w-4 mr-2" /> Add item
-          </Button>
-        </div>
+        <ListEditor
+          items={reviewSections?.what_they_ate || []}
+          onItemsChange={(items) => updateReviewSection("what_they_ate", items)}
+          placeholder="Add dish or item..."
+          emptyMessage="No items added yet"
+          maxItems={10}
+        />
       </div>
 
       {/* Verbatim Quotes */}
       <div className="space-y-4">
         <FormLabel>Verbatim Quotes</FormLabel>
-        <div className="space-y-2">
-          {(reviewSections?.verbatim_quotes || []).map((quote: string, index: number) => (
-            <div key={index} className="flex items-center gap-2">
-              <Input
-                value={quote}
-                onChange={(e) => updateVerbatimQuote(index, e.target.value)}
-                placeholder="Add a quote..."
-                className="bg-white shadow-lg border-none"
-              />
-              <Button type="button" variant="ghost" size="icon" onClick={() => removeVerbatimQuote(index)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-          <Button type="button" variant="outline" onClick={addVerbatimQuote}>
-            <Plus className="h-4 w-4 mr-2" /> Add quote
-          </Button>
-        </div>
+        <ListEditor
+          items={reviewSections?.verbatim_quotes || []}
+          onItemsChange={(items) =>
+            updateReviewSection("verbatim_quotes", items)
+          }
+          placeholder="Add a quote..."
+          emptyMessage="No quotes added yet"
+          maxItems={10}
+        />
       </div>
 
       {/* Nomtok Reflection */}
@@ -171,7 +123,9 @@ export function ReviewSectionsForm({ form }: ReviewSectionsFormProps) {
                 className="min-h-[100px] bg-white shadow-lg border-none"
                 {...field}
                 value={field.value || ""}
-                onChange={(e) => updateReviewSection("nomtok_reflection", e.target.value)}
+                onChange={(e) =>
+                  updateReviewSection("nomtok_reflection", e.target.value)
+                }
               />
             </FormControl>
             <FormMessage />
