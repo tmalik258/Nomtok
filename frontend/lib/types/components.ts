@@ -216,15 +216,15 @@ export interface RestaurantSearchFilterProps {
   sortBy: string;
   setSortBy: (sortBy: string) => void;
   getSearchPlaceholder: (searchType: string) => string;
-  // selectedTags: Tag[];
-  // onTagsChange: (tags: Tag[]) => void;
   selectedCuisines: Cuisine[];
   onCuisinesChange: (cuisines: Cuisine[]) => void;
   updateSearchQuery: (query: string) => void;
   updateSearchType: (type: string) => void;
   updateSortBy: (sortBy: string) => void;
-  // updateSelectedTags: (tags: Tag[]) => void;
   updateSelectedCuisines: (cuisines: Cuisine[]) => void;
+  selectedInfluencerId?: string;
+  onInfluencerIdChange: (id?: string) => void;
+  updateSelectedInfluencerId: (id?: string) => void;
   city?: string;
 }
 

@@ -44,21 +44,6 @@ export const useRestaurants = (params?: SearchParams) => {
     }
   }, []);
 
-  const fetchRestaurantsWithListings = useCallback(async (searchParams?: SearchParams, includeVideoDetails = false) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await restaurantActions.getRestaurantsWithListings(searchParams, includeVideoDetails);
-      setRestaurants(data.restaurants);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch restaurants with listings"
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const refetch = useCallback(() => fetchRestaurants(params), [fetchRestaurants, params]);
 
   return {
@@ -66,7 +51,6 @@ export const useRestaurants = (params?: SearchParams) => {
     loading,
     error,
     fetchRestaurants,
-    fetchRestaurantsWithListings,
     searchByCity,
     refetch,
   };

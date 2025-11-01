@@ -40,7 +40,8 @@ async def get_restaurants(
     limit: int = 10,
     include_listings: Optional[bool] = Query(False, description="Include listings with restaurants"),
     include_video_details: Optional[bool] = Query(False, description="Include full video details (description, transcription)"),
-    slug: str | None = None
+    slug: str | None = None,
+    influencer_id: Optional[str] = Query(None, description="Filter restaurants reviewed by influencer (UUID or slug)")
 ):
     """Get restaurants with filters for name, ID, city, country, Google Place ID, tags, and cuisines."""
     try:
@@ -78,6 +79,18 @@ async def get_restaurants(
                 )
             )
         
+        if influencer_id:
+            try:
+                influencer_uuid = UUID(influencer_id)
+                filters.append(
+                    Restaurant.listings.any(Listing.influencer_id == influencer_uuid)
+                )
+            except ValueError:
+                # If not UUID, try to find by slug
+                filters.append(
+                    Restaurant.listings.any(Listing.influencer.has(Influencer.slug == influencer_id))
+                )
+        
         # Count query for total
         count_query = select(func.count(Restaurant.id)).filter(*filters)
         count_result = await db.execute(count_query)
@@ -105,20 +118,12 @@ async def get_restaurants(
         
         # Add listings if requested
         if include_listings:
-            if include_video_details:
-                query = query.options(
-                    joinedload(Restaurant.listings)
-                    .joinedload(Listing.video),
-                    joinedload(Restaurant.listings)
-                    .joinedload(Listing.influencer)
-                )
-            else:
-                query = query.options(
-                    joinedload(Restaurant.listings)
-                    .joinedload(Listing.video),
-                    joinedload(Restaurant.listings)
-                    .joinedload(Listing.influencer)
-                )
+            query = query.options(
+                joinedload(Restaurant.listings)
+                .joinedload(Listing.video),
+                joinedload(Restaurant.listings)
+                .joinedload(Listing.influencer)
+            )
 
         result = await db.execute(query.offset(skip).limit(limit))
         restaurants = result.unique().scalars().all()
@@ -208,7 +213,6 @@ async def get_restaurants(
                             video=VideoResponse.model_validate(listing.video),
                             influencer=influencer_response,
                             visit_date=listing.visit_date,
-                            quotes=listing.quotes,
                             timestamp=listing.timestamp,
                             approved=listing.approved,
                             created_at=listing.created_at,
@@ -221,7 +225,6 @@ async def get_restaurants(
                             influencer=influencer_response,
                             video=listing.video.id,
                             visit_date=listing.visit_date,
-                            quotes=listing.quotes,
                             timestamp=listing.timestamp,
                             approved=listing.approved,
                             created_at=listing.created_at,
@@ -401,7 +404,6 @@ async def get_featured_optimized(db: AsyncSession = Depends(get_async_db)):
                             restaurant_id=listing.restaurant.id,
                             influencer=influencer_response,
                             visit_date=listing.visit_date,
-                            quotes=listing.quotes,
                             confidence_score=listing.confidence_score,
                             timestamp=listing.timestamp,
                             approved=listing.approved,
@@ -567,7 +569,6 @@ async def get_restaurant(
                         video=video_response,
                         influencer=influencer_response,
                         visit_date=listing.visit_date,
-                        quotes=listing.quotes,
                         timestamp=listing.timestamp,
                         approved=listing.approved,
                         created_at=listing.created_at,
@@ -580,7 +581,6 @@ async def get_restaurant(
                         video=listing.video.id,
                         influencer=influencer_response,
                         visit_date=listing.visit_date,
-                        quotes=listing.quotes,
                         timestamp=listing.timestamp,
                         approved=listing.approved,
                         created_at=listing.created_at,

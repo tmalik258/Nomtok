@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { cachedAxiosGet, clearAll } from './utils/cache';
 import { createClient } from '@/lib/utils/supabase/client';
 
 export { restaurantActions as restaurantApi } from './actions/restaurant-actions';
@@ -37,5 +38,34 @@ adminApi.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+// Invalidate frontend caches on successful admin mutations
+adminApi.interceptors.response.use(
+  (response) => {
+    const method = (response.config.method || 'get').toLowerCase();
+    if (method !== 'get') {
+      try {
+        clearAll();
+      } catch {}
+    }
+    return response;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Cached GET wrapper using localStorage-based cache with ETag support
+export async function cachedApiGet<T>(
+  url: string,
+  config?: Parameters<typeof api.get<T>>[1],
+  options?: {
+    ttlMs?: number;
+    storage?: 'local' | 'session';
+    namespace?: string;
+    preferCache?: boolean;
+    keySuffix?: string;
+  }
+): Promise<{ data: T; fromCache: boolean; isStale: boolean; etag?: string }> {
+  return cachedAxiosGet<T>(api, url, config, options);
+}
 
 export default api;

@@ -1,5 +1,5 @@
 import { Cuisine, Restaurant } from '@/lib/types';
-import api, { adminApi } from '../api';
+import api, { adminApi, cachedApiGet } from '../api';
 
 // In-memory cache for all cuisines to avoid repeated fetching across mounts
 let allCuisinesCache: Cuisine[] | null = null;
@@ -22,9 +22,9 @@ export const cuisineActions = {
     limit?: number;
   }): Promise<Cuisine[]> {
     try {
-      const response = await api.get('/cuisines/', { params });
+      const { data } = await cachedApiGet('/cuisines/', { params }, { ttlMs: 5 * 60 * 1000, keySuffix: 'cuisines-list' });
       // Handle both old and new response formats for backward compatibility
-      return Array.isArray(response.data) ? response.data : response.data.cuisines;
+      return Array.isArray(data) ? data : (data as any).cuisines;
     } catch (error) {
       console.error('Error fetching cuisines:', error);
       throw error;
@@ -42,17 +42,17 @@ export const cuisineActions = {
     limit?: number;
   }): Promise<PaginatedCuisinesResponse> {
     try {
-      const response = await api.get('/cuisines/', { params });
+      const { data } = await cachedApiGet('/cuisines/', { params }, { ttlMs: 5 * 60 * 1000, keySuffix: 'cuisines-paginated' });
       // Handle both old and new response formats
-      if (Array.isArray(response.data)) {
+      if (Array.isArray(data)) {
         // Old format - return as paginated response
         return {
-          cuisines: response.data,
-          total: response.data.length
+          cuisines: data,
+          total: data.length
         };
       }
       // New format - return as is
-      return response.data;
+      return data as PaginatedCuisinesResponse;
     } catch (error) {
       console.error('Error fetching paginated cuisines:', error);
       throw error;
@@ -64,8 +64,8 @@ export const cuisineActions = {
    */
   async getCuisine(cuisineId: string): Promise<Cuisine> {
     try {
-      const response = await api.get(`/cuisines/${cuisineId}/`);
-      return response.data;
+      const { data } = await cachedApiGet(`/cuisines/${cuisineId}/`, undefined, { ttlMs: 60 * 60 * 1000, keySuffix: `cuisine:${cuisineId}` });
+      return data as Cuisine;
     } catch (error) {
       console.error(`Error fetching cuisine ${cuisineId}:`, error);
       throw error;
@@ -77,13 +77,13 @@ export const cuisineActions = {
    */
   async searchCuisinesByName(name: string, limit = 20): Promise<Cuisine[]> {
     try {
-      const response = await api.get('/cuisines/', {
+      const { data } = await cachedApiGet('/cuisines/', {
         params: {
           name,
           limit,
         },
-      });
-      return response.data;
+      }, { ttlMs: 10 * 60 * 1000, keySuffix: `cuisines-search:${name}:${limit}` });
+      return data as Cuisine[];
     } catch (error) {
       console.error(`Error searching cuisines by name "${name}":`, error);
       throw error;
@@ -99,14 +99,13 @@ export const cuisineActions = {
       if (allCuisinesCache && allCuisinesCacheKey === cacheKey) {
         return allCuisinesCache;
       }
-      const response = await api.get('/cuisines/', {
+      const { data } = await cachedApiGet('/cuisines/', {
         params: {
           limit,
           city,
         },
-      });
-      const data = response.data;
-      const cuisines = Array.isArray(data) ? data : data?.cuisines ?? [];
+      }, { ttlMs: 60 * 60 * 1000, keySuffix: 'cuisines-all' });
+      const cuisines = Array.isArray(data) ? data : (data as any)?.cuisines ?? [];
       allCuisinesCache = cuisines;
       allCuisinesCacheKey = cacheKey;
       return cuisines;
@@ -167,8 +166,8 @@ export const cuisineActions = {
     }
   ): Promise<{ restaurants: Restaurant[]; total: number }> {
     try {
-      const response = await api.get(`/cuisines/${cuisineId}/restaurants/`, { params });
-      return response.data;
+      const { data } = await cachedApiGet(`/cuisines/${cuisineId}/restaurants/`, { params }, { ttlMs: 5 * 60 * 1000, keySuffix: `cuisine-restaurants:${cuisineId}` });
+      return data as { restaurants: Restaurant[]; total: number };
     } catch (error) {
       console.error(`Error fetching restaurants for cuisine ${cuisineId}:`, error);
       throw error;

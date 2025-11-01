@@ -126,10 +126,11 @@ export function AsyncSearchableSelect({
           </span>
           <div className="flex items-center gap-1">
             {selectedOption && !disabled && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-4 w-4 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              // Use a span to avoid nested <button> inside the trigger button
+              <span
+                role="button"
+                aria-label="Clear selection"
+                className="inline-flex items-center justify-center h-4 w-4 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
@@ -137,7 +138,7 @@ export function AsyncSearchableSelect({
                 }}
               >
                 <X className="h-4 w-4" />
-              </Button>
+              </span>
             )}
             <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </div>

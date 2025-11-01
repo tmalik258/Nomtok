@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 
 from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
@@ -14,6 +14,7 @@ from app.api_schema.cuisines import CuisineResponse
 from app.api_schema.listings import ListingLightResponse
 from app.api_schema.restaurants import RestaurantResponse, PaginatedRestaurantsResponse
 from app.api_schema.influencers import InfluencerResponse
+from app.services.cache import CacheService, cache_json_response
 
 logger = setup_logger(__name__)
 
@@ -37,6 +38,7 @@ async def create_tag(tag: TagCreate, db: AsyncSession = Depends(get_async_db)):
 
 @router.get("/", response_model=PaginatedTagsResponse)
 async def get_tags(
+    request: Request,
     db: AsyncSession = Depends(get_async_db),
     name: str | None = None,
     city: str | None = None,
@@ -44,47 +46,62 @@ async def get_tags(
     limit: int = 100,
 ):
     """Get tags with filters for name or city."""
-    try:
-        # Build the base query
-        query = select(Tag)
-        count_query = select(func.count(Tag.id))
-        
-        # Apply filters
-        if name:
-            query = query.filter(Tag.name.ilike(f"%{name}%"))
-            count_query = count_query.filter(Tag.name.ilike(f"%{name}%"))
-        if city:
-            query = query.join(Tag.restaurant_tags).join(RestaurantTag.restaurant).filter(Restaurant.city.ilike(f"%{city}%"))
-            count_query = count_query.join(Tag.restaurant_tags).join(RestaurantTag.restaurant).filter(Restaurant.city.ilike(f"%{city}%"))
-        
-        # Get total count
-        total_result = await db.execute(count_query)
-        total_count = total_result.scalar()
-        
-        # Get paginated results
-        result = await db.execute(query.offset(skip).limit(limit))
-        tags = result.scalars().all()
-        
-        return PaginatedTagsResponse(tags=tags, total=total_count)
-    except Exception as e:
-        logger.error(f"Error fetching tags: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error while fetching tags")
+    cache = CacheService("tags")
+    key = f"list:name={name}|city={city}|skip={skip}|limit={limit}"
+
+    async def compute():
+        try:
+            # Build the base query
+            query = select(Tag)
+            count_query = select(func.count(Tag.id))
+            
+            # Apply filters
+            if name:
+                query = query.filter(Tag.name.ilike(f"%{name}%"))
+                count_query = count_query.filter(Tag.name.ilike(f"%{name}%"))
+            if city:
+                query = query.join(Tag.restaurant_tags).join(RestaurantTag.restaurant).filter(Restaurant.city.ilike(f"%{city}%"))
+                count_query = count_query.join(Tag.restaurant_tags).join(RestaurantTag.restaurant).filter(Restaurant.city.ilike(f"%{city}%"))
+            
+            # Get total count
+            total_result = await db.execute(count_query)
+            total_count = total_result.scalar()
+            
+            # Get paginated results
+            result = await db.execute(query.offset(skip).limit(limit))
+            tags = result.scalars().all()
+            
+            return PaginatedTagsResponse(tags=tags, total=total_count)
+        except Exception as e:
+            logger.error(f"Error fetching tags: {e}")
+            raise HTTPException(status_code=500, detail="Internal server error while fetching tags")
+
+    # Cache-Control for lists: allow revalidation and CDNs
+    cache_control = "public, max-age=300, stale-while-revalidate=60"
+    return await cache_json_response(request, cache, key, ttl_seconds=300, compute_func=compute, cache_control=cache_control)
 
 
 @router.get("/{tag_id}/", response_model=TagResponse)
-async def get_tag(tag_id: UUID, db: AsyncSession = Depends(get_async_db)):
+async def get_tag(tag_id: UUID, request: Request, db: AsyncSession = Depends(get_async_db)):
     """Get a single tag by ID."""
-    try:
-        result = await db.execute(select(Tag).filter(Tag.id == tag_id))
-        tag = result.scalars().first()
-        if not tag:
-            raise HTTPException(status_code=404, detail="Tag not found")
-        return tag
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error fetching tag {tag_id}: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error while fetching tag")
+    cache = CacheService("tags")
+    key = f"detail:{tag_id}"
+
+    async def compute():
+        try:
+            result = await db.execute(select(Tag).filter(Tag.id == tag_id))
+            tag = result.scalars().first()
+            if not tag:
+                raise HTTPException(status_code=404, detail="Tag not found")
+            return tag
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error fetching tag {tag_id}: {e}")
+            raise HTTPException(status_code=500, detail="Internal server error while fetching tag")
+
+    cache_control = "public, max-age=3600"
+    return await cache_json_response(request, cache, key, ttl_seconds=3600, compute_func=compute, cache_control=cache_control)
 
 
 @router.put("/{tag_id}/", response_model=TagResponse)
@@ -124,19 +141,23 @@ async def delete_tag(tag_id: UUID, db: AsyncSession = Depends(get_async_db)):
 @router.get("/{tag_id}/restaurants/", response_model=PaginatedRestaurantsResponse)
 async def get_restaurants_by_tag(
     tag_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_async_db),
     skip: int = 0,
     limit: int = 10,
     include_listings: bool = Query(False, description="Include listings with restaurants"),
 ):
-    """Get all restaurants associated with a specific tag."""
-    try:
+    """Get all restaurants associated with a specific tag, with caching."""
+    cache = CacheService("tags")
+    key = f"restaurants:{tag_id}|skip={skip}|limit={limit}|listings={include_listings}"
+
+    async def compute():
         # First check if tag exists
         tag_result = await db.execute(select(Tag).filter(Tag.id == tag_id))
         tag = tag_result.scalars().first()
         if not tag:
             raise HTTPException(status_code=404, detail="Tag not found")
-        
+
         # Count query for total restaurants with this tag
         count_query = select(func.count(Restaurant.id)).join(
             RestaurantTag, Restaurant.id == RestaurantTag.restaurant_id
@@ -146,7 +167,7 @@ async def get_restaurants_by_tag(
         )
         count_result = await db.execute(count_query)
         total_count = count_result.scalar()
-        
+
         # Data query with eager loading
         query = select(Restaurant).join(
             RestaurantTag, Restaurant.id == RestaurantTag.restaurant_id
@@ -157,17 +178,17 @@ async def get_restaurants_by_tag(
             joinedload(Restaurant.restaurant_tags).joinedload(RestaurantTag.tag),
             joinedload(Restaurant.restaurant_cuisines).joinedload(RestaurantCuisine.cuisine)
         )
-        
+
         # Add listings if requested
         if include_listings:
             query = query.options(
                 joinedload(Restaurant.listings).joinedload(Listing.video),
                 joinedload(Restaurant.listings).joinedload(Listing.influencer)
             )
-        
+
         result = await db.execute(query.offset(skip).limit(limit))
         restaurants = result.unique().scalars().all()
-        
+
         # Convert to response format
         result_list = []
         for restaurant in restaurants:
@@ -186,7 +207,7 @@ async def get_restaurants_by_tag(
             except Exception as tag_error:
                 logger.warning(f"Error processing tags for restaurant {restaurant.id}: {tag_error}")
                 tags = None
-            
+
             # Process cuisines safely
             cuisines = None
             try:
@@ -202,7 +223,7 @@ async def get_restaurants_by_tag(
             except Exception as cuisine_error:
                 logger.warning(f"Error processing cuisines for restaurant {restaurant.id}: {cuisine_error}")
                 cuisines = None
-            
+
             # Create restaurant data
             restaurant_data = RestaurantResponse(
                 id=restaurant.id,
@@ -223,11 +244,10 @@ async def get_restaurants_by_tag(
                 cuisines=cuisines,
                 listings=None
             )
-            
+
             if include_listings and restaurant.listings:
                 listings_data = []
                 for listing in restaurant.listings:
-                    # Create InfluencerResponse manually to avoid lazy loading issues
                     influencer_response = InfluencerResponse(
                         id=listing.influencer.id,
                         name=listing.influencer.name,
@@ -241,13 +261,13 @@ async def get_restaurants_by_tag(
                         updated_at=listing.influencer.updated_at,
                         listings=None
                     )
-                    
+
                     listing_response = ListingLightResponse(
                         id=listing.id,
                         restaurant_id=listing.restaurant.id,
                         influencer=influencer_response,
+                        video_id=listing.video.id,
                         visit_date=listing.visit_date,
-                        quotes=listing.quotes,
                         confidence_score=listing.confidence_score,
                         timestamp=listing.timestamp,
                         approved=listing.approved,
@@ -256,20 +276,17 @@ async def get_restaurants_by_tag(
                     )
                     listings_data.append(listing_response)
                 restaurant_data.listings = listings_data
-            
+
             result_list.append(restaurant_data)
-        
+
         return PaginatedRestaurantsResponse(
             restaurants=result_list,
             total=total_count
         )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error fetching restaurants for tag {tag_id}: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch restaurants for tag. Please try again later.")
 
+    cache_control = "public, max-age=300, stale-while-revalidate=60"
+    return await cache_json_response(request, cache, key, ttl_seconds=300, compute_func=compute, cache_control=cache_control)
+            
 
 @router.delete("/{tag_id}/restaurants/{restaurant_id}/")
 async def remove_restaurant_from_tag(

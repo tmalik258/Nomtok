@@ -742,7 +742,11 @@ async def store_restaurant_and_listing(
                 )
                 if existing_listing.visit_date is None:
                     existing_listing.visit_date = video.published_at.date()
-                existing_listing.quotes = entities.get("quotes", [])
+                
+                # Handle new review sections format only
+                if "review_sections" in entities:
+                    existing_listing.review_sections = entities["review_sections"]
+                
                 existing_listing.confidence_score = validated["confidence_score"]
                 await db.flush()
                 return
@@ -752,7 +756,7 @@ async def store_restaurant_and_listing(
                 video_id=video.id,
                 influencer_id=video.influencer_id,
                 visit_date=video.published_at.date() if video.published_at else None,
-                quotes=entities.get("quotes", []),
+                review_sections=entities.get("review_sections"),
                 confidence_score=validated["confidence_score"],
                 approved=False,  # Requires admin approval
             )

@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { AsyncSearchableSelect } from "./async-searchable-select";
 import { Switch } from "@/components/ui/switch";
-import { QuotesList } from "./quotes-list";
+import { ReviewSectionsForm } from "./review-sections-form";
 import {
   fetchFunctions,
   EntityType,
@@ -165,23 +165,10 @@ export function ListingForm({ mode, listingData, onSuccess, onDeleted, className
             )}
           </div>
 
-          <FormField
-            control={form.control}
-            name="quotes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Quotes</FormLabel>
-                <FormControl>
-                  <QuotesList
-                    items={field.value}
-                    onItemsChange={field.onChange}
-                    placeholder="Add a quote..."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-medium mb-4">Review Sections</h3>
+            <ReviewSectionsForm form={form} />
+          </div>
 
           <FormField
             control={form.control}

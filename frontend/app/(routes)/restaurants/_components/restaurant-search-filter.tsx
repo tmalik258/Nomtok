@@ -10,10 +10,12 @@ import {
 } from "@/components/ui/select";
 import { Search, X } from "lucide-react";
 import {  RestaurantSearchFilterProps } from "@/lib/types";
-// import { TagFilterDropdown } from "./tag-filter-dropdown";
 import { CuisineFilterDropdown } from "./cuisine-filter-dropdown";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AsyncSearchableSelect } from "@/components/ui/async-searchable-select";
+import { useInfluencerOptions } from "@/lib/hooks/useInfluencerOptions";
+import { useInfluencer } from "@/lib/hooks/useInfluencers";
 
 export function RestaurantSearchFilter({
   city,
@@ -33,7 +35,18 @@ export function RestaurantSearchFilter({
   updateSortBy,
   // updateSelectedTags,
   updateSelectedCuisines,
+  selectedInfluencerId,
+  onInfluencerIdChange,
+  updateSelectedInfluencerId,
 }: RestaurantSearchFilterProps) {
+  // Fetch influencers for async select via hook
+  const { fetchInfluencerOptions } = useInfluencerOptions();
+  // Fetch selected influencer details by slug to show name in badge
+  const { influencer } = useInfluencer(selectedInfluencerId || "", {
+    include_listings: false,
+    include_video_details: false,
+  });
+
   return (
     <div className="mb-8 flex flex-col gap-4 z-[10000] bg-white shadow-lg p-6 rounded-xl border border-gray-100">
       <div className="flex flex-col gap-4">
@@ -86,6 +99,19 @@ export function RestaurantSearchFilter({
               onCuisinesChange={onCuisinesChange}
             />
           </div>
+          {/* Influencer dropdown */}
+          <div className="flex-1">
+            <AsyncSearchableSelect
+              value={selectedInfluencerId}
+              onValueChange={(val) => {
+                onInfluencerIdChange(val || undefined);
+              }}
+              fetchOptions={fetchInfluencerOptions}
+              placeholder="Filter by influencer..."
+              searchPlaceholder="Search influencers..."
+              className="border-gray-200 focus:border-orange-500 focus:ring-orange-500"
+            />
+          </div>
         </div>
       </div>
 
@@ -93,7 +119,8 @@ export function RestaurantSearchFilter({
       {(selectedCuisines.length > 0 ||
         searchQuery ||
         searchType ||
-        sortBy) && (
+        sortBy ||
+        selectedInfluencerId) && (
         <div className="flex flex-wrap gap-2 mt-4">
           {/* Search Query Badge */}
           {searchQuery && (
@@ -172,29 +199,6 @@ export function RestaurantSearchFilter({
             </Badge>
           )}
 
-          {/* Selected Tags */}
-          {/* {selectedTags.map((tag) => (
-            <Badge
-              key={tag.id}
-              variant="secondary"
-              className="flex items-center gap-1 pr-1 cursor-pointer hover:bg-secondary/80"
-            >
-              <span className="text-xs text-muted-foreground">Tag:</span>
-              <span>{tag.name}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 hover:bg-gray-300 cursor-pointer transition-colors duration-200"
-                onClick={() => {
-                  const newTags = selectedTags.filter((t) => t.id !== tag.id);
-                  updateSelectedTags(newTags);
-                }}
-              >
-                <X className="w-3 h-3" />
-              </Button>
-            </Badge>
-          ))} */}
-
           {/* Selected Cuisines */}
           {selectedCuisines.map((cuisine) => (
             <Badge
@@ -220,11 +224,31 @@ export function RestaurantSearchFilter({
             </Badge>
           ))}
 
+          {/* Influencer Filter Badge */}
+          {selectedInfluencerId && (
+            <Badge
+              variant="secondary"
+              className="flex items-center gap-1 pr-1 cursor-pointer hover:bg-gray-200 transition-colors duration-200"
+            >
+              <span className="text-xs text-muted-foreground">Influencer:</span>
+              <span>{influencer?.name || selectedInfluencerId}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-4 w-4 p-0 hover:bg-gray-300 cursor-pointer transition-colors duration-200"
+                onClick={() => updateSelectedInfluencerId(undefined)}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </Badge>
+          )}
+
           {/* Clear All Button */}
           {(selectedCuisines.length > 0 ||
             searchQuery ||
             searchType ||
-            sortBy) && (
+            sortBy ||
+            selectedInfluencerId) && (
             <Button
               variant="ghost"
               size="sm"
@@ -234,6 +258,8 @@ export function RestaurantSearchFilter({
                 updateSearchQuery("");
                 updateSearchType("");
                 updateSortBy("");
+                updateSelectedInfluencerId(undefined);
+                onInfluencerIdChange(undefined);
               }}
               className="h-8 px-3 text-sm text-muted-foreground hover:text-foreground cursor-pointer border-gray-200 hover:border-gray-300"
             >

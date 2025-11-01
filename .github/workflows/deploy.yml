@@ -1,0 +1,108 @@
+name: Deploy to Production Server
+
+on:
+  push:
+    branches: [ prod ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        SSH_HOST: ${{ secrets.SSH_HOST }}
+        SSH_USER: ${{ secrets.SSH_USER }}
+      run: |
+        # Create SSH directory
+        mkdir -p ~/.ssh
+        
+        # Add SSH private key
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        
+        # Add server to known hosts
+        ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+        
+        # Create SSH config
+        cat >> ~/.ssh/config << EOF
+        Host production
+          HostName $SSH_HOST
+          User $SSH_USER
+          IdentityFile ~/.ssh/deploy_key
+          StrictHostKeyChecking no
+        EOF
+        
+    - name: Deploy to server
+      env:
+        SSH_HOST: ${{ secrets.SSH_HOST }}
+        SSH_USER: ${{ secrets.SSH_USER }}
+        PROJECT_DIR: ${{ secrets.PROJECT_DIR }}
+      run: |
+        echo "🚀 Starting deployment to production server..."
+        
+        # Connect to server and execute deployment commands
+        ssh production << 'ENDSSH'
+          set -e
+          
+          echo "📁 Navigating to project directory..."
+          cd "$PROJECT_DIR" || exit 1
+          
+          echo "📥 Pulling latest code from GitHub..."
+          git pull origin main || git pull origin master
+          
+          echo "🔄 Stopping existing containers..."
+          docker compose -f docker-compose.prod.yml down --remove-orphans || true
+          
+          echo "🗑️ Cleaning up Docker system..."
+          docker system prune -f
+          
+          echo "🏗️ Building and starting services..."
+          docker compose -f docker-compose.prod.yml build --no-cache
+          docker compose -f docker-compose.prod.yml up -d
+          
+          echo "⏳ Waiting for services to be healthy..."
+          sleep 30
+          
+          echo "🔍 Checking service health..."
+          # Check backend health
+          if ! curl -f http://localhost:8030/health > /dev/null 2>&1; then
+            echo "❌ Backend health check failed"
+            docker compose -f docker-compose.prod.yml logs backend
+            exit 1
+          fi
+          
+          # Check frontend health
+          if ! curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
+            echo "❌ Frontend health check failed"
+            docker compose -f docker-compose.prod.yml logs frontend
+            exit 1
+          fi
+          
+          echo "✅ All services are healthy!"
+          
+          echo "🧹 Cleaning up old Docker images..."
+          docker image prune -f
+          
+          echo "🎉 Deployment completed successfully!"
+        ENDSSH
+        
+    - name: Deployment Status
+      if: success()
+      run: |
+        echo "✅ Deployment to production server completed successfully!"
+        echo "🌐 Application should be available at: http://191.101.15.39:3000"
+        echo "🔧 Backend API should be available at: http://191.101.15.39:8030"
+        
+    - name: Deployment Failure
+      if: failure()
+      run: |
+        echo "❌ Deployment failed!"
+        echo "Please check the logs above for more details."
+        echo "You can also SSH into the server to check the status manually."
+        exit 1

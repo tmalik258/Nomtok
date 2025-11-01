@@ -44,11 +44,22 @@ export const TrendingQuoteCard: React.FC<TrendingQuoteProps> = ({
       ) : listing ? (
         <div>
           <blockquote className="text-lg italic font-light leading-relaxed">
-            {listing.quotes && listing.quotes.length > 0 ? (
-              `"${listing.quotes[0]}"`
-            ) : (
-              `"Latest review from ${listing.restaurant?.name}"`
-            )}
+            {(() => {
+              if (listing.review_sections) {
+                // Priority order for display text
+                if (listing.review_sections.overview) return `"${listing.review_sections.overview}"`;
+                if (listing.review_sections.history_context) return `"${listing.review_sections.history_context}"`;
+                if (listing.review_sections.nomtok_reflection) return `"${listing.review_sections.nomtok_reflection}"`;
+                if (listing.review_sections.what_they_ate && listing.review_sections.what_they_ate.length > 0) {
+                  return `"${listing.review_sections.what_they_ate[0]}"`;
+                }
+                if (listing.review_sections.verbatim_quotes && listing.review_sections.verbatim_quotes.length > 0) {
+                  return `"${listing.review_sections.verbatim_quotes[0]}"`;
+                }
+              }
+              
+              return `"Latest review from ${listing.restaurant?.name}"`;
+            })()}
           </blockquote>
           <p className="text-sm text-white/80 mt-3">
             — {listing.influencer?.name} at {listing.restaurant?.name}

@@ -73,6 +73,14 @@ export interface VideosResponse {
   total: number;
 }
 
+export interface ReviewSections {
+  history_context?: string;
+  overview?: string;
+  what_they_ate?: string[];
+  verbatim_quotes?: string[];
+  nomtok_reflection?: string;
+}
+
 export interface Listing {
   id: string;
   restaurant_id?: string;
@@ -82,7 +90,7 @@ export interface Listing {
   influencer_id?: string;
   influencer?: Influencer;
   visit_date?: string;
-  quotes?: string[];
+  review_sections?: ReviewSections;
   confidence_score?: number;
   timestamp?: number;  // Video timestamp in seconds for start time
   approved?: boolean;

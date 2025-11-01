@@ -115,25 +115,54 @@ export function RestaurantDetailCard({
                       </span>
                     </div>
                   )}
-                  {listing.quotes && listing.quotes.length > 0 && (
-                    <div className="space-y-2">
-                      {listing.quotes.map(
-                        (quote: string, quoteIndex: number) => (
-                          <div
-                            key={quoteIndex}
-                            className="p-3 bg-gray-50 rounded-lg border-l-4 border-orange-500"
-                          >
+                  {(() => {
+                    if (listing.review_sections) {
+                      // Priority: show verbatim quotes if available
+                      if (listing.review_sections.verbatim_quotes && listing.review_sections.verbatim_quotes.length > 0) {
+                        return (
+                          <div className="space-y-2">
+                            {listing.review_sections.verbatim_quotes.map((quote: string, quoteIndex: number) => (
+                              <div
+                                key={quoteIndex}
+                                className="p-3 bg-gray-50 rounded-lg border-l-4 border-orange-500"
+                              >
+                                <div className="flex items-start gap-2">
+                                  <Quote className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                                  <blockquote className="text-gray-700 italic text-sm">
+                                    &quot;{quote}&quot;
+                                  </blockquote>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      }
+                      
+                      // Fallback to other review sections
+                      const reviewText = 
+                        listing.review_sections.overview ||
+                        listing.review_sections.history_context ||
+                        listing.review_sections.nomtok_reflection ||
+                        (listing.review_sections.what_they_ate && listing.review_sections.what_they_ate.length > 0 ? listing.review_sections.what_they_ate[0] : '');
+                      
+                      if (reviewText) {
+                        return (
+                          <div className="p-3 bg-gray-50 rounded-lg border-l-4 border-orange-500">
                             <div className="flex items-start gap-2">
                               <Quote className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                               <blockquote className="text-gray-700 italic text-sm">
-                                &quot;{quote}&quot;
+                                &quot;{reviewText}&quot;
                               </blockquote>
                             </div>
                           </div>
-                        )
-                      )}
-                    </div>
-                  )}
+                        );
+                      }
+                    }
+                    
+
+                    
+                    return null;
+                  })()}
                 </div>
               </div>
             );

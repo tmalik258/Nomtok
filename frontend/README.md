@@ -183,3 +183,13 @@ docker-compose up frontend
    - Ensure Tailwind CSS is properly configured
    - Check for conflicting CSS rules
    - Verify responsive breakpoints
+
+## Caching Strategy
+
+- Server-side caching uses Redis (if available) with an in-memory TTL fallback.
+- Responses include `ETag` and `Cache-Control` headers for conditional requests.
+- Client-side caching leverages a localStorage/sessionStorage cache with ETag revalidation via Axios.
+- Admin mutations clear client caches via an interceptor to avoid stale UI.
+- Cache metrics are available at `/api/cache/metrics` in development, aggregated by namespaces.
+- To inspect metrics on the frontend, use the `useCacheMetrics` hook (`lib/hooks/useCacheMetrics.ts`).
+- Recommended TTLs: list endpoints `300s` (`stale-while-revalidate=60`), details `3600s`.

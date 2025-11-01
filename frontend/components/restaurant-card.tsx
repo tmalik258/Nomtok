@@ -20,10 +20,28 @@ export function RestaurantCard({
   showButton = true,
 }: RestaurantCardProps) {
   const router = useRouter();
+  
+  // Helper function to get the first available review section text
+  const getFirstReviewSectionText = (listing: Listing): string => {
+    if (listing.review_sections) {
+      // Priority order for display text
+      if (listing.review_sections.overview) return listing.review_sections.overview;
+      if (listing.review_sections.history_context) return listing.review_sections.history_context;
+      if (listing.review_sections.nomtok_reflection) return listing.review_sections.nomtok_reflection;
+      if (listing.review_sections.what_they_ate && listing.review_sections.what_they_ate.length > 0) {
+        return listing.review_sections.what_they_ate[0];
+      }
+      if (listing.review_sections.verbatim_quotes && listing.review_sections.verbatim_quotes.length > 0) {
+        return listing.review_sections.verbatim_quotes[0];
+      }
+    }
+    
+    return "";
+  };
   return (
     <Card
       key={restaurant.slug}
-      className="overflow-hidden border-gray-100 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 group p-4"
+      className="h-full flex flex-col overflow-hidden border-gray-100 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 group p-4"
       onClick={() => router.push(`/restaurants/${restaurant.slug}`)}
     >
       <div className="relative h-48 rounded-lg overflow-hidden">
@@ -43,8 +61,9 @@ export function RestaurantCard({
           </div>
         )}
       </div>
-      <CardContent className="p-0 flex flex-col flex-grow gap-3">
-        <div className="">
+      <CardContent className="p-0 flex flex-col flex-1 justify-between gap-3">
+        {/* Top: Restaurant basic info */}
+        <div>
           <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors">
             {restaurant.name}
           </h3>
@@ -61,11 +80,12 @@ export function RestaurantCard({
                 </Badge>
               ))}
           </p>
-          {/* <p className="text-sm text-gray-500">{restaurant.address}</p> */}
         </div>
-        <div className="flex-grow flex flex-col ">
+
+        {/* Bottom: Quotes/listings and CTA button */}
+        <div className="flex flex-col gap-3">
           {listings && listings.length > 0 && (
-            <div className="my-auto">
+            <div>
               {listings.map((listing) => (
                 <div key={listing.id} className="flex items-center mb-2">
                   {listing.influencer && listing.influencer.avatar_url && (
@@ -81,25 +101,32 @@ export function RestaurantCard({
                     <p className="text-sm font-medium text-gray-700">
                       {listing.influencer?.name}
                     </p>
-                    {listing.quotes && listing.quotes.length > 0 && (
-                      <p className="text-xs text-gray-500 italic line-clamp-3">
-                        &quot;{listing.quotes?.[1]}&quot;
-                      </p>
-                    )}
+                    {(() => {
+                      const reviewText = getFirstReviewSectionText(listing);
+                      if (reviewText) {
+                        return (
+                          <p className="text-xs text-gray-500 italic line-clamp-3">
+                            &quot;{reviewText}&quot;
+                          </p>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               ))}
             </div>
           )}
+
+          {showButton !== false && (
+            <Button
+              asChild
+              className="w-full mt-auto bg-orange-500 text-white hover:bg-orange-600 transition-colors duration-200 cursor-pointer"
+            >
+              <Link href={`/restaurants/${restaurant.slug}`}>View Details</Link>
+            </Button>
+          )}
         </div>
-        {showButton !== false && (
-          <Button
-            asChild
-            className="w-full mt-auto bg-orange-500 text-white hover:bg-orange-600 transition-colors duration-200"
-          >
-            <Link href={`/restaurants/${restaurant.slug}`}>View Details</Link>
-          </Button>
-        )}
       </CardContent>
     </Card>
   );

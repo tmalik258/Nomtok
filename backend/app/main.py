@@ -31,6 +31,7 @@ from app.routes.admin.tags import admin_tags_router
 from app.routes.admin.cuisines import admin_cuisines_router
 from app.routes.admin.dashboard import router as dashboard_router
 from app.routes.geocoding import router as geocoding_router
+from app.routes.cache import router as cache_router
 
 # Configure logging
 logger = setup_logger(__name__)
@@ -85,6 +86,7 @@ app.include_router(admin_tags_router, prefix="/admin/tags", tags=["admin"])
 app.include_router(admin_cuisines_router, prefix="/admin/cuisines", tags=["admin"])
 app.include_router(geocoding_router, prefix="/geocoding", tags=["geocoding"])
 app.include_router(dashboard_router, prefix="/admin/dashboard", tags=["admin"])
+app.include_router(cache_router, prefix="/cache", tags=["cache"])
 
 
 # Custom exception handler for validation errors

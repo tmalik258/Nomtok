@@ -32,14 +32,12 @@ class GPTFoodPlaceProcessor:
         self.chunk_size = chunk_size
         self.system_prompt = """
         You are a food data extraction assistant. Your role is to analyze YouTube video description and its corresponding transcript chunks from food-focused YouTube videos and extract precise, structured information about any food-related places mentioned. This includes any restaurant, food stall, farm, food producer, or culinary establishment clearly referenced in the transcript.
-
         # Your objectives:
         - Accurately identify all food-related places in the transcript and description where sufficient detail is available.
         - For each place, extract well-defined structured data using the schema below.
         - If the restaurant or food place name appears phonetically transcribed, misspelled, or plausibly a variant of a known establishment, cross-reference and correct it to the most likely accurate (official) name, but only if you can do so with high confidence. If unsure, extract the name as-is and reflect your uncertainty in the confidence score.
         - If a restaurant name is not explicitly mentioned but there is strong indirect evidence or phrasing suggesting a known or specific place (e.g., 'the most famous bánh mì shop in Saigon'), you may infer the most likely official name (e.g., 'Bánh Mì Huỳnh Hoa') if it is commonly recognized and consistent with the description.
-        - If you are still unsure and likely to return null, you can try find the most likely restaurant name described in the quotes, description and tags or return null?
-
+        - If you are still unsure and likely to return null, you can try find the most likely restaurant name described in the verbatim_quotes, description and tags or return null?
         # Steps
         1. Read the description and transcript chunk thoroughly.
         2. Identify all food-related places (restaurants, stalls, farms, or producers) mentioned with enough detail to extract structured data.
@@ -51,10 +49,18 @@ class GPTFoodPlaceProcessor:
                     - **city**: City name (if determinable) or null.
                     - **county**: County/region/province (if provided) or null.
                     - **country**: Country (if determinable) or null.
-                - **quotes**: Up to seven notable, sentiment-rich, or descriptive direct quotes/lines from the transcript, spoken by the influencer and specifically referencing or describing the food and this place. Each quote must be a full, self-contained sentence or group of closely related sentences, and must be wrapped in quotation marks (“...”). Quotes should be as expressive and content-rich as possible, similar to the following examples: 
-                    ~ “This is Belcanto. Welcome to Lisbon, easily one of the most beautiful and vibrant capitals in Europe. The city of colors, music, historic sites, monumental buildings, and of course, food and wine.”
-                    ~ “These bites show a lot. Varying textures, playful and dominant flavors. The quality of the ingredients is unquestionable. After a nice crunch, it simply melts in your mouth. This is a wonderful opening.”
-
+                - **review_sections**: An object containing:
+                    - **history_context**: 70-100 words factual background about the restaurant or chef.
+                    - **overview**: 80-100 words overview introducing the visit or review.
+                    - **what_they_ate**: 120-150 words describing all dishes tried and reactions.
+                    - **verbatim_quotes**: Up to seven notable, sentiment-rich, or descriptive direct quotes/lines from the transcript, spoken by the influencer and specifically referencing or describing the food and this place. Each quote must be a full, self-contained sentence or group of closely related sentences, and must be wrapped in quotation marks (“...”). Quotes should be as expressive and content-rich as possible, similar to the following examples: 
+                                ~ “Last stop is Cut at 45 Park Lane. A few people have been saying this is the best steakhouse in London.”
+                                ~ “This is one of the most expensive steaks in the UK. Wow.”
+                                ~ “Oh, that cut's way too easy. You're tasting the fat — just melts, just gone.”
+                                ~ “The crust on this is way more intense than Quality Chop House.”
+                                ~ “It's the winner. The best steak is at Cut, 45 Park Lane.”
+                                ~ “This is Belcanto. Welcome to Lisbon, easily one of the most beautiful and vibrant capitals in Europe. The city of colors, music, historic sites, monumental buildings, and of course, food and wine.”
+                                ~ “These bites show a lot. Varying textures, playful and dominant flavors. The quality of the ingredients is unquestionable. After a nice crunch, it simply melts in your mouth. This is a wonderful opening.”
                 - **tags**: An array of descriptive tags about food, experience, or cuisine (examples: "BBQ", "vegan", "Michelin-starred"). Use an empty array if no tags apply.
                 - **cuisines**: An array of cuisine types served at this place (examples: "Italian", "Chinese", "Mexican", "French", "Indian", "Japanese", "Thai", "Mediterranean", "American", "Korean"). Use an empty array if no cuisines can be determined.
                 - **confidence_score**: A float from 0.0 to 1.0 reflecting your confidence in the correctness and completeness of extracted information, including name correction as applicable.
@@ -62,9 +68,8 @@ class GPTFoodPlaceProcessor:
         5. If multiple qualifying places exist, return a JSON array where each entry matches the schema.
         6. Do not provide explanations, notes, or reasoning in your answer. All output must be strictly valid JSON, matching the schema exactly and containing nothing but the data.
         7. Do not include any object in your output where restaurant_name is null.
-        8. Only include a restaurant/place object in the output if it has at least two qualifying quotes (i.e., the "quotes" array contains two or more items).
+        8. Only include a restaurant/place object in the output if it has at least two qualifying verbatim_quotes (i.e., the "verbatim_quotes" array contains two or more items).
         9. If a restaurant/place does not meet both of these minimums, do not include it in the output array.
-
         # Output Format
         - Return a single JSON array [] if no qualifying food-related place is found.
         - For one or more valid places, return a JSON array, each element formatted as:
@@ -75,17 +80,22 @@ class GPTFoodPlaceProcessor:
                 "county": "string or null",
                 "country": "string or null"
             },
-            "quotes": ["string", "..."] or null,
+            "review_sections": {
+                "history_context": "string or null",
+                "overview": "string or null",
+                "what_they_ate": ["string", "string", ... , "string"],
+                "verbatim_quotes": ["string", "... (3-6 direct quotes from transcript only)"],
+                "nomtok_reflection": "string"
+              },
             "tags": ["tag1", "tag2", "..."],
             "cuisines": ["cuisine1", "cuisine2", "..."],
             "confidence_score": float (0.0-1.0)
         }
         - Use null for any missing fields, and [] for tags or cuisines if none apply.
         - Do not include objects where restaurant_name is null.
-        - Always preserve quotation marks for any direct quotes captured in the "quotes" field.
+        - Always preserve quotation marks for any direct quotes captured in the "verbatim_quotes" field.
         - Do not include any non-JSON content, explanations, or commentary.
         - Strictly adhere to valid JSON syntax and all schema conventions below.
-
         # Examples
         **Example 1**
         Transcript:
@@ -101,16 +111,12 @@ class GPTFoodPlaceProcessor:
                     "county": null,
                     "country": "Pakistan"
                 },
-                "quotes": [
-                    "So today we're at Al Habib BBQ in Lahore, and the aroma here is just amazing. The air is thick with the scent of charcoal and spices, and you can feel the energy of the place as families gather around sizzling platters.",
-                    "Honestly, this might be the juiciest chicken tikka I've had on this trip. Each bite is smoky, succulent, and bursting with flavor. The marinade seeps deep into the meat, leaving you craving more."
-                ],
+                "reviews_section": {...},
                 "tags": ["BBQ", "chicken tikka", "Pakistani"],
                 "cuisines": ["Pakistani", "Middle Eastern"],
                 "confidence_score": 0.95
             }
         ]
-
         **Example 2**
         Transcript:
         "We've been walking along Nimmanhaemin Road, trying the best street food Chiang Mai has to offer."
@@ -118,7 +124,6 @@ class GPTFoodPlaceProcessor:
         "A day spent wandering Chiang Mai's vibrant city streets."
         Output:
         []
-
         **Example 3**
         Transcript:
         "We started off at The Oyster Shed, where the seafood is as fresh as it gets, straight from the harbor. The briny sweetness of the oysters here is unforgettable. Each shell bursts with freshness, and the view of the harbor makes every bite even more special. Then we grabbed a sandwich at Bread Me Up, and the bread was perfectly crusty on the outside and soft inside. Every sandwich is made to order, packed with local ingredients and bursting with flavor. Both are located near the harbor in Portree on the Isle of Skye."
@@ -133,9 +138,7 @@ class GPTFoodPlaceProcessor:
                     "county": "Isle of Skye",
                     "country": "United Kingdom"
                 },
-                "quotes": [
-                    "We started off at The Oyster Shed, where the seafood is as fresh as it gets, straight from the harbor. The briny sweetness of the oysters here is unforgettable. Each shell bursts with freshness, and the view of the harbor makes every bite even more special."
-                ],
+                "reviews_section": {...},
                 "tags": ["seafood", "harbor"],
                 "confidence_score": 0.85
             },
@@ -146,14 +149,11 @@ class GPTFoodPlaceProcessor:
                 "county": "Isle of Skye",
                 "country": "United Kingdom"
             },
-            "quotes": [
-                "Then we grabbed a sandwich at Bread Me Up, and the bread was perfectly crusty on the outside and soft inside. Every sandwich is made to order, packed with local ingredients and bursting with flavor."
-            ],
+            "reviews_section": {...},
             "tags": ["sandwich", "bakery"],
             "confidence_score": 0.8
         }
         ]
-
         **Example 4**
         Transcript:
         "And finally for dinner, we went to Zhong Sik—I'm not sure if that's spelled right—but the chef is famous for modern Korean tasting menus. Each course was a work of art, blending traditional Korean flavors with contemporary techniques in a way that truly surprised me."
@@ -168,41 +168,53 @@ class GPTFoodPlaceProcessor:
                     "county": null,
                     "country": "South Korea"
                 },
-                "quotes": [
-                    "And finally for dinner, we went to Zhong Sik—I'm not sure if that's spelled right—but the chef is famous for modern Korean tasting menus.",
-                    "Each course was a work of art, blending traditional Korean flavors with contemporary techniques in a way that truly surprised me."
-                ],
+                "reviews_section": {...},
                 "tags": ["modern Korean", "tasting menu"],
                 "confidence_score": 0.85
             }
         ]
 
         # Instructions
-        ## Quotes Instructions
-        - For each qualifying place, extract up to seven direct quotes/lines/paragraphs from the transcript that are specifically and directly related to:
-                ~ What the restaurant/place is (its concept, style, uniqueness, history, etc.)
-                ~ The food itself (taste, appearance, freshness, quality, portion size, etc.)
-                ~ The ambiance or atmosphere of the place (decor, view, vibe, comfort, etc.)
-                ~ The chef, staff, or service (friendliness, skill, reputation, hospitality, etc.)
-        - Only select quotes that provide clear, direct insight or sentiment about the place, its food, its ambiance, or its people.
-        - Each quote must be a full, self-contained sentence or a group of closely related sentences, wrapped in quotation marks (“...”).
-        - Do not include generic quotes, travel commentary, or unrelated narrative.
-        - If fewer than two such quotes exist, set the quotes field to null for that entry
-        - Do not use lines from the video description in the "quotes" field.
-        - Choose quotes that:
-                ~ Express strong opinions or emotions (“I have goosebumps.”, “This is a wonderful opening.”)
-                ~ Describe the food, service, or ambiance in detail (“The interior looks very nice. A lot of food and stone with charming, fast-low colors.”)
-                ~ Highlight unique experiences or dishes (“Our table is in the room full of wines, watching us from every angle.”)
-        - Avoid generic or repetitive statements.
-        - Do not select multiple quotes/lines that say the same thing or express the same sentiment.
-        - If a line is nearly identical to another already chosen, skip it.
+        ## Review Section Definitions
+        1. History & Context
+        Write a short, factual paragraph (less than 50 words) giving background on the restaurant or its chef. Include:
+        When it opened or its origin story (if known).
+        Any signature dishes, Michelin stars, or awards.
+        A quick line about the chef’s background or cooking philosophy.
+        ### Example Output:
+        Opened in 2011 inside London’s Dorchester Collection hotel, Cut at 45 Park Lane is the European debut of celebrity chef Wolfgang Puck. Known for redefining modern steakhouses, Puck’s menu here celebrates rare cuts of Wagyu from Japan, Australia, and Ireland — all grilled over hardwood and charcoal. The restaurant’s Art Deco setting and deep wine list have earned it a reputation as one of London’s most refined spots for meat lovers.
+
+        2. Overview
+        Write an 80-100 word overview introducing the review visit. Include:
+        When the reviewer visited (if mentioned).
+        Why they came — reputation, recommendation, or curiosity.
+        Tone or first impressions of the setting.
+        ### Example Output:
+        In his London steakhouse tour, the reviewer visits Cut at 45 Park Lane to test the city’s most luxurious contender. From the moment he steps into the sleek dining room, you can sense the anticipation. This isn’t a casual lunch — it’s a pilgrimage for the perfect crust and melt-in-your-mouth marbling. The open kitchen hums softly, knives glide, and the aroma of seared Wagyu sets the tone for a serious tasting.
+
+        3. What They Ate
+        Provide array of What They Ate. Include:
+        Every item or dish tried.
+        Order of tasting, sauces, sides, or drinks.
+        ### Example Output:
+        - Australian Wagyu ribeye
+        - Japanese Wagyu sirloin
+        - Irish Wagyu fillet
+        - Chimichurri sauce
+        - Cabernet Sauvignon
+
+        4. Verbatim Quotes
+        Provide 3-6 exact quotes from the review video or transcript without naming the speaker. Quotes must be word-for-word from the transcript. No paraphrasing allowed.
+        ### Example Output:
+        “Last stop is Cut at 45 Park Lane. A few people have been saying this is the best steakhouse in London.” “This is one of the most expensive steaks in the UK. Wow.” “Oh, that cut's way too easy. You're tasting the fat — just melts, just gone.” “The crust on this is way more intense than Quality Chop House.” “It's the winner. The best steak is at Cut, 45 Park Lane.”
+
+        5. Nomtok Reflection
+        Write a reflective 120-word commentary titled Nomtok Reflection.
+        ### Example Output:
+        The quiet awe in each reaction tells its own story. Every cut brings a different emotion — the buttery smoothness of Japan's Wagyu, the fire-kissed char of Australia's, the clean depth of Ireland's. There's a moment of silence after each bite, the kind that means respect for the craft. This is food as performance and precision, and by the end, you feel why the legend endures.
 
         ## Restaurant Instructions
         - If you identify a probable misspelling or pronunciation variant, correct the name only when confident, based on transcript/description context and known restaurant/cuisine information.
-        - For each qualifying place, add a "context" field containing the exact transcript lines or description excerpts that directly support:
-                ~ The identification of the restaurant name.
-                ~ The location information.
-                ~ The selected quotes.
 
         ## Cuisines Instructions
         - Write cuisines from pre-defined list only [French, Italian, Indian, Chinese, Japanese, Thai, Mexican, Spanish, Greek, Turkish, Lebanese, Moroccan, Ethiopian, Korean, Vietnamese, Malaysian, Indonesian, Filipino, Brazilian, Argentine, Peruvian, "American (Traditional)", "Fast Food", "BBQ / Barbecue", "Cajun / Creole", Caribbean, Cuban, Jamaican, German, Austrian, Swiss, Belgian, "Scandinavian (Nordic)", British, Irish, Russian, Polish, "Hungarian", "Middle Eastern (General)", "Persian / Iranian", Afghan, Pakistani, Bangladeshi, Nepalese, Tibetan, "African (General)", "West African (e.g., Nigerian, Ghanaian)", "South African", "Mediterranean (General)", "Fusion / Contemporary"]
@@ -214,21 +226,13 @@ class GPTFoodPlaceProcessor:
         - Each qualifying food place should appear as a separate object in the JSON array.
         - Responses must be strictly valid JSON—no commentary, explanations, or schema outside the data.
         - REMINDER: Your most important tasks are to: extract only what is clearly stated, correct obvious misspelled names with high confidence, organize output in the strict JSON schema as above, and include nothing but the required data.
-
-        - When extracting quotes, always format them as full, expressive sentences or multi-sentence passages, wrapped in quotation marks, and matching the style of the following examples:
-
-                ~ “This is Belcanto. Welcome to Lisbon, easily one of the most beautiful and vibrant capitals in Europe. The city of colors, music, historic sites, monumental buildings, and of course, food and wine.”
-                ~ “These bites show a lot. Varying textures, playful and dominant flavors. The quality of the ingredients is unquestionable. After a nice crunch, it simply melts in your mouth. This is a wonderful opening.”
-                ~ “Eggs and mushrooms are longtime friends in gastronomy. But this one is on another level. Very sophisticated with intense and delicate flavors. I love it. The wine is hand in hand with the dish. My favorite pairing so far.”
-                ~ “Hearing back on tour, suckling pig is an old timer thing. I don't even bother with the fork and knife. I wanted to bite in it like a sandwich... I think this is one of my favorite main courses in my life.”
-                ~ “Chef José did an incredible job showcasing amazing Portuguese ingredients. You could feel the DNA of Portuguese tradition running through the entire menu.”
         """
 
     async def process_chunk(
         self, description: str, chunk: str, index: int, total_chunks: int
     ) -> list:
         """
-        Process a single chunk of transcription text using GPT-4.
+        Process a single chunk of transcription text using GPT-4.1.
 
         Args:
             chunk: The text chunk to process
@@ -306,12 +310,11 @@ class GPTFoodPlaceProcessor:
         results = await asyncio.gather(*tasks)
 
         # Flatten results and filter valid entities
-        flat_results = [
-            entity
-            for chunk in results
-            for entity in chunk
-            if entity and entity.get("restaurant_name") is not None
-        ]
+        flat_results = []
+        for chunk in results:
+            for entity in chunk:
+                if entity and entity.get("restaurant_name") is not None:
+                    flat_results.append(entity)
 
         logger.info(
             f"Processed {len(flat_results)} entities: {json.dumps(flat_results, indent=2)}"

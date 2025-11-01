@@ -184,27 +184,92 @@ export function ListingCard({ listing, onDeleted, onUpdate }: ListingCardProps) 
           )}
         </div>
 
-        {/* Quotes */}
-        {listing.quotes && listing.quotes.length > 0 && (
-          <div>
-            <h4 className="flex items-center gap-2 text-sm font-medium mb-2">
-              <Quote className="h-4 w-4 text-gray-500" />
-              Quotes
-            </h4>
-            <div className="space-y-2">
-              {listing.quotes.map((quote, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-50 p-3 rounded-md border-l-4 border-blue-200"
-                >
-                  <p className="text-sm text-gray-700 italic">
-                    &quot;{quote}&quot;
-                  </p>
+        {/* Review Sections */}
+        {listing.review_sections && (
+          <div className="space-y-4">
+            {/* History Context */}
+            {listing.review_sections.history_context && (
+              <div>
+                <h4 className="flex items-center gap-2 text-sm font-medium mb-2 text-blue-600">
+                  <Quote className="h-4 w-4 text-blue-600" />
+                  Background
+                </h4>
+                <div className="bg-blue-50 p-3 rounded-md border-l-4 border-blue-200">
+                  <p className="text-sm text-blue-800">{listing.review_sections.history_context}</p>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+            
+            {/* Overview */}
+            {listing.review_sections.overview && (
+              <div>
+                <h4 className="flex items-center gap-2 text-sm font-medium mb-2 text-green-600">
+                  <Quote className="h-4 w-4 text-green-600" />
+                  Overview
+                </h4>
+                <div className="bg-green-50 p-3 rounded-md border-l-4 border-green-200">
+                  <p className="text-sm text-green-800">{listing.review_sections.overview}</p>
+                </div>
+              </div>
+            )}
+            
+            {/* What They Ate */}
+            {listing.review_sections.what_they_ate && listing.review_sections.what_they_ate.length > 0 && (
+              <div>
+                <h4 className="flex items-center gap-2 text-sm font-medium mb-2 text-purple-600">
+                  <Quote className="h-4 w-4 text-purple-600" />
+                  What They Ate
+                </h4>
+                <div className="bg-purple-50 p-3 rounded-md border-l-4 border-purple-200">
+                  <ul className="text-sm text-purple-800 space-y-1">
+                    {listing.review_sections.what_they_ate.map((item, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-purple-500 mt-1">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+            
+            {/* Verbatim Quotes */}
+            {listing.review_sections.verbatim_quotes && listing.review_sections.verbatim_quotes.length > 0 && (
+              <div>
+                <h4 className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-600">
+                  <Quote className="h-4 w-4 text-gray-600" />
+                  Quotes
+                </h4>
+                <div className="space-y-2">
+                  {listing.review_sections.verbatim_quotes.map((quote, index) => (
+                    <div
+                      key={index}
+                      className="bg-gray-50 p-3 rounded-md border-l-4 border-gray-200"
+                    >
+                      <p className="text-sm text-gray-700 italic">
+                        &quot;{quote}&quot;
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Nomtok Reflection */}
+              {listing.review_sections.nomtok_reflection && (
+                <div>
+                  <h4 className="flex items-center gap-2 text-sm font-medium mb-2 text-orange-600">
+                    <Quote className="h-4 w-4 text-orange-600" />
+                    Our Reflection
+                  </h4>
+                  <div className="bg-orange-50 p-3 rounded-md border-l-4 border-orange-200">
+                    <p className="text-sm text-orange-800">{listing.review_sections.nomtok_reflection}</p>
+                  </div>
+                </div>
+              )}
           </div>
         )}
+        
 
         {/* Restaurant Information */}
         {listing.restaurant && (

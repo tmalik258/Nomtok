@@ -59,13 +59,11 @@ export function FeaturedRestaurantsCarousel({
     );
   }
 
-  const currentCity = displayedCity || "";
-
   return (
     <div className="space-y-8">
       <div className="text-center">
         <h2 className="text-3xl font-bold tracking-tight">
-          {currentCity ? `${currentCity}` : "Featured Cities & Restaurants"}
+          {displayedCity ? `${displayedCity}` : "Featured Cities & Restaurants"}
         </h2>
         <p className="text-muted-foreground mt-2">
           Discover the latest restaurant recommendations from top food cities
@@ -106,10 +104,10 @@ export function FeaturedRestaurantsCarousel({
       </Carousel>
       <div className="flex items-center justify-center">
         <Link
-          href={`/restaurants?city=${encodeURIComponent(currentCity)}`}
+          href={`/restaurants?city=${encodeURIComponent(displayedCity)}`}
           className="rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-orange-500 text-white hover:bg-orange-600 px-6 py-3"
         >
-          View all restaurants in {currentCity} →
+          View all restaurants in {displayedCity} →
         </Link>
       </div>
     </div>

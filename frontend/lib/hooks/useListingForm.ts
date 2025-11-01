@@ -38,7 +38,6 @@ export function useListingForm({
       restaurant_id: "",
       video_id: "",
       influencer_id: "",
-      quotes: [],
       confidence_score: 0,
       approved: false,
       timestamp: 0,
@@ -49,16 +48,11 @@ export function useListingForm({
   // Pre-populate form fields when in edit mode
   useEffect(() => {
     if (mode === 'edit' && listingData) {
-      const quotesArray = listingData.quotes 
-        ? listingData.quotes.filter(quote => quote.trim() !== '')
-        : [];
-
       form.reset({
         restaurant_id: listingData.restaurant_id || listingData.restaurant?.id || "",
         video_id: listingData.video_id || listingData.video?.id || "",
         influencer_id: listingData.influencer_id || listingData.influencer?.id || "",
         visit_date: listingData.visit_date ? new Date(listingData.visit_date) : undefined,
-        quotes: quotesArray,
         confidence_score: listingData.confidence_score,
         approved: listingData.approved,
         timestamp: listingData.timestamp ? Number(listingData.timestamp) : 0,
@@ -127,16 +121,11 @@ export function useListingForm({
     } else {
       // In edit mode, reset to original values
       if (listingData) {
-        const quotesArray = listingData.quotes 
-          ? listingData.quotes.filter(quote => quote.trim() !== '')
-          : [];
-        
         form.reset({
           restaurant_id: listingData.restaurant_id,
           video_id: listingData.video_id,
           influencer_id: listingData.influencer_id,
           visit_date: listingData.visit_date ? new Date(listingData.visit_date) : undefined,
-          quotes: quotesArray,
           confidence_score: listingData.confidence_score,
           approved: listingData.approved,
           timestamp: listingData.timestamp ? Number(listingData.timestamp) : 0,

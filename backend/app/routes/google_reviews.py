@@ -22,7 +22,7 @@ async def get_google_reviews(
 ) -> Dict[str, Any]:
     """
     Fetch Google Maps reviews for a restaurant using Google Places API.
-    Returns the 3 most recent reviews with proper error handling.
+    Returns the 6 most recent reviews with proper error handling.
     """
     
     if not GOOGLE_MAPS_API_KEY:
@@ -52,12 +52,12 @@ async def get_google_reviews(
         rating = result.get("rating", 0)
         user_ratings_total = result.get("user_ratings_total", 0)
         
-        # Sort reviews by time (most recent first) and limit to 3
+        # Sort reviews by time (most recent first) and limit to 6
         sorted_reviews = sorted(
             reviews, 
             key=lambda x: x.get("time", 0), 
             reverse=True
-        )[:3]
+        )[:6]
         
         # Clean and format the response
         formatted_reviews = []

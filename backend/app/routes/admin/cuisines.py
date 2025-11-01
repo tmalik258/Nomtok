@@ -10,6 +10,7 @@ from app.database import get_async_db
 from app.dependencies import get_current_admin
 from app.models.cuisine import Cuisine
 from app.utils.logging import setup_logger
+from app.services.cache import CacheService
 
 admin_cuisines_router = APIRouter()
 
@@ -41,6 +42,8 @@ async def create_cuisine(
         db.add(new_cuisine)
         await db.commit()
         await db.refresh(new_cuisine)
+        # Invalidate cached cuisine lists/details to reflect new data
+        CacheService("cuisines").invalidate_prefix("")
         return new_cuisine
     except HTTPException:
         raise
@@ -104,6 +107,8 @@ async def update_cuisine(
 
         await db.commit()
         await db.refresh(existing_cuisine)
+        # Invalidate cached cuisine lists/details and cuisine-related restaurants
+        CacheService("cuisines").invalidate_prefix("")
         return existing_cuisine
     except HTTPException:
         raise
@@ -150,6 +155,8 @@ async def delete_cuisine(
 
         await db.execute(delete(Cuisine).filter(Cuisine.id == cuisine_id))
         await db.commit()
+        # Invalidate cached cuisine lists/details and cuisine-related restaurants
+        CacheService("cuisines").invalidate_prefix("")
         
         return {"message": "Cuisine deleted successfully"}
     except HTTPException:

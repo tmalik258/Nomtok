@@ -32,7 +32,7 @@ export const useRestaurantsPaginated = (initialParams?: PaginatedRestaurantsPara
     limit: 12,
     ...initialParams
   });
-
+  
   const fetchRestaurants = useCallback(async (searchParams?: PaginatedRestaurantsParams) => {
     const currentParams = searchParams || params;
     const { page = 1, limit = 12, ...otherParams } = currentParams;
@@ -90,6 +90,10 @@ export const useRestaurantsPaginated = (initialParams?: PaginatedRestaurantsPara
     updateParams({ cuisine, page: 1 }); // Reset to first page when filtering by cuisine
   }, [updateParams]);
 
+  const setInfluencerFilter = useCallback((influencer_id?: string) => {
+    updateParams({ influencer_id, page: 1 }); // Reset to first page when filtering by influencer
+  }, [updateParams]);
+
   const setSortBy = useCallback((sort_by: string) => {
     updateParams({ sort_by, page: 1 }); // Reset to first page when changing sort
   }, [updateParams]);
@@ -110,6 +114,7 @@ export const useRestaurantsPaginated = (initialParams?: PaginatedRestaurantsPara
     setCityFilter,
     setTagFilter,
     setCuisineFilter,
+    setInfluencerFilter,
     setSortBy,
     refetch: () => fetchRestaurants(params)
   };

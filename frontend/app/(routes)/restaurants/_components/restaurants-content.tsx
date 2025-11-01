@@ -33,21 +33,17 @@ export function RestaurantsContent() {
   const searchQueryParam = searchParams.get("search") || "";
   const searchTypeParam = searchParams.get("searchType") || "";
   const sortByParam = searchParams.get("sortBy") || "";
+  const influencerSlugParam = searchParams.get("influencer-slug") || undefined;
+  const pageParam = Number(searchParams.get("page") || "1") || 1;
+  const limitParam = Number(searchParams.get("limit") || "12") || 12;
 
   const [searchQuery, setSearchQuery] = useState(searchQueryParam);
   const [searchType, setSearchType] = useState(searchTypeParam);
-  const [sortBy, setSortBy] = useState(sortByParam);
+  const [sortBy, setSortByState] = useState(sortByParam);
+  const [selectedInfluencerId, setSelectedInfluencerId] = useState<string | undefined>(influencerSlugParam);
   const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[]>(
     []
   );
-  // Initialize selected tags from URL parameters
-  // const tagsParam = searchParams.get("tags");
-  // const initialSelectedTags: Tag[] = tagsParam
-  //   ? tagsParam
-  //       .split(",")
-  //       .map((tagName) => ({ id: "", name: tagName, created_at: "" }))
-  //   : [];
-  // const [selectedTags, setSelectedTags] = useState<Tag[]>(initialSelectedTags);
 
   // Initialize selected cuisines from URL parameters
   const cuisinesParam = searchParams.get("cuisines");
@@ -88,23 +84,6 @@ export function RestaurantsContent() {
     router.push(newUrl);
     setCityFilter("");
   };
-
-  // Function to update URL with selected tags
-  // const updateSelectedTags = (newTags: Tag[]) => {
-  //   const params = new URLSearchParams(searchParams.toString());
-  //   if (newTags.length === 0) {
-  //     params.delete("tags");
-  //   } else {
-  //     const tagNames = newTags.map((tag) => tag.name).join(",");
-  //     params.set("tags", tagNames);
-  //   }
-  //   const newUrl = params.toString()
-  //     ? `${pathname}?${params.toString()}`
-  //     : pathname;
-
-  //   router.replace(newUrl, { scroll: false });
-  //   setSelectedTags(newTags);
-  // };
 
   // Function to update URL with selected cuisines
   const updateSelectedCuisines = (newCuisines: Cuisine[]) => {
@@ -168,7 +147,29 @@ export function RestaurantsContent() {
       : pathname;
 
     router.replace(newUrl, { scroll: false });
-    setSortBy(sort);
+    setSortByState(sort);
+  };
+
+  // Function to update URL with influencer filter (use influencer-slug)
+  const updateSelectedInfluencerId = (id?: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    // Clean up legacy param
+    params.delete("influencer_id");
+    if (!id) {
+      params.delete("influencer-slug");
+    } else {
+      params.set("influencer-slug", id);
+    }
+    const newUrl = params.toString()
+      ? `${pathname}?${params.toString()}`
+      : pathname;
+
+    router.replace(newUrl, { scroll: false });
+    setSelectedInfluencerId(id);
+  };
+
+  const onInfluencerIdChange = (id?: string) => {
+    setSelectedInfluencerId(id);
   };
 
   const {
@@ -176,133 +177,122 @@ export function RestaurantsContent() {
     loading,
     error,
     page,
+    limit,
     totalPages,
     goToPage,
     setCityFilter,
     refetch,
+    setInfluencerFilter,
+    setSortBy,
+    setSearchQuery: setBackendSearchQuery,
+    setCuisineFilter,
   } = useRestaurantsPaginated({
     city: city || undefined,
     name: searchQuery || undefined,
+    influencer_id: influencerSlugParam,
+    sort_by: sortByParam || undefined,
+    cuisine: initialSelectedCuisines[0]?.name,
+    page: pageParam,
+    limit: limitParam,
   });
+
   const handleRefresh = () => {
     refetch();
   };
 
-  // Set up filtered restaurants and listings
+  // Keep hook in sync with influencer selection
   useEffect(() => {
-    if (restaurants.length > 0) {
-      let filtered = [...restaurants];
+    setInfluencerFilter(selectedInfluencerId);
+  }, [selectedInfluencerId, setInfluencerFilter]);
 
-      // Apply tag filter first
-      // if (selectedTags.length > 0) {
-      //   const selectedTagNames = selectedTags.map((tag) => tag.name);
-      //   filtered = filtered.filter((restaurant) => {
-      //     return restaurant.tags?.some((tag) =>
-      //       selectedTagNames.includes(tag.name)
-      //     );
-      //   });
-      // }
+  // Persist page and limit in URL when they change
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const currentPageParam = params.get("page");
+    const currentLimitParam = params.get("limit");
+    const nextPage = String(page);
+    const nextLimit = String(limit);
 
-      // Apply cuisine filter
-      if (selectedCuisines.length > 0) {
-        const selectedCuisineNames = selectedCuisines.map(
-          (cuisine) => cuisine.name
-        );
-        filtered = filtered.filter((restaurant) => {
-          return restaurant.cuisines?.some((cuisine) =>
-            selectedCuisineNames.includes(cuisine.name)
-          );
-        });
-      }
+    let changed = false;
+    if (currentPageParam !== nextPage) {
+      params.set("page", nextPage);
+      changed = true;
+    }
+    if (currentLimitParam !== nextLimit) {
+      params.set("limit", nextLimit);
+      changed = true;
+    }
 
-      // Apply search filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
+    if (changed) {
+      const newUrl = params.toString()
+        ? `${pathname}?${params.toString()}`
+        : pathname;
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [page, limit, pathname, router, searchParams]);
 
-        // Search by specific type
-        filtered = filtered.filter((restaurant) => {
-          switch (searchType) {
-            case "restaurant":
-              return restaurant.name.toLowerCase().includes(query);
-            case "city":
-              return restaurant.city?.toLowerCase().includes(query);
-            // case "tags":
-            //   return restaurant.tags?.some((tag) =>
-            //     tag.name.toLowerCase().includes(query)
-            //   );
-            case "influencer":
-              return restaurant?.listings?.some((listing) =>
-                listing?.influencer?.name?.toLowerCase().includes(query)
-              );
-            case "cuisine":
-              return restaurant.cuisines?.some((cuisine) =>
-                cuisine.name.toLowerCase().includes(query)
-              );
-            // case "video":
-            //   return restaurant?.listings?.some(
-            //     (listing) =>
-            //       (listing.video.title.toLowerCase().includes(query) ||
-            //         listing.video.description?.toLowerCase().includes(query))
-            //   );
-            default:
-              return (
-                restaurant.name.toLowerCase().includes(query) ||
-                restaurant.city?.toLowerCase().includes(query) ||
-                // restaurant.tags?.some((tag) =>
-                //   tag.name.toLowerCase().includes(query)
-                // ) ||
-                restaurant.cuisines?.some((cuisine) =>
-                  cuisine.name.toLowerCase().includes(query)
-                ) ||
-                restaurant?.listings?.some((listing) =>
-                  listing?.influencer?.name?.toLowerCase().includes(query)
-                )
-                //  ||
-                // restaurant?.listings?.some(
-                //   (listing) =>
-                //     listing.video.title.toLowerCase().includes(query) ||
-                //     listing.video.description?.toLowerCase().includes(query)
-                // )
-              );
-          }
-        });
-      }
+  // NEW: Keep filteredRestaurants in sync with backend results
+  useEffect(() => {
+    setFilteredRestaurants(restaurants);
+  }, [restaurants]);
 
-      // Apply sorting
-      filtered.sort((a, b) => {
-        switch (sortBy) {
-          case "name":
-            return a.name.localeCompare(b.name);
-          case "rating":
-            return (b.google_rating || 0) - (a.google_rating || 0);
-          case "city":
-            return (a.city || "").localeCompare(b.city || "");
-          default:
-            return 0;
-        }
-      });
+  // NEW: Trigger backend sort when sortBy changes
+  useEffect(() => {
+    if (sortBy) {
+      setSortBy(sortBy);
+    } else {
+      // Default backend sort is name
+      setSortBy("name");
+    }
+  }, [sortBy, setSortBy]);
 
+  // NEW: Trigger backend search based on selected search type
+  useEffect(() => {
+    const query = searchQuery?.trim() || "";
+    if (!query) {
+      // Clear filters when search is empty
+      setBackendSearchQuery("");
+      return;
+    }
+
+    switch (searchType) {
+      case "restaurant":
+        setBackendSearchQuery(query);
+        break;
+      case "city":
+        setCityFilter(query);
+        break;
+      case "cuisines":
+        setCuisineFilter(query);
+        break;
+      default:
+        // Fallback to name search for "all"
+        setBackendSearchQuery(query);
+        break;
+    }
+  }, [searchType, searchQuery, setBackendSearchQuery, setCityFilter, setCuisineFilter]);
+
+  // NEW: Trigger backend cuisine filter when cuisines selection changes
+  useEffect(() => {
+    if (selectedCuisines.length > 0) {
+      setCuisineFilter(selectedCuisines[0].name);
+    } else {
+      setCuisineFilter("");
+    }
+  }, [selectedCuisines, setCuisineFilter]);
+
+  // Fallback: preserve typed influencer name filtering client-side (backend supports only influencer_id)
+  useEffect(() => {
+    const query = searchQuery?.trim().toLowerCase() || "";
+    if (searchType === "influencer" && query) {
+      const filtered = restaurants.filter((restaurant) =>
+        restaurant?.listings?.some((listing) =>
+          listing?.influencer?.name?.toLowerCase().includes(query)
+        )
+      );
       setFilteredRestaurants(filtered);
     }
-  }, [restaurants, searchQuery, searchType, sortBy, selectedCuisines]);
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-white">
-        <div className="p-2">
-          <RestaurantHeroSection city={city} />
-        </div>
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <ErrorCard
-            title="Failed to load restaurants"
-            message={error}
-            error={error}
-            onRefresh={handleRefresh}
-          />
-        </div>
-      </div>
-    );
-  }
+  }, [searchType, searchQuery, restaurants]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -351,7 +341,7 @@ export function RestaurantsContent() {
                 `}
               ></div>
               <Button
-                variant={viewMode === "grid" ? "default" : "ghost"}
+                variant="secondary"
                 size="sm"
                 onClick={() => updateViewMode("grid")}
                 className={`relative z-10 h-8 px-3 bg-transparent hover:bg-transparent ${
@@ -387,21 +377,21 @@ export function RestaurantsContent() {
         <RestaurantSearchFilter
           city={city}
           searchQuery={searchQuery}
-          setSearchQuery={updateSearchQuery}
+          setSearchQuery={setSearchQuery}
           searchType={searchType}
-          setSearchType={updateSearchType}
+          setSearchType={setSearchType}
           sortBy={sortBy}
-          setSortBy={updateSortBy}
+          setSortBy={setSortByState}
           getSearchPlaceholder={getSearchPlaceholder}
-          // selectedTags={selectedTags}
-          // onTagsChange={updateSelectedTags}
           selectedCuisines={selectedCuisines}
-          onCuisinesChange={updateSelectedCuisines}
+          onCuisinesChange={setSelectedCuisines}
           updateSearchQuery={updateSearchQuery}
           updateSearchType={updateSearchType}
           updateSortBy={updateSortBy}
-          // updateSelectedTags={updateSelectedTags}
           updateSelectedCuisines={updateSelectedCuisines}
+          selectedInfluencerId={selectedInfluencerId}
+          onInfluencerIdChange={onInfluencerIdChange}
+          updateSelectedInfluencerId={updateSelectedInfluencerId}
         />
 
         {filteredRestaurants.length === 0 && !loading ? (

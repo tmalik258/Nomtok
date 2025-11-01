@@ -11,6 +11,7 @@ from app.database import get_async_db
 from app.dependencies import get_current_admin
 from app.models.tag import Tag
 from app.utils.logging import setup_logger
+from app.services.cache import CacheService
 
 admin_tags_router = APIRouter()
 
@@ -42,6 +43,8 @@ async def create_tag(
         db.add(new_tag)
         await db.commit()
         await db.refresh(new_tag)
+        # Invalidate cached tag lists/details to reflect new data
+        CacheService("tags").invalidate_prefix("")
         return new_tag
     except HTTPException:
         raise
@@ -104,6 +107,8 @@ async def update_tag(
 
         await db.commit()
         await db.refresh(existing_tag)
+        # Invalidate cached tag lists/details and tag-related restaurants
+        CacheService("tags").invalidate_prefix("")
         return existing_tag
     except HTTPException:
         raise
@@ -150,6 +155,8 @@ async def delete_tag(
 
         await db.execute(delete(Tag).filter(Tag.id == tag_id))
         await db.commit()
+        # Invalidate cached tag lists/details and tag-related restaurants
+        CacheService("tags").invalidate_prefix("")
         
         return {"message": "Tag deleted successfully"}
     except HTTPException:

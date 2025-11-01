@@ -1,5 +1,5 @@
 import { Tag } from '@/lib/types';
-import api, { adminApi } from '../api';
+import api, { adminApi, cachedApiGet } from '../api';
 
 // In-memory cache for all tags to avoid repeated fetching across mounts
 let allTagsCache: Tag[] | null = null;
@@ -22,9 +22,9 @@ export const tagActions = {
     limit?: number;
   }): Promise<Tag[]> {
     try {
-      const response = await api.get('/tags/', { params });
+      const { data } = await cachedApiGet('/tags/', { params }, { ttlMs: 5 * 60 * 1000, keySuffix: 'tags-list', namespace: 'tags' });
       // Handle both old and new response formats for backward compatibility
-      return Array.isArray(response.data) ? response.data : response.data.tags;
+      return Array.isArray(data) ? data : (data as any).tags;
     } catch (error) {
       console.error('Error fetching tags:', error);
       throw error;
@@ -42,17 +42,17 @@ export const tagActions = {
     limit?: number;
   }): Promise<PaginatedTagsResponse> {
     try {
-      const response = await api.get('/tags/', { params });
+      const { data } = await cachedApiGet('/tags/', { params }, { ttlMs: 5 * 60 * 1000, keySuffix: 'tags-paginated', namespace: 'tags' });
       // Handle both old and new response formats
-      if (Array.isArray(response.data)) {
+      if (Array.isArray(data)) {
         // Old format - return as paginated response
         return {
-          tags: response.data,
-          total: response.data.length
+          tags: data,
+          total: data.length
         };
       }
       // New format - return as is
-      return response.data;
+      return data as PaginatedTagsResponse;
     } catch (error) {
       console.error('Error fetching paginated tags:', error);
       throw error;
@@ -64,8 +64,8 @@ export const tagActions = {
    */
   async getTag(tagId: string): Promise<Tag> {
     try {
-      const response = await api.get(`/tags/${tagId}/`);
-      return response.data;
+      const { data } = await cachedApiGet(`/tags/${tagId}/`, undefined, { ttlMs: 60 * 60 * 1000, keySuffix: `tag:${tagId}`, namespace: 'tags' });
+      return data as Tag;
     } catch (error) {
       console.error(`Error fetching tag ${tagId}:`, error);
       throw error;
@@ -77,13 +77,13 @@ export const tagActions = {
    */
   async searchTagsByName(name: string, limit = 20): Promise<Tag[]> {
     try {
-      const response = await api.get('/tags/', {
+      const { data } = await cachedApiGet('/tags/', {
         params: {
           name,
           limit,
         },
-      });
-      return response.data;
+      }, { ttlMs: 10 * 60 * 1000, keySuffix: `tags-search:${name}:${limit}`, namespace: 'tags' });
+      return data as Tag[];
     } catch (error) {
       console.error(`Error searching tags by name "${name}":`, error);
       throw error;
@@ -99,14 +99,13 @@ export const tagActions = {
       if (allTagsCache && allTagsCacheKey === cacheKey) {
         return allTagsCache;
       }
-      const response = await api.get('/tags/', {
+      const { data } = await cachedApiGet('/tags/', {
         params: {
           limit,
           city,
         },
-      });
-      const data = response.data;
-      const tags = Array.isArray(data) ? data : data?.tags ?? [];
+      }, { ttlMs: 60 * 60 * 1000, keySuffix: 'tags-all', namespace: 'tags' });
+      const tags = Array.isArray(data) ? data : (data as any)?.tags ?? [];
       allTagsCache = tags;
       allTagsCacheKey = cacheKey;
       return tags;
