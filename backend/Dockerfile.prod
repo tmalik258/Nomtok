@@ -54,4 +54,4 @@ COPY . .
 EXPOSE 8000
 
 # Optimized command with worker recycling
-CMD ["gunicorn", "-w", "1", "app.main:app", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120", "--max-requests", "100", "--max-requests-jitter", "20", "--worker-tmp-dir", "/dev/shm"]
+CMD ["bash", "-c", "gunicorn -w $((($(nproc) * 2) + 1)) app.main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --timeout 120 --max-requests 1000 --max-requests-jitter 50 --worker-tmp-dir /dev/shm"]
