@@ -50,7 +50,7 @@ jobs:
         ssh production << 'ENDSSH'
           set -e
           
-          echo "📁 Navigating to project directory..."
+          echo "📁 Navigating to project directory $PROJECT_DIR..."
           cd "$PROJECT_DIR" || exit 1
           
           echo "📥 Pulling latest code from GitHub..."
