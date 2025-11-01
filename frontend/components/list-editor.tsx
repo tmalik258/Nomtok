@@ -107,7 +107,7 @@ export function ListEditor({
   };
 
   return (
-    <div className="space-y-3 px-2">
+    <div className="space-y-1 px-2">
       {/* Add new item */}
       <div className="flex gap-2">
         <Input
