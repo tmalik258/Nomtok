@@ -51,7 +51,7 @@ jobs:
           set -e
           
           echo "📁 Navigating to project directory $PROJECT_DIR ..."
-          cd ~/"$PROJECT_DIR" || exit 1
+          cd ~/Nomtok || exit 1
           
           echo "📥 Pulling latest code from GitHub..."
           git pull origin prod
