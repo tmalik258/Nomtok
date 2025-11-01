@@ -42,7 +42,6 @@ jobs:
       env:
         SSH_HOST: ${{ secrets.SSH_HOST }}
         SSH_USER: ${{ secrets.SSH_USER }}
-        PROJECT_DIR: ${{ secrets.PROJECT_DIR }}
       run: |
         echo "🚀 Starting deployment to production server..."
         
@@ -50,21 +49,15 @@ jobs:
         ssh production << 'ENDSSH'
           set -e
           
-          echo "📁 Navigating to project directory $PROJECT_DIR ..."
+          echo "📁 Navigating to project directory..."
           cd ~/Nomtok || exit 1
           
           echo "📥 Pulling latest code from GitHub..."
           git pull origin prod
           
           echo "🔄 Stopping existing containers..."
-          docker compose -f docker-compose.prod.yml down --remove-orphans || true
-          
-          echo "🗑️ Cleaning up Docker system..."
-          docker system prune -f
-          
-          echo "🏗️ Building and starting services..."
-          docker compose -f docker-compose.prod.yml build --no-cache
-          docker compose -f docker-compose.prod.yml up -d
+          docker compose -f docker-compose.prod.yml -p nomtok build
+          docker compose -f docker-compose.prod.yml -p nomtok up -d --remove-orphans
           
           echo "⏳ Waiting for services to be healthy..."
           sleep 30
@@ -87,8 +80,12 @@ jobs:
           echo "✅ All services are healthy!"
           
           echo "🧹 Cleaning up old Docker images..."
-          docker image prune -f
-          
+          if [ "${{ vars.PRUNE_DOCKER }}" = "true" ]; then
+            echo "🗑️ Cleaning up Docker system (prune)..."
+            docker system prune -f
+          else
+            echo "ℹ️ Skipping global docker prune; set PRUNE_DOCKER=true to enable."
+          fi
           echo "🎉 Deployment completed successfully!"
         ENDSSH
         
