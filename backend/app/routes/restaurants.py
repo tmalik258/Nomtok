@@ -189,21 +189,18 @@ async def get_restaurants(
                 listings_data = []
                 for listing in restaurant.listings:
                     # Create InfluencerResponse manually to avoid lazy loading issues
-                    influencer_response = InfluencerResponse(
+                    influencer_response = InfluencerLightResponse(
                         id=listing.influencer.id,
                         name=listing.influencer.name,
                         slug=listing.influencer.slug,
                         bio=listing.influencer.bio,
                         avatar_url=listing.influencer.avatar_url,
                         banner_url=listing.influencer.banner_url,
-                        # region=listing.influencer.region,
-                        # country=listing.influencer.country,
                         youtube_channel_id=listing.influencer.youtube_channel_id,
                         youtube_channel_url=listing.influencer.youtube_channel_url,
                         subscriber_count=listing.influencer.subscriber_count,
                         created_at=listing.influencer.created_at,
                         updated_at=listing.influencer.updated_at,
-                        listings=None  # Explicitly set to None to avoid lazy loading
                     )
                     
                     if include_video_details:
@@ -213,6 +210,7 @@ async def get_restaurants(
                             video=VideoResponse.model_validate(listing.video),
                             influencer=influencer_response,
                             visit_date=listing.visit_date,
+                            review_sections=listing.review_sections,
                             timestamp=listing.timestamp,
                             approved=listing.approved,
                             created_at=listing.created_at,
@@ -226,6 +224,7 @@ async def get_restaurants(
                             video=listing.video.id,
                             visit_date=listing.visit_date,
                             timestamp=listing.timestamp,
+                            review_sections=listing.review_sections,
                             approved=listing.approved,
                             created_at=listing.created_at,
                             updated_at=listing.updated_at
@@ -381,22 +380,19 @@ async def get_featured_optimized(db: AsyncSession = Depends(get_async_db)):
                 for listing in restaurant.listings:
                     if listing.influencer:
                         # Create optimized listing with only essential data
-                        # Manually construct InfluencerResponse to avoid lazy loading issues
-                        influencer_response = InfluencerResponse(
+                        # Manually construct InfluencerLightResponse to avoid lazy loading issues
+                        influencer_response = InfluencerLightResponse(
                             id=listing.influencer.id,
                             name=listing.influencer.name,
                             slug=listing.influencer.slug,
                             bio=listing.influencer.bio,
                             avatar_url=listing.influencer.avatar_url,
                             banner_url=listing.influencer.banner_url,
-                            # region=listing.influencer.region,
-                            # country=listing.influencer.country,
                             youtube_channel_id=listing.influencer.youtube_channel_id,
                             youtube_channel_url=listing.influencer.youtube_channel_url,
                             subscriber_count=listing.influencer.subscriber_count,
                             created_at=listing.influencer.created_at,
                             updated_at=listing.influencer.updated_at,
-                            listings=None  # Explicitly set to None to avoid lazy loading
                         )
                         
                         listing_optimized = ListingLightResponse(
@@ -405,6 +401,7 @@ async def get_featured_optimized(db: AsyncSession = Depends(get_async_db)):
                             influencer=influencer_response,
                             visit_date=listing.visit_date,
                             confidence_score=listing.confidence_score,
+                            review_sections=listing.review_sections,
                             timestamp=listing.timestamp,
                             approved=listing.approved,
                             created_at=listing.created_at,
@@ -512,21 +509,18 @@ async def get_restaurant(
             listings_data = []
             for listing in restaurant_obj.listings:
                 # Create InfluencerResponse manually to avoid lazy loading issues
-                influencer_response = InfluencerResponse(
+                influencer_response = InfluencerLightResponse(
                     id=listing.influencer.id,
                     name=listing.influencer.name,
                     slug=listing.influencer.slug,
                     bio=listing.influencer.bio,
                     avatar_url=listing.influencer.avatar_url,
                     banner_url=listing.influencer.banner_url,
-                    # region=listing.influencer.region,
-                    # country=listing.influencer.country,
                     youtube_channel_id=listing.influencer.youtube_channel_id,
                     youtube_channel_url=listing.influencer.youtube_channel_url,
                     subscriber_count=listing.influencer.subscriber_count,
                     created_at=listing.influencer.created_at,
                     updated_at=listing.influencer.updated_at,
-                    listings=None  # Explicitly set to None to avoid lazy loading
                 )
                 
                 if include_video_details:
@@ -569,6 +563,7 @@ async def get_restaurant(
                         video=video_response,
                         influencer=influencer_response,
                         visit_date=listing.visit_date,
+                        review_sections=listing.review_sections,
                         timestamp=listing.timestamp,
                         approved=listing.approved,
                         created_at=listing.created_at,
@@ -582,6 +577,7 @@ async def get_restaurant(
                         influencer=influencer_response,
                         visit_date=listing.visit_date,
                         timestamp=listing.timestamp,
+                        review_sections=listing.review_sections,
                         approved=listing.approved,
                         created_at=listing.created_at,
                         updated_at=listing.updated_at

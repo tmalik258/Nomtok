@@ -13,7 +13,7 @@ from app.api_schema.tags import TagResponse, TagCreate, TagUpdate, PaginatedTags
 from app.api_schema.cuisines import CuisineResponse
 from app.api_schema.listings import ListingLightResponse
 from app.api_schema.restaurants import RestaurantResponse, PaginatedRestaurantsResponse
-from app.api_schema.influencers import InfluencerResponse
+from app.api_schema.influencers import InfluencerLightResponse
 from app.services.cache import CacheService, cache_json_response
 
 logger = setup_logger(__name__)
@@ -228,6 +228,7 @@ async def get_restaurants_by_tag(
             restaurant_data = RestaurantResponse(
                 id=restaurant.id,
                 name=restaurant.name,
+                slug=restaurant.slug,
                 address=restaurant.address,
                 latitude=restaurant.latitude,
                 longitude=restaurant.longitude,
@@ -248,8 +249,9 @@ async def get_restaurants_by_tag(
             if include_listings and restaurant.listings:
                 listings_data = []
                 for listing in restaurant.listings:
-                    influencer_response = InfluencerResponse(
+                    influencer_response = InfluencerLightResponse(
                         id=listing.influencer.id,
+                        slug=listing.influencer.slug,
                         name=listing.influencer.name,
                         bio=listing.influencer.bio,
                         avatar_url=listing.influencer.avatar_url,
@@ -259,16 +261,15 @@ async def get_restaurants_by_tag(
                         subscriber_count=listing.influencer.subscriber_count,
                         created_at=listing.influencer.created_at,
                         updated_at=listing.influencer.updated_at,
-                        listings=None
                     )
 
                     listing_response = ListingLightResponse(
                         id=listing.id,
                         restaurant_id=listing.restaurant.id,
                         influencer=influencer_response,
-                        video_id=listing.video.id,
+                        video=listing.video.id,
                         visit_date=listing.visit_date,
-                        confidence_score=listing.confidence_score,
+                        review_sections=listing.review_sections,
                         timestamp=listing.timestamp,
                         approved=listing.approved,
                         created_at=listing.created_at,

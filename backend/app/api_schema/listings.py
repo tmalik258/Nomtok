@@ -65,6 +65,7 @@ class ListingUpdate(BaseModel):
 class ListingLightResponse(BaseModel):
     id: UUID
     restaurant_id: Optional[UUID] = None
+    restaurant: Optional[RestaurantResponse | UUID] = None
     video: Optional[VideoResponse | UUID] = None
     influencer: Optional[InfluencerLightResponse | UUID] = None
     visit_date: Optional[date] = None

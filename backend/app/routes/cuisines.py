@@ -13,7 +13,7 @@ from app.api_schema.cuisines import CuisineResponse, CuisineCreate, CuisineUpdat
 from app.api_schema.restaurants import RestaurantResponse, PaginatedRestaurantsResponse
 from app.api_schema.tags import TagResponse
 from app.api_schema.listings import ListingLightResponse
-from app.api_schema.influencers import InfluencerResponse
+from app.api_schema.influencers import InfluencerLightResponse
 from app.utils.logging import setup_logger
 from app.services.cache import CacheService, cache_json_response
 
@@ -230,6 +230,7 @@ async def get_restaurants_by_cuisine(
                 # Create restaurant data
                 restaurant_data = RestaurantResponse(
                     id=restaurant.id,
+                    slug=restaurant.slug,
                     name=restaurant.name,
                     address=restaurant.address,
                     latitude=restaurant.latitude,
@@ -252,8 +253,9 @@ async def get_restaurants_by_cuisine(
                     listings_data = []
                     for listing in restaurant.listings:
                         # Create InfluencerResponse manually to avoid lazy loading issues
-                        influencer_response = InfluencerResponse(
+                        influencer_response = InfluencerLightResponse(
                             id=listing.influencer.id,
+                            slug=listing.influencer.slug,
                             name=listing.influencer.name,
                             bio=listing.influencer.bio,
                             avatar_url=listing.influencer.avatar_url,
@@ -263,7 +265,6 @@ async def get_restaurants_by_cuisine(
                             subscriber_count=listing.influencer.subscriber_count,
                             created_at=listing.influencer.created_at,
                             updated_at=listing.influencer.updated_at,
-                            listings=None
                         )
                         
                         listing_response = ListingLightResponse(
@@ -274,6 +275,7 @@ async def get_restaurants_by_cuisine(
                             confidence_score=listing.confidence_score,
                             timestamp=listing.timestamp,
                             approved=listing.approved,
+                            review_sections=listing.review_sections,
                             created_at=listing.created_at,
                             updated_at=listing.updated_at
                         )
