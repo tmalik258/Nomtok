@@ -30,7 +30,7 @@ const ListingCard = ({
                 />
               ) : (
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-bold text-lg">
-                  {listing?.influencer?.name?.charAt(0) || '?'}
+                  {listing?.influencer?.name?.charAt(0) || "?"}
                 </div>
               )}
             </div>
@@ -74,64 +74,91 @@ const ListingCard = ({
             <div className="space-y-4 mb-4">
               {/* History Context */}
               {listing.review_sections.history_context && (
-                <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                <div>
                   <h4 className="font-semibold text-blue-900 mb-2">About</h4>
-                  <p className="text-blue-800 text-sm">{listing.review_sections.history_context}</p>
+                  <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                    <p className="text-blue-800 text-sm">
+                      {listing.review_sections.history_context}
+                    </p>
+                  </div>
                 </div>
               )}
-              
+
               {/* Overview */}
               {listing.review_sections.overview && (
-                <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
-                  <h4 className="font-semibold text-green-900 mb-2">The Visit</h4>
-                  <p className="text-green-800 text-sm">{listing.review_sections.overview}</p>
+                <div>
+                  <h4 className="font-semibold text-green-900 mb-2">
+                    The Visit
+                  </h4>
+                  <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                    <p className="text-green-800 text-sm">
+                      {listing.review_sections.overview}
+                    </p>
+                  </div>
                 </div>
               )}
-              
+
               {/* What They Ate */}
-              {listing.review_sections.what_they_ate && listing.review_sections.what_they_ate.length > 0 && (
-                <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
-                  <h4 className="font-semibold text-purple-900 mb-2">What They Ate</h4>
-                  <ul className="text-purple-800 text-sm space-y-1">
-                    {listing.review_sections.what_they_ate.map((item, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <span className="text-purple-500 mt-1">•</span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              
-              {/* Verbatim Quotes */}
-              {listing.review_sections.verbatim_quotes && listing.review_sections.verbatim_quotes.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {listing.review_sections.verbatim_quotes.map((quote, index) => (
-                    <div
-                      key={index}
-                      className="p-3 bg-gray-50 rounded-lg border-l-4 border-orange-500"
-                    >
-                      <div className="flex items-start gap-2">
-                        <Quote className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                        <blockquote className="text-gray-700 italic text-sm">
-                          &quot;{quote}&quot;
-                        </blockquote>
-                      </div>
+              {listing.review_sections.what_they_ate &&
+                listing.review_sections.what_they_ate.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-purple-900 mb-2">
+                      What They Ate
+                    </h4>
+                    <div className="text-purple-800 flex flex-wrap gap-3 text-sm space-y-1">
+                      {listing.review_sections.what_they_ate.map(
+                        (item, index) => (
+                            <div key={index} className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
+                              {item}
+                            </div>
+                        )
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-              
+                  </div>
+                )}
+
+              {/* Verbatim Quotes */}
+              {listing.review_sections.verbatim_quotes &&
+                listing.review_sections.verbatim_quotes.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-orange-500 mb-2">
+                      Quotes
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {listing.review_sections.verbatim_quotes.map(
+                        (quote, index) => (
+                          <div
+                            key={index}
+                            className="p-3 bg-gray-50 rounded-lg border-l-4 border-orange-500"
+                          >
+                            <div className="flex items-start gap-2">
+                              <Quote className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                              <blockquote className="text-gray-700 italic text-sm">
+                                &quot;{quote}&quot;
+                              </blockquote>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
+
               {/* Nomtok Reflection */}
               {listing.review_sections.nomtok_reflection && (
-                <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
-                  <h4 className="font-semibold text-orange-900 mb-2">Our Reflection</h4>
-                  <p className="text-orange-800 text-sm">{listing.review_sections.nomtok_reflection}</p>
+                <div>
+                  <h4 className="font-semibold text-orange-900 mb-2">
+                    Our Reflection
+                  </h4>
+                  <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
+                    <p className="text-orange-800 text-sm">
+                      {listing.review_sections.nomtok_reflection}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
           )}
-          
 
           {/* Video Section - Full Width at Bottom */}
           <div className="w-full">
@@ -156,7 +183,9 @@ const ListingCard = ({
                   >
                     <iframe
                       className="absolute top-0 left-0 w-full h-full rounded-lg"
-                      src={`https://www.youtube.com/embed/${videoId}${listing?.timestamp ? `?start=${listing?.timestamp}` : ''}`}
+                      src={`https://www.youtube.com/embed/${videoId}${
+                        listing?.timestamp ? `?start=${listing?.timestamp}` : ""
+                      }`}
                       title={`${listing?.influencer?.name} - ${restaurant_name} Review`}
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
