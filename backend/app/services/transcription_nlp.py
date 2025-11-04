@@ -608,6 +608,9 @@ async def store_restaurant_and_listing(
     """Store restaurant, listing, and tags in the database."""
     try:
         logger.info(f"Storing restaurant and listing for video {video.youtube_video_id}")
+
+        logger.info(f"Entities storing: {entities}")
+
         if validated["valid"]:
             # Check for existing restaurant
             result = await db.execute(
