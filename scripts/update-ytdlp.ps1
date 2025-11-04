@@ -13,13 +13,13 @@ try {
     exit 1
 }
 
-# Check if the backend container is running
-$ContainerName = "food_backend"
+# Check if the backend container is running (production)
+$ContainerName = "nomtok_backend_prod"
 $RunningContainers = docker ps --format "table {{.Names}}" | Select-String "^$ContainerName$"
 
 if (-not $RunningContainers) {
     Write-Host "❌ Backend container '$ContainerName' is not running." -ForegroundColor Red
-    Write-Host "💡 Start it with: docker compose up -d backend" -ForegroundColor Yellow
+    Write-Host "💡 Start it with: docker compose -f docker-compose.prod.yml up -d backend" -ForegroundColor Yellow
     exit 1
 }
 
@@ -36,7 +36,7 @@ Write-Host "✅ yt-dlp updated successfully to version: $NewVersion" -Foreground
 $Restart = Read-Host "🔄 Do you want to restart the backend service? (y/N)"
 if ($Restart -match "^[Yy]$") {
     Write-Host "🔄 Restarting backend service..." -ForegroundColor Yellow
-    docker compose restart backend
+    docker compose -f docker-compose.prod.yml restart backend
     Write-Host "✅ Backend service restarted successfully." -ForegroundColor Green
 } else {
     Write-Host "ℹ️  Backend service not restarted. Changes will take effect on next restart." -ForegroundColor Blue

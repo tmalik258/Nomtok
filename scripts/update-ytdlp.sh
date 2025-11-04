@@ -14,10 +14,11 @@ if ! docker info > /dev/null 2>&1; then
 fi
 
 # Check if the backend container is running
-CONTAINER_NAME="food_backend"
+# Use the production container name defined in docker-compose.prod.yml
+CONTAINER_NAME="nomtok_backend_prod"
 if ! docker ps --format "table {{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
     echo "❌ Backend container '${CONTAINER_NAME}' is not running."
-    echo "💡 Start it with: docker compose up -d backend"
+    echo "💡 Start it with: docker compose -f docker-compose.prod.yml up -d backend"
     exit 1
 fi
 
@@ -35,7 +36,7 @@ read -p "🔄 Do you want to restart the backend service? (y/N): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "🔄 Restarting backend service..."
-    docker compose restart backend
+    docker compose -f docker-compose.prod.yml restart backend
     echo "✅ Backend service restarted successfully."
 else
     echo "ℹ️  Backend service not restarted. Changes will take effect on next restart."

@@ -42,14 +42,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 RUN pip install --no-cache-dir gunicorn uvicorn
 
-# Install yt-dlp nightly
-RUN pip install --no-cache-dir --pre "yt-dlp[default]"
+# Install yt-dlp nightly (upgrade to latest available)
+RUN pip install --no-cache-dir --upgrade --pre "yt-dlp[default]"
 
 # Install Playwright - use ONLY Firefox to save memory
 RUN pip install --no-cache-dir playwright playwright-stealth
 RUN playwright install --with-deps chrome
 
 COPY . .
+
+# Provide in-container update helper for scheduled or manual updates
+RUN echo '#!/bin/bash\nset -e\npip install --no-cache-dir --upgrade --pre "yt-dlp[default]"' > /usr/local/bin/update-ytdlp && \
+    chmod +x /usr/local/bin/update-ytdlp
 
 EXPOSE 8000
 

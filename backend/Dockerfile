@@ -33,8 +33,8 @@ xauth \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install yt-dlp nightly for latest fixes (overrides requirements.txt version)
-RUN pip install --no-cache-dir --pre "yt-dlp[default]"
+# Install yt-dlp nightly for latest fixes (ensure upgrade over requirements.txt)
+RUN pip install --no-cache-dir --upgrade --pre "yt-dlp[default]"
 
 # Add Google Chrome repo and install
 RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/googlechrome-linux-keyring.gpg \
@@ -51,7 +51,7 @@ RUN playwright install --with-deps chrome  # Installs deps + links to system Chr
 COPY . .
 
 # Create update script for yt-dlp
-RUN echo '#!/bin/bash\npip install --no-cache-dir --upgrade --pre "yt-dlp[default]"' > /usr/local/bin/update-ytdlp && \
+RUN echo '#!/bin/bash\nset -e\npip install --no-cache-dir --upgrade --pre "yt-dlp[default]"' > /usr/local/bin/update-ytdlp && \
     chmod +x /usr/local/bin/update-ytdlp
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
