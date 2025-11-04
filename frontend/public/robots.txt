@@ -1,0 +1,11 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://nomtok.com
+
+# Sitemaps
+Sitemap: https://nomtok.com/sitemap.xml
+Sitemap: https://nomtok.com/restaurants-sitemap.xml
+Sitemap: https://nomtok.com/influencers-sitemap.xml
