@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 from pydantic.config import ConfigDict
 from uuid import UUID
@@ -30,6 +30,14 @@ class RestaurantUpdate(BaseModel):
     photo_url: Optional[str] = Field(None, description="URL to restaurant photo")
     is_active: Optional[bool] = Field(None, description="Whether the restaurant is active")
     
+    # Enhanced fields from Google Places API
+    current_opening_hours: Optional[Dict[str, Any]] = Field(None, description="Structured opening hours")
+    secondary_opening_hours: Optional[Dict[str, Any]] = Field(None, description="Alternative opening hours")
+    international_phone_number: Optional[str] = Field(None, description="International phone number format")
+    opening_hours: Optional[Dict[str, Any]] = Field(None, description="Raw Google Places opening hours data")
+    price_level: Optional[int] = Field(None, description="Price level on a 0-4 scale from Google Places")
+    website: Optional[str] = Field(None, description="Restaurant website URL")
+
     model_config = ConfigDict(from_attributes=True)
 
 class RestaurantTagUpdate(BaseModel):

@@ -1,7 +1,7 @@
 import uuid
 from enum import Enum
 
-from sqlalchemy import (Column, String, Text, Float, Boolean, DateTime, event, inspect)
+from sqlalchemy import (Column, String, Text, Float, Boolean, DateTime, event, inspect, JSON, Integer)
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -41,6 +41,14 @@ class Restaurant(Base):
     is_active = Column(Boolean, default=True) # Soft delete
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # Enhanced fields from Google Places API
+    current_opening_hours = Column(JSON, nullable=True)  # Structured opening hours
+    secondary_opening_hours = Column(JSON, nullable=True)  # Alternative hours
+    international_phone_number = Column(String(50), nullable=True)  # International phone format
+    opening_hours = Column(JSON, nullable=True)  # Raw Google Places opening hours data
+    price_level = Column(Integer, nullable=True)  # 0-4 scale from Google Places
+    website = Column(String(500), nullable=True)  # Restaurant website URL
 
     listings = relationship("Listing", back_populates="restaurant")
     restaurant_tags = relationship("RestaurantTag", back_populates="restaurant")

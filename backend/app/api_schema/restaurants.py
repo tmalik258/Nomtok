@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List, TYPE_CHECKING
+from typing import Optional, List, TYPE_CHECKING, Dict, Any
 from uuid import UUID
 from pydantic import BaseModel
 from pydantic.config import ConfigDict
@@ -29,6 +29,14 @@ class RestaurantResponse(BaseModel):
     tags: Optional[list[TagResponse]] = None
     cuisines: Optional[list[CuisineResponse]] = None
     listings: Optional[List["ListingLightResponse"]] = None
+    
+    # Enhanced fields from Google Places API
+    current_opening_hours: Optional[Dict[str, Any]] = None
+    secondary_opening_hours: Optional[Dict[str, Any]] = None
+    international_phone_number: Optional[str] = None
+    opening_hours: Optional[Dict[str, Any]] = None
+    price_level: Optional[int] = None
+    website: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -11,11 +11,12 @@ import time
 import re
 from typing import Optional, Dict, Any, Tuple
 
-from googlemaps import Client as GoogleMapsClient
-from googlemaps.exceptions import ApiError
 from googleapiclient.http import HttpRequest
 from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
+
+# Import Places API (New) client for migration
+from app.services.places_api_new import validate_restaurant as validate_restaurant_new
 
 from fastapi import HTTPException
 
@@ -59,8 +60,6 @@ logger = setup_logger(__name__)
 
 # Initialize Redis client
 redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True)
-
-gmaps = GoogleMapsClient(key=GOOGLE_MAPS_API_KEY)
 
 # Custom HTTP client to add referer header for YouTube API
 class CustomHttpRequest(HttpRequest):
@@ -589,55 +588,18 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
             raise PipelineError(cls.get("type", "unknown"), str(e), details)
 
 async def validate_restaurant(entities: dict) -> dict:
-    """Validate restaurant details using Google Maps Places API with referer header."""
-    logger.info(f"Validating restaurant using Google Maps: {entities}")
+    """Validate restaurant details using Places API (New)."""
+    logger.info(f"Validating restaurant using Places API (New): {entities}")
     if not entities.get("restaurant_name") or not entities.get("location"):
         logger.warning("No restaurant name or location found")
         return {"valid": False}
 
-    loop = asyncio.get_event_loop()
     try:
-        query = f"{entities['restaurant_name']} {entities['location'].get('city', '')} {entities['location'].get('country', '')}".strip()
-        result = await loop.run_in_executor(None, lambda: gmaps.places(query=query))
-        if result["status"] == "OK" and result["results"]:
-            place = result["results"][0]
-            logger.info(
-                f"Validated restaurant with Google Maps: {place['name']} ({place['place_id']})"
-            )
-            
-            # Extract photo URL from Text Search response (no additional API call needed)
-            photo_url = None
-            try:
-                photos = place.get("photos")
-                if photos and len(photos) > 0:
-                    photo_reference = photos[0]["photo_reference"]
-                    # Construct photo URL using legacy Google Places API format
-                    photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo_reference}&key={GOOGLE_MAPS_API_KEY}"
-                    logger.info(f"Found photo for {place['name']}: {photo_url}")
-                else:
-                    logger.info(f"No photos found for {place['name']}")
-            except Exception as photo_error:
-                logger.warning(f"Could not extract photo for {place['name']}: {photo_error}")
-            
-            return {
-                "valid": True,
-                "name": place["name"],
-                "address": place.get("formatted_address", ""),
-                "latitude": place["geometry"]["location"]["lat"],
-                "longitude": place["geometry"]["location"]["lng"],
-                "city": entities["location"].get("city"),
-                "country": entities["location"].get("country"),
-                "google_place_id": place["place_id"],
-                "google_rating": place.get("rating"),
-                "business_status": place.get("business_status", BusinessStatus.BUSINESS_STATUS_UNSPECIFIED.value),
-                "photo_url": photo_url,
-                "confidence_score": entities.get("confidence_score", 0.8),
-                "tags": entities.get("tags", []),
-                "cuisines": entities.get("cuisines", []),
-            }
-        return {"valid": False}
-    except ApiError as e:
-        logger.error(f"Error validating restaurant with Google Maps: {e}")
+        # Delegate to the new Places API helper
+        validated = await validate_restaurant_new(entities)
+        return validated
+    except Exception as e:
+        logger.error(f"Error validating restaurant with Places API (New): {e}")
         return {"valid": False}
 
 async def store_restaurant_and_listing(
@@ -666,6 +628,8 @@ async def store_restaurant_and_listing(
                     google_rating=validated["google_rating"],
                     business_status=validated["business_status"],
                     photo_url=validated["photo_url"],
+                    price_level=validated.get("price_level"),
+                    website=validated.get("website_uri"),
                     is_active=True,
                 )
                 db.add(restaurant)
@@ -673,6 +637,11 @@ async def store_restaurant_and_listing(
                 await db.refresh(restaurant)
             else:
                 restaurant.business_status = validated["business_status"]
+                # Update enhanced fields when available
+                if validated.get("price_level") is not None:
+                    restaurant.price_level = validated.get("price_level")
+                if validated.get("website_uri"):
+                    restaurant.website = validated.get("website_uri")
                 await db.flush()
 
             # Store tags

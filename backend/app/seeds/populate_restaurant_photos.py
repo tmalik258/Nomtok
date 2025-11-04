@@ -1,19 +1,14 @@
 import asyncio
 from sqlalchemy.orm import Session
 
-from googlemaps import Client as GoogleMapsClient
-from googlemaps.exceptions import ApiError
-
 from app.config import GOOGLE_MAPS_API_KEY
 from app.database import get_db
 from app.models.restaurant import Restaurant
-
-# Initialize Google Maps client
-gmaps = GoogleMapsClient(key=GOOGLE_MAPS_API_KEY)
+from app.services.places_api_new import get_place_photos
 
 async def get_google_place_photo_url(google_place_id: str) -> str | None:
     """
-    Fetch Google Place photo URL using the googlemaps library
+    Fetch Google Place photo URL using Places API (New) photo media
     """
     if not GOOGLE_MAPS_API_KEY:
         print("Warning: GOOGLE_MAPS_API_KEY not found in environment variables")
@@ -22,33 +17,12 @@ async def get_google_place_photo_url(google_place_id: str) -> str | None:
     if not google_place_id:
         return None
     
-    loop = asyncio.get_event_loop()
     try:
-        # Get place details with photos using googlemaps library
-        place_details = await loop.run_in_executor(
-            None, 
-            lambda: gmaps.place(place_id=google_place_id, fields=['photo'])
-        )
-        
-        if place_details["status"] != "OK":
-            print(f"Failed to get place details for {google_place_id}: {place_details['status']}")
-            return None
-            
-        photos = place_details["result"].get("photos")
+        # Get photo media using Places API (New)
+        photos = await get_place_photos(google_place_id, max_photos=1)
         if not photos:
             return None
-
-        # Get the first photo reference
-        photo_reference = photos[0].get("photo_reference")
-        if not photo_reference:
-            return None
-
-        # Construct the photo URL using the legacy Places API format
-        photo_url = f"https://maps.googleapis.com/maps/api/place/photo?photoreference={photo_reference}&maxwidth=400&key={GOOGLE_MAPS_API_KEY}"
-        return photo_url
-    except ApiError as e:
-        print(f"API error fetching photo for place {google_place_id}: {str(e)}")
-        return None
+        return photos[0].get("media_url")
     except Exception as e:
         print(f"Error fetching photo for place {google_place_id}: {str(e)}")
         return None
