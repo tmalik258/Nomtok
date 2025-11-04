@@ -39,6 +39,8 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NEXT_PUBLIC_SITE_URL=https://nomtok.com
     env_file:
       - ./frontend/.env
     depends_on:

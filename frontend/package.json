@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev --port 3000 --turbo",
     "build": "next build",
-    "postbuild": "next-sitemap && pnpm run generate-sitemaps",
+    "postbuild": "next-sitemap",
     "start": "next start",
     "lint": "next lint",
     "generate-sitemaps": "tsx scripts/generate-sitemaps.ts"
