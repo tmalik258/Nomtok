@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process'
+import axios from 'axios'
 import main from './generate-sitemaps.js'
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://backend:8000').replace(/\/$/, '')
@@ -12,13 +13,11 @@ async function sleep(ms) {
 
 async function checkHealth() {
   const url = `${API_URL}${HEALTH_ENDPOINT}`
+  const client = axios.create({ timeout: 5000 })
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 5000)
-      const res = await fetch(url, { signal: controller.signal })
-      clearTimeout(timeout)
-      if (res.ok) {
+      const res = await client.get(url)
+      if (res.status >= 200 && res.status < 300) {
         console.log(`[startup] backend healthy at ${url}`)
         return true
       }
