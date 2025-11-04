@@ -67,6 +67,17 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Custom sitemaps: restaurants and influencers
+        source: '/(restaurants|influencers)-sitemap.xml',
+        headers: [
+          { key: 'Content-Type', value: 'application/xml' },
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=3600, max-age=0, stale-while-revalidate=600',
+          },
+        ],
+      },
+      {
         // It's also good practice to set the correct type for robots.txt
         source: '/robots.txt',
         headers: [
