@@ -52,7 +52,7 @@ export function useRestaurantForm({
     try {
       const cleanedData = cleanRestaurantFormData(data);
       
-      await adminApi.put(`/restaurants/${restaurant.id}`, cleanedData);
+      await adminApi.put(`/restaurants/${restaurant.slug}`, cleanedData);
       
       toast.success("Restaurant updated successfully!");
       

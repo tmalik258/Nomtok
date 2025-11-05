@@ -82,7 +82,7 @@ export function FeaturedRestaurantsCarousel({
           {cities.flatMap((cityData) =>
             cityData.restaurants.map((restaurant) => (
               <CarouselItem
-                key={`${cityData.city}-${restaurant.id}`}
+                key={`${cityData.city}-${restaurant.slug}`}
 
                 className="border-0 pl-2 md:basis-1/2 lg:basis-1/3 self-center"
               >

@@ -25,7 +25,15 @@ import {
   CheckCircle,
   AlertCircle,
   Copy,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { copyToClipboard } from "@/lib/utils/copy-to-clipboard";
 
 interface ListingCardProps {
@@ -91,26 +99,36 @@ export function ListingCard({ listing, onDeleted, onUpdate }: ListingCardProps) 
             <FileText className="h-5 w-5 text-blue-600" />
             Listing Details
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleEditMode}
-              className="flex items-center gap-2"
-            >
-              <Edit className="h-4 w-4" />
-              Edit
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={openDeleteDialog}
-              className="flex items-center gap-2 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 p-0 cursor-pointer"
+              >
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                onClick={toggleEditMode}
+                className="cursor-pointer"
+              >
+                <Edit className="h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={openDeleteDialog}
+                variant="destructive"
+                className="cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">

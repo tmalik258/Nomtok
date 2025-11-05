@@ -10,6 +10,23 @@ export interface Cuisine {
   created_at: string;
 }
 
+// Opening hours types (aligned with Google Places API shapes)
+export interface OpeningHoursPoint {
+  day?: number; // 0 (Sunday) - 6 (Saturday)
+  time?: string; // "HHMM" format, e.g., "0900"
+}
+
+export interface OpeningHoursPeriod {
+  open?: OpeningHoursPoint;
+  close?: OpeningHoursPoint;
+}
+
+export interface OpeningHours {
+  open_now?: boolean;
+  weekday_text?: string[]; // e.g., ["Monday: 9:00 AM – 5:00 PM", ...]
+  periods?: OpeningHoursPeriod[];
+}
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -28,6 +45,13 @@ export interface Restaurant {
   is_active?: boolean;
   created_at: string;
   updated_at: string;
+  // Enhanced details
+  current_opening_hours?: OpeningHours;
+  secondary_opening_hours?: OpeningHours[];
+  international_phone_number?: string;
+  opening_hours?: OpeningHours;
+  price_level?: number;
+  website?: string;
   videos?: Video[];
   listings?: Listing[];
 }

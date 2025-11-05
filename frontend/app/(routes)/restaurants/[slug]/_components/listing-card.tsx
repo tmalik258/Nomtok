@@ -39,7 +39,7 @@ const ListingCard = ({
               <div className="flex items-start justify-between">
                 <div>
                   <Link
-                    href={`/influencers/${listing?.influencer?.id}`}
+                    href={`/influencers/${listing?.influencer?.slug}`}
                     className="text-lg font-semibold text-gray-900 hover:text-orange-600 transition-colors"
                   >
                     {listing?.influencer?.name}
@@ -59,7 +59,7 @@ const ListingCard = ({
                 {/* View Profile Button - Right Aligned */}
                 <Button variant="outline" size="sm" asChild>
                   <Link
-                    href={`/influencers/${listing?.influencer?.id}`}
+                    href={`/influencers/${listing?.influencer?.slug}`}
                     className="flex items-center gap-2"
                   >
                     View Profile

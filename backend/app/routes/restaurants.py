@@ -180,6 +180,12 @@ async def get_restaurants(
                 is_active=restaurant.is_active,
                 created_at=restaurant.created_at,
                 updated_at=restaurant.updated_at,
+                current_opening_hours=restaurant.current_opening_hours,
+                secondary_opening_hours=restaurant.secondary_opening_hours,
+                international_phone_number=restaurant.international_phone_number,
+                opening_hours=restaurant.opening_hours,
+                price_level=restaurant.price_level,
+                website=restaurant.website,
                 tags=tags,
                 cuisines=cuisines,
                 listings=None
@@ -372,7 +378,13 @@ async def get_featured_optimized(db: AsyncSession = Depends(get_async_db)):
                     'photo_url': restaurant.photo_url,
                     'is_active': restaurant.is_active,
                     'created_at': restaurant.created_at,
-                    'updated_at': restaurant.updated_at
+                    'updated_at': restaurant.updated_at,
+                    'current_opening_hours': restaurant.current_opening_hours,
+                    'secondary_opening_hours': restaurant.secondary_opening_hours,
+                    'international_phone_number': restaurant.international_phone_number,
+                    'opening_hours': restaurant.opening_hours,
+                    'price_level': restaurant.price_level,
+                    'website': restaurant.website
                 }
                 
                 # Process optimized listings (exclude restaurant and video data)
@@ -500,6 +512,12 @@ async def get_restaurant(
             is_active=restaurant_obj.is_active,
             created_at=restaurant_obj.created_at,
             updated_at=restaurant_obj.updated_at,
+            current_opening_hours=restaurant_obj.current_opening_hours,
+            secondary_opening_hours=restaurant_obj.secondary_opening_hours,
+            international_phone_number=restaurant_obj.international_phone_number,
+            opening_hours=restaurant_obj.opening_hours,
+            price_level=restaurant_obj.price_level,
+            website=restaurant_obj.website,
             tags=[TagResponse.model_validate(rt.tag) for rt in restaurant_obj.restaurant_tags] if restaurant_obj.restaurant_tags else None,
             cuisines=[CuisineResponse.model_validate(rc.cuisine) for rc in restaurant_obj.restaurant_cuisines] if restaurant_obj.restaurant_cuisines else None,
             listings=None  # Will be set separately if needed

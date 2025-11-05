@@ -1,7 +1,7 @@
 import type { Listing } from "@/lib/types/index";
 
 export const getUniqueRestaurantsCount = (listings: Listing[]): number => {
-  return new Set(listings.map((listing) => listing?.restaurant?.id)).size;
+  return new Set(listings.map((listing) => listing?.restaurant?.slug)).size;
 };
 
 export const getUniqueCitiesCount = (listings: Listing[]): number => {

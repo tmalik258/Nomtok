@@ -253,11 +253,11 @@ const RestaurantMapClient: React.FC<RestaurantMapProps> = ({
         <MapBounds restaurants={mappableRestaurants} initialFitOnly={true} />
 
         {mappableRestaurants.map((restaurant) => {
-          const isSelected = selectedRestaurant?.id === restaurant?.id;
+          const isSelected = selectedRestaurant?.slug === restaurant?.slug;
 
           return (
             <Marker
-              key={restaurant?.id}
+              key={restaurant?.slug}
               position={[restaurant?.latitude ?? 0, restaurant?.longitude ?? 0]}
               icon={createCustomIcon(isSelected)}
               eventHandlers={{

@@ -151,6 +151,12 @@ async def get_influencers(
                             is_active=listing.restaurant.is_active,
                             created_at=listing.restaurant.created_at,
                             updated_at=listing.restaurant.updated_at,
+                            current_opening_hours=listing.restaurant.current_opening_hours,
+                            secondary_opening_hours=listing.restaurant.secondary_opening_hours,
+                            international_phone_number=listing.restaurant.international_phone_number,
+                            opening_hours=listing.restaurant.opening_hours,
+                            price_level=listing.restaurant.price_level,
+                            website=listing.restaurant.website,
                             tags=None,  # Avoid lazy loading
                             listings=None  # Avoid lazy loading
                         )
@@ -218,6 +224,12 @@ async def get_influencers(
                             is_active=listing.restaurant.is_active,
                             created_at=listing.restaurant.created_at,
                             updated_at=listing.restaurant.updated_at,
+                            current_opening_hours=listing.restaurant.current_opening_hours,
+                            secondary_opening_hours=listing.restaurant.secondary_opening_hours,
+                            international_phone_number=listing.restaurant.international_phone_number,
+                            opening_hours=listing.restaurant.opening_hours,
+                            price_level=listing.restaurant.price_level,
+                            website=listing.restaurant.website,
                             tags=None,  # Avoid lazy loading
                             listings=None  # Avoid lazy loading
                         )
@@ -328,6 +340,12 @@ async def get_influencer(
                         is_active=listing.restaurant.is_active,
                         created_at=listing.restaurant.created_at,
                         updated_at=listing.restaurant.updated_at,
+                        current_opening_hours=listing.restaurant.current_opening_hours,
+                        secondary_opening_hours=listing.restaurant.secondary_opening_hours,
+                        international_phone_number=listing.restaurant.international_phone_number,
+                        opening_hours=listing.restaurant.opening_hours,
+                        price_level=listing.restaurant.price_level,
+                        website=listing.restaurant.website,
                         tags=None,  # Avoid lazy loading
                         listings=None  # Avoid lazy loading
                     )
@@ -395,6 +413,12 @@ async def get_influencer(
                         is_active=listing.restaurant.is_active,
                         created_at=listing.restaurant.created_at,
                         updated_at=listing.restaurant.updated_at,
+                        current_opening_hours=listing.restaurant.current_opening_hours,
+                        secondary_opening_hours=listing.restaurant.secondary_opening_hours,
+                        international_phone_number=listing.restaurant.international_phone_number,
+                        opening_hours=listing.restaurant.opening_hours,
+                        price_level=listing.restaurant.price_level,
+                        website=listing.restaurant.website,
                         tags=None,  # Avoid lazy loading
                         listings=None  # Avoid lazy loading
                     )

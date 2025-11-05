@@ -47,7 +47,7 @@ export function ReviewSectionsForm({ form }: ReviewSectionsFormProps) {
               <FormControl>
                 <Textarea
                   placeholder="Add background context about the restaurant or visit..."
-                  className="min-h-[100px] bg-white shadow-lg border-none"
+                  className="min-h-[100px] max-h-[200px] bg-white shadow-lg border-none"
                   {...field}
                   value={field.value || ""}
                   onChange={(e) =>
@@ -70,7 +70,7 @@ export function ReviewSectionsForm({ form }: ReviewSectionsFormProps) {
               <FormControl>
                 <Textarea
                   placeholder="Provide an overview of the restaurant experience..."
-                  className="min-h-[100px] bg-white shadow-lg border-none"
+                  className="min-h-[100px] max-h-[200px] bg-white shadow-lg border-none"
                   {...field}
                   value={field.value || ""}
                   onChange={(e) =>
@@ -120,7 +120,7 @@ export function ReviewSectionsForm({ form }: ReviewSectionsFormProps) {
             <FormControl>
               <Textarea
                 placeholder="Add final thoughts or reflection about the restaurant..."
-                className="min-h-[100px] bg-white shadow-lg border-none"
+                className="min-h-[100px] max-h-[200px] bg-white shadow-lg border-none"
                 {...field}
                 value={field.value || ""}
                 onChange={(e) =>

@@ -53,6 +53,7 @@ export function useListingForm({
         video_id: listingData.video_id || listingData.video?.id || "",
         influencer_id: listingData.influencer_id || listingData.influencer?.id || "",
         visit_date: listingData.visit_date ? new Date(listingData.visit_date) : undefined,
+        review_sections: listingData.review_sections || {},
         confidence_score: listingData.confidence_score,
         approved: listingData.approved,
         timestamp: listingData.timestamp ? Number(listingData.timestamp) : 0,

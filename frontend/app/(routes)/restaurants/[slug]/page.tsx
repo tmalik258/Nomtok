@@ -4,7 +4,6 @@ import { useParams } from "next/navigation";
 import { useRestaurantWithListings } from "@/lib/hooks";
 import { MapPin, Users } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,8 @@ import ErrorCard from "@/components/error-card";
 import SkeletonLoading from "./_components/skeleton-loading";
 import SocialShareButtons from "@/components/social-share-buttons";
 import ListingCard from "./_components/listing-card";
+import RestaurantKeyDetails from "./_components/restaurant-key-details";
+import RestaurantImage from "@/components/restaurant-image";
 
 export default function RestaurantDetailPage() {
   const params = useParams();
@@ -61,18 +62,14 @@ export default function RestaurantDetailPage() {
     <div className="min-h-screen bg-white p-2 mb-5">
       {/* Full Width Hero Section with Overlay Title */}
       <div className="relative h-[calc(65vh)] rounded-xl overflow-hidden">
-        {restaurant.photo_url ? (
-          <Image
-            fill
-            src={restaurant.photo_url}
-            alt={restaurant.name}
-            className="object-cover w-full h-full brightness-[0.5] filter"
-            // sizes="100vw"
-            priority
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-r from-orange-400 to-red-500"></div>
-        )}
+        <RestaurantImage
+          src={restaurant.photo_url || undefined}
+          alt={restaurant.name}
+          restaurantSlug={String(restaurant.slug)}
+          className="brightness-[0.5] filter"
+          sizes="100vw"
+          fill
+        />
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
 
@@ -127,6 +124,8 @@ export default function RestaurantDetailPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4">
+        {/* Key Details */}
+        <RestaurantKeyDetails restaurant={restaurant} />
         {/* Influencer Reviews */}
         {listings.length > 0 && (
           <div className="mb-8">

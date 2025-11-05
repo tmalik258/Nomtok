@@ -70,6 +70,8 @@ export function ListingForm({ mode, listingData, onSuccess, onDeleted, className
     }
   };
 
+  console.log("listing data: ", listingData)
+
   return (
     <div className={cn(className)}>
       <div className="mb-6">

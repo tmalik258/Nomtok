@@ -21,6 +21,15 @@ export function RestaurantCard({
 }: RestaurantCardProps) {
   const router = useRouter();
   
+  // Derived details from new fields
+  const openNow =
+    restaurant?.current_opening_hours?.open_now ??
+    restaurant?.opening_hours?.open_now;
+  const priceText =
+    typeof restaurant?.price_level === "number" && restaurant.price_level > 0
+      ? "$".repeat(Math.min(4, Math.max(1, restaurant.price_level)))
+      : null;
+  
   // Helper function to get the first available review section text
   const getFirstReviewSectionText = (listing: Listing): string => {
     if (listing.review_sections) {
@@ -80,6 +89,25 @@ export function RestaurantCard({
                 </Badge>
               ))}
           </p>
+          {/* New: price level and open status */}
+          <div className="mt-2 flex items-center gap-2">
+            {priceText && (
+              <Badge className="bg-gray-100 text-gray-800 px-2 py-1">
+                {priceText}
+              </Badge>
+            )}
+            {typeof openNow === "boolean" && (
+              <Badge
+                className={
+                  openNow
+                    ? "bg-green-100 text-green-700 px-2 py-1"
+                    : "bg-gray-200 text-gray-700 px-2 py-1"
+                }
+              >
+                {openNow ? "Open now" : "Closed"}
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Bottom: Quotes/listings and CTA button */}

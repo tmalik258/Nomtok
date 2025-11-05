@@ -62,7 +62,7 @@ export function RestaurantDetailCard({
             <div className="mt-6 space-y-3">
               <div className="flex flex-wrap gap-3">
                 <Button asChild>
-                  <Link href={`/restaurants/${restaurant.id}`}>
+                  <Link href={`/restaurants/${restaurant?.slug}`}>
                     View Full Details
                   </Link>
                 </Button>
@@ -81,7 +81,7 @@ export function RestaurantDetailCard({
               </div>
               {/* Social Share Buttons */}
               <SocialShareButtons
-                url={typeof window !== 'undefined' ? `${window.location.origin}/restaurants/${restaurant.id}` : ''}
+                url={typeof window !== 'undefined' ? `${window.location.origin}/restaurants/${restaurant.slug}` : ''}
                 title={`Check out ${restaurant.name} - Amazing restaurant in ${restaurant.city || 'the city'}`}
                 variant="inline"
                 className="pt-2 border-t border-gray-100"

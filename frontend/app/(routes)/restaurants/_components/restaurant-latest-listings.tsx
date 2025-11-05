@@ -23,7 +23,7 @@ export function RestaurantLatestListings({
         ) : (
           restaurants.slice(0, 3).map((restaurant) => (
             <RestaurantCard
-              key={restaurant.id}
+              key={restaurant.slug}
               restaurant={restaurant}
               listings={restaurant.listings || []}
             />
