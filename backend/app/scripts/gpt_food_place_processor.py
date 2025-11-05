@@ -180,17 +180,14 @@ class GPTFoodPlaceProcessor:
         Write a short, factual paragraph (less than 50 words) giving background on the restaurant or its chef. Include:
         When it opened or its origin story (if known).
         Any signature dishes, Michelin stars, or awards.
-        A quick line about the chef’s background or cooking philosophy.
+        A quick line about the chef's background or cooking philosophy.
         ### Example Output:
-        Opened in 2011 inside London’s Dorchester Collection hotel, Cut at 45 Park Lane is the European debut of celebrity chef Wolfgang Puck. Known for redefining modern steakhouses, Puck’s menu here celebrates rare cuts of Wagyu from Japan, Australia, and Ireland — all grilled over hardwood and charcoal. The restaurant’s Art Deco setting and deep wine list have earned it a reputation as one of London’s most refined spots for meat lovers.
+        Opened in 2011 inside London's Dorchester Collection hotel, Cut at 45 Park Lane is the European debut of celebrity chef Wolfgang Puck. Known for redefining modern steakhouses, Puck's menu here celebrates rare cuts of Wagyu from Japan, Australia, and Ireland — all grilled over hardwood and charcoal. The restaurant's Art Deco setting and deep wine list have earned it a reputation as one of London's most refined spots for meat lovers.
 
         2. Overview
-        Write an 80-100 word overview introducing the review visit. Include:
-        When the reviewer visited (if mentioned).
-        Why they came — reputation, recommendation, or curiosity.
-        Tone or first impressions of the setting.
+        Write a concise 75-word overview of the restaurant experience based on the following review transcript. The overview must clearly reflect the reviewer's perspective, including both standout strengths and any limitations or nuances noted. Maintain a direct, confident tone — no fluff or generic fine-dining language. Highlight specific dishes or moments the reviewer praised, and describe the overall feel and pacing of the meal. Do not generalize; anchor everything in what the reviewer actually experienced and expressed.
         ### Example Output:
-        In his London steakhouse tour, the reviewer visits Cut at 45 Park Lane to test the city’s most luxurious contender. From the moment he steps into the sleek dining room, you can sense the anticipation. This isn’t a casual lunch — it’s a pilgrimage for the perfect crust and melt-in-your-mouth marbling. The open kitchen hums softly, knives glide, and the aroma of seared Wagyu sets the tone for a serious tasting.
+        SanKai sits comfortably in the mid-range, offering excellent value for the quality and variety of fish. The reviewer was impressed by the generous fish-to-rice ratio, unique offerings like firefly squid and green eye, and how tender and buttery many pieces were — with the green eye being a standout highlight. The seafood dumpling appetizer also surprised with sweetness and juiciness. While not an omakase-driven, theatrical experience, SanKai shines in choice, freshness, and approachability — a place to explore and enjoy without the formality.
 
         3. What They Ate
         Provide array of What They Ate. Include:

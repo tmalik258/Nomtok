@@ -224,7 +224,6 @@ export function ListingCard({ listing, onDeleted, onUpdate }: ListingCardProps) 
                   <ul className="text-sm text-purple-800 space-y-1">
                     {listing.review_sections.what_they_ate.map((item, index) => (
                       <li key={index} className="flex items-start gap-2">
-                        <span className="text-purple-500 mt-1">•</span>
                         <span>{item}</span>
                       </li>
                     ))}

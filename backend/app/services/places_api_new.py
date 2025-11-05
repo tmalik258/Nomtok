@@ -476,9 +476,9 @@ async def fetch_restaurant_details(
     
     # Build search query
     query_parts = [restaurant_name.strip()]
-    if city and city.strip():
+    if city and city.strip() and city != None:
         query_parts.append(city.strip())
-    if country and country.strip():
+    if country and country.strip() and country != None:
         query_parts.append(country.strip())
     
     query = " ".join(query_parts)
