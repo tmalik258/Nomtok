@@ -57,14 +57,34 @@ export function ListingManagement() {
 
   useEffect(() => {
     const id = searchParams.get("id");
-    if (id) {
-      const listing = listings.find((listing) => listing.id === id);
-      if (listing) {
-        setSelectedListing(listing);
-        setIsEditFormOpen(true);
-      }
+    // Prevent re-opening if already open
+    if (!id || isEditFormOpen) return;
+
+    const existing = listings.find((l) => l.id === id);
+    if (existing) {
+      setSelectedListing(existing);
+      setIsEditFormOpen(true);
+      return;
     }
-  }, [listings, searchParams]);
+
+    let cancelled = false;
+    // Fallback: fetch listing by id when not present in current page
+    listingActions
+      .getListing(id)
+      .then((fetched) => {
+        if (!cancelled && fetched) {
+          setSelectedListing(fetched);
+          setIsEditFormOpen(true);
+        }
+      })
+      .catch(() => {
+        // Ignore fetch errors here; user can open manually
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [listings, searchParams, isEditFormOpen]);
 
   const refreshListings = () => {
     refetch();
@@ -155,27 +175,6 @@ export function ListingManagement() {
     const newSearchParams = new URLSearchParams(searchParams.toString());
     newSearchParams.delete("id");
     router.replace(`${window.location.pathname}?${newSearchParams.toString()}`);
-  };
-
-  // Handle edit submit
-  const handleEditSubmit = async (
-    listingId: string,
-    data: CreateListingFormData
-  ) => {
-    setActionLoading(listingId);
-    try {
-      await listingActions.updateListing(listingId, data);
-      toast.success("Listing updated successfully");
-      await refetch(); // Refresh the list
-      setIsEditFormOpen(false);
-      setSelectedListing(null);
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update listing"
-      );
-    } finally {
-      setActionLoading(null);
-    }
   };
 
   // Handle delete listing
@@ -272,10 +271,9 @@ export function ListingManagement() {
             <ListingForm
               mode="edit"
               listingData={selectedListing}
-              onSuccess={async (
-                data: CreateListingFormData | EditListingFormData
-              ) => {
-                await handleEditSubmit(selectedListing.id, data);
+              onSuccess={async () => {
+                // ListingForm already performs the update in edit mode.
+                await refetch();
                 handleCloseEditForm();
               }}
               onDeleted={() => {

@@ -9,12 +9,15 @@ import { toast } from "sonner";
 interface UseListingCardProps {
   listing: Listing;
   onDeleted?: () => void;
+  onUpdate?: () => void;
 }
 
-export function useListingCard({ listing, onDeleted }: UseListingCardProps) {
+export function useListingCard({ listing, onDeleted, onUpdate }: UseListingCardProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [approved, setApproved] = useState<boolean>(!!listing.approved);
+  const [isApprovalLoading, setIsApprovalLoading] = useState(false);
   const router = useRouter();
 
   const toggleEditMode = () => {
@@ -63,6 +66,54 @@ export function useListingCard({ listing, onDeleted }: UseListingCardProps) {
     }
   };
 
+  const approveListing = async () => {
+    if (isApprovalLoading) return;
+    setIsApprovalLoading(true);
+    // Optimistic update
+    setApproved(true);
+    try {
+      const data = await listingActions.approveListing(listing.id);
+      setApproved(!!data.approved);
+      toast.success("Listing approved", {
+        description: data.message || "The listing has been approved.",
+      });
+      onUpdate?.();
+      router.refresh();
+    } catch (error: unknown) {
+      // Revert optimistic update
+      setApproved(false);
+      const err = error as { response?: { data?: { detail?: string; message?: string } }; message?: string };
+      const message = err.response?.data?.detail || err.response?.data?.message || err.message || "Failed to approve listing";
+      toast.error(message);
+    } finally {
+      setIsApprovalLoading(false);
+    }
+  };
+
+  const disapproveListing = async () => {
+    if (isApprovalLoading) return;
+    setIsApprovalLoading(true);
+    // Optimistic update
+    setApproved(false);
+    try {
+      const data = await listingActions.disapproveListing(listing.id);
+      setApproved(!!data.approved);
+      toast.success("Listing disapproved", {
+        description: data.message || "The listing has been disapproved.",
+      });
+      onUpdate?.();
+      router.refresh();
+    } catch (error: unknown) {
+      // Revert optimistic update
+      setApproved(true);
+      const err = error as { response?: { data?: { detail?: string; message?: string } }; message?: string };
+      const message = err.response?.data?.detail || err.response?.data?.message || err.message || "Failed to disapprove listing";
+      toast.error(message);
+    } finally {
+      setIsApprovalLoading(false);
+    }
+  };
+
   return {
     isEditMode,
     toggleEditMode,
@@ -74,5 +125,9 @@ export function useListingCard({ listing, onDeleted }: UseListingCardProps) {
     openDeleteDialog,
     closeDeleteDialog,
     handleDeleteConfirm,
+    approved,
+    isApprovalLoading,
+    approveListing,
+    disapproveListing,
   };
 }

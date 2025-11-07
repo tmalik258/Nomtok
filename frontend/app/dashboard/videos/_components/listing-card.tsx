@@ -26,6 +26,7 @@ import {
   AlertCircle,
   Copy,
   MoreVertical,
+  XCircle,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -54,7 +55,11 @@ export function ListingCard({ listing, onDeleted, onUpdate }: ListingCardProps) 
     openDeleteDialog,
     closeDeleteDialog,
     handleDeleteConfirm,
-  } = useListingCard({ listing, onDeleted });
+    approved,
+    isApprovalLoading,
+    approveListing,
+    disapproveListing,
+  } = useListingCard({ listing, onDeleted, onUpdate });
 
   if (isEditMode) {
     return (
@@ -111,6 +116,34 @@ export function ListingCard({ listing, onDeleted, onUpdate }: ListingCardProps) 
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
+              {approved ? (
+                <DropdownMenuItem
+                  onClick={disapproveListing}
+                  disabled={isApprovalLoading}
+                  className="cursor-pointer"
+                >
+                  {isApprovalLoading ? (
+                    <Clock className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-red-600" />
+                  )}
+                  Disapprove
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  onClick={approveListing}
+                  disabled={isApprovalLoading}
+                  className="cursor-pointer"
+                >
+                  {isApprovalLoading ? (
+                    <Clock className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  )}
+                  Approve
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={toggleEditMode}
                 className="cursor-pointer"
@@ -150,7 +183,7 @@ export function ListingCard({ listing, onDeleted, onUpdate }: ListingCardProps) 
               }}
             />
           </div>
-          {listing.approved ? (
+          {approved ? (
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <span className="text-sm font-medium text-green-600">

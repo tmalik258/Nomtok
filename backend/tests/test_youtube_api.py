@@ -1,9 +1,20 @@
+import json
+import os
+from typing import Tuple
+
 import pytest
 from dotenv import load_dotenv
-import re
-from googleapiclient.discovery import build
-from app.config import YOUTUBE_API_KEY, INFLUENCER_CHANNELS
+
+from app.config import GOOGLE_MAPS_API_KEY
 from app.utils.logging import setup_logger
+from app.services.places_api_new import (
+    search_text,
+    get_place_details,
+    get_place_photos,
+    get_reviews,
+    validate_restaurant,
+    fetch_restaurant_details,
+)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -11,137 +22,141 @@ load_dotenv()
 # Configure logging
 logger = setup_logger(__name__)
 
-def get_channel_id_from_url(url):
+def get_sample_inputs() -> Tuple[str, str, str]:
+    """Return a default restaurant test tuple (name, city, country).
+    Values can be overridden with env vars TEST_RESTAURANT_NAME, TEST_RESTAURANT_CITY, TEST_RESTAURANT_COUNTRY.
     """
-    Extract channel ID from YouTube URL.
-    Handles both @username and channel ID formats.
-    """
-    # Extract username from @username format
-    username_match = re.search(r'@([^/?]+)', url)
-    if username_match:
-        return username_match.group(1)
-    
-    # Extract channel ID from channel URL format
-    channel_match = re.search(r'/channel/([^/?]+)', url)
-    if channel_match:
-        return channel_match.group(1)
-    
-    return None
+    name = os.getenv("TEST_RESTAURANT_NAME", "Sushi Sho")
+    city = os.getenv("TEST_RESTAURANT_CITY", "New York")
+    country = os.getenv("TEST_RESTAURANT_COUNTRY", "USA")
+    return name, city, country
 
-def get_channel_data_by_username(youtube, username):
-    """
-    Get channel data using username (handle).
-    """
-    try:
-        # First try to search for the channel by username
-        search_response = youtube.search().list(
-            part='snippet',
-            q=username,
-            type='channel',
-            maxResults=1
-        ).execute()
-        
-        if search_response['items']:
-            channel_id = search_response['items'][0]['snippet']['channelId']
-            
-            # Get detailed channel information
-            channel_response = youtube.channels().list(
-                part='snippet,statistics',
-                id=channel_id
-            ).execute()
-            
-            return channel_response
-        
-        return None
-    except Exception as e:
-        logger.error(f"Error fetching channel data for username {username}: {e}")
-        return None
 
-def test_youtube_api_fetch():
-    """Test fetching real data from YouTube API using configured channels."""
-    assert YOUTUBE_API_KEY is not None, "YOUTUBE_API_KEY not found in .env file"
-    assert len(INFLUENCER_CHANNELS) > 0, "No influencer channels configured"
+@pytest.mark.asyncio
+async def test_places_api_search_and_details():
+    """Exercise Places API search, details, photos, and reviews, logging raw payloads."""
+    assert GOOGLE_MAPS_API_KEY is not None, "GOOGLE_MAPS_API_KEY not found in .env file"
 
-    logger.info(f"Using YouTube API Key: {YOUTUBE_API_KEY[:10]}...")
+    name, city, country = get_sample_inputs()
+    query = f"{name} {city} {country}".strip()
+    logger.info(f"Places API search query: {query}")
 
-    # Use the first configured channel for testing
-    test_channel = INFLUENCER_CHANNELS[0]
-    channel_url = test_channel['url']
-    channel_name = test_channel['name']
-    
-    logger.info(f"Testing with channel: {channel_name} ({channel_url})")
+    # Search
+    search_result = await search_text(query=query)
+    assert search_result["status"] == "OK", "Text search failed"
+    assert len(search_result.get("places", [])) > 0, "No places returned from search"
 
-    # Build YouTube API client
-    youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
-    
-    # Extract username from URL
-    username = get_channel_id_from_url(channel_url)
-    assert username is not None, f"Could not extract username from URL: {channel_url}"
-    
-    logger.info(f"Extracted username: {username}")
-    
-    # Fetch channel data
-    response = get_channel_data_by_username(youtube, username)
-    
-    # Validate response
-    assert response is not None, f"Failed to fetch data for channel: {channel_name}"
-    assert 'items' in response, "Response missing 'items' field"
-    assert len(response['items']) > 0, "No channel data returned"
-    
-    channel_data = response['items'][0]
-    
-    # Validate channel data structure
-    assert 'id' in channel_data, "Channel data missing 'id' field"
-    assert 'snippet' in channel_data, "Channel data missing 'snippet' field"
-    assert 'statistics' in channel_data, "Channel data missing 'statistics' field"
-    
-    # Validate snippet data
-    snippet = channel_data['snippet']
-    assert 'title' in snippet, "Channel snippet missing 'title' field"
-    assert 'description' in snippet, "Channel snippet missing 'description' field"
-    
-    # Validate statistics data
-    statistics = channel_data['statistics']
-    assert 'subscriberCount' in statistics, "Channel statistics missing 'subscriberCount' field"
-    assert 'videoCount' in statistics, "Channel statistics missing 'videoCount' field"
-    
-    logger.info(f"Successfully retrieved data for channel: {snippet['title']}")
-    logger.info(f"Subscriber count: {statistics.get('subscriberCount', 'Hidden')}")
-    logger.info(f"Video count: {statistics['videoCount']}")
-    
-    # Log the full response for debugging
-    logger.info(f"Retrieved YouTube API Data: {response}")
+    place = search_result["places"][0]
+    place_id = place["id"]
+    logger.info("Search result place (raw): " + json.dumps(place, ensure_ascii=False, indent=2))
 
-def test_multiple_channels():
-    """Test fetching data from multiple configured channels."""
-    assert YOUTUBE_API_KEY is not None, "YOUTUBE_API_KEY not found in .env file"
-    
-    # Build YouTube API client
-    youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
-    
-    # Test first 3 channels to avoid hitting API quotas
-    test_channels = INFLUENCER_CHANNELS[:3]
-    successful_fetches = 0
-    
-    for channel in test_channels:
-        channel_url = channel['url']
-        channel_name = channel['name']
-        
-        logger.info(f"Testing channel: {channel_name}")
-        
-        username = get_channel_id_from_url(channel_url)
-        if username:
-            response = get_channel_data_by_username(youtube, username)
-            if response and response.get('items'):
-                successful_fetches += 1
-                logger.info(f"✓ Successfully fetched data for: {channel_name}")
-            else:
-                logger.warning(f"✗ Failed to fetch data for: {channel_name}")
-        else:
-            logger.warning(f"✗ Could not extract username from URL: {channel_url}")
-    
-    # At least one channel should be successfully fetched
-    assert successful_fetches > 0, "Failed to fetch data from any configured channels"
+    # Details with specific field mask covering stored attributes
+    fields = [
+        "id",
+        "displayName",
+        "formattedAddress",
+        "location",
+        "rating",
+        "userRatingCount",
+        "businessStatus",
+        "photos",
+        "websiteUri",
+        "editorialSummary",
+        "priceLevel",
+        "types",
+        "addressComponents",
+        "openingHours",
+        "currentOpeningHours",
+        "secondaryOpeningHours",
+        "internationalPhoneNumber",
+    ]
+    details_result = await get_place_details(place_id=place_id, fields=fields)
+    assert details_result["status"] == "OK", "Place details call failed"
+    assert details_result["place"] is not None, "No place details returned"
 
-# To run this test, save it as test_youtube_api.py in your tests directory
-# and run pytest from your terminal: pytest backend/tests/test_youtube_api.py
+    detailed_place = details_result["place"]
+    logger.info("Place details (raw): " + json.dumps(detailed_place, ensure_ascii=False, indent=2))
+
+    # Photos
+    photos = await get_place_photos(place_id, max_photos=1)
+    logger.info("Photos (raw): " + json.dumps(photos, ensure_ascii=False, indent=2))
+
+    # Reviews (limited)
+    reviews_result = await get_reviews(place_id, max_reviews=3)
+    logger.info("Reviews (raw): " + json.dumps(reviews_result, ensure_ascii=False, indent=2))
+
+    # Basic structural assertions
+    assert "displayName" in detailed_place, "Missing displayName"
+    assert "formattedAddress" in detailed_place, "Missing formattedAddress"
+    assert "location" in detailed_place, "Missing location"
+
+
+@pytest.mark.asyncio
+async def test_places_api_fetch_restaurant_details_mapping():
+    """Verify the mapped structure from fetch_restaurant_details includes all stored fields."""
+    assert GOOGLE_MAPS_API_KEY is not None, "GOOGLE_MAPS_API_KEY not found in .env file"
+
+    name, city, country = get_sample_inputs()
+    mapped = await fetch_restaurant_details(name, city=city, country=country)
+
+    logger.info("Mapped restaurant details: " + json.dumps(mapped, ensure_ascii=False, indent=2))
+
+    # Validate presence of primary stored attributes
+    required_keys = [
+        "name",
+        "address",
+        "latitude",
+        "longitude",
+        "city",
+        "country",
+        "google_place_id",
+        "google_rating",
+        "business_status",
+        "photo_url",
+        "types",
+        "price_level",
+        "website_uri",
+        "editorial_summary",
+    ]
+    for key in required_keys:
+        assert key in mapped, f"Mapped result missing '{key}'"
+
+    # Sanity checks for types
+    assert isinstance(mapped.get("types", []), list), "types should be a list"
+    assert isinstance(mapped.get("google_rating", 0), (int, float)), "google_rating should be numeric"
+
+
+@pytest.mark.asyncio
+async def test_places_api_validate_restaurant():
+    """Validate restaurant using the Places API and log structured output."""
+    assert GOOGLE_MAPS_API_KEY is not None, "GOOGLE_MAPS_API_KEY not found in .env file"
+
+    name, city, country = get_sample_inputs()
+    entities = {
+        "restaurant_name": name,
+        "location": {"city": city, "country": country},
+        "confidence_score": 0.8,
+        "tags": [],
+        "cuisines": [],
+    }
+
+    result = await validate_restaurant(entities)
+    logger.info("Validate restaurant result: " + json.dumps(result, ensure_ascii=False, indent=2))
+
+    assert result.get("valid") is True, "Restaurant validation failed"
+
+    # Check mapped keys from validation
+    for key in [
+        "name",
+        "address",
+        "latitude",
+        "longitude",
+        "google_place_id",
+        "google_rating",
+        "business_status",
+    ]:
+        assert key in result, f"Validation result missing '{key}'"
+
+
+# To run these tests and see detailed logs, use:
+#   pytest backend/tests/test_youtube_api.py -s

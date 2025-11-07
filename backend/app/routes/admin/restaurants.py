@@ -78,6 +78,13 @@ async def create_restaurant(
             google_rating=google_details["google_rating"],
             business_status=google_details["business_status"],
             photo_url=google_details["photo_url"],
+            # Persist enhanced fields
+            price_level=google_details.get("price_level"),
+            website=google_details.get("website") or google_details.get("website_uri"),
+            current_opening_hours=google_details.get("current_opening_hours"),
+            secondary_opening_hours=google_details.get("secondary_opening_hours"),
+            opening_hours=google_details.get("opening_hours"),
+            international_phone_number=google_details.get("international_phone_number"),
             is_active=True
         )
         

@@ -418,6 +418,15 @@ async def validate_restaurant(entities: dict) -> dict:
         
         # Get rating
         rating = place.get("rating", 0)
+
+        # Opening hours and phone numbers
+        current_opening_hours = place.get("currentOpeningHours")
+        secondary_opening_hours = place.get("secondaryOpeningHours")
+        opening_hours = place.get("regularOpeningHours") or place.get("openingHours")
+        international_phone_number = place.get("internationalPhoneNumber")
+        national_phone_number = place.get("nationalPhoneNumber")
+        website_uri = place.get("websiteUri", "")
+        website = website_uri  # alias for model compatibility
         
         return {
             "valid": True,
@@ -442,8 +451,14 @@ async def validate_restaurant(entities: dict) -> dict:
                 "PRICE_LEVEL_EXPENSIVE": 3,
                 "PRICE_LEVEL_VERY_EXPENSIVE": 4,
             }.get(place.get("priceLevel", "")),
-            "website_uri": place.get("websiteUri", ""),
+            "website_uri": website_uri,
+            "website": website,
             "editorial_summary": place.get("editorialSummary", {}).get("text", ""),
+            "current_opening_hours": current_opening_hours,
+            "secondary_opening_hours": secondary_opening_hours,
+            "opening_hours": opening_hours,
+            "international_phone_number": international_phone_number,
+            "national_phone_number": national_phone_number,
         }
     except Exception as e:
         logger.error(f"Error validating restaurant with Places API: {e}")
@@ -498,10 +513,34 @@ async def fetch_restaurant_details(
         place_id = place["id"]
         
         # Get more detailed place information
-        details_result = await get_place_details(place_id=place_id)
+        # Request details with explicit field mask to ensure opening hours and phone fields
+        fields = [
+            "id",
+            "displayName",
+            "formattedAddress",
+            "location",
+            "rating",
+            "userRatingCount",
+            "businessStatus",
+            "photos",
+            "websiteUri",
+            "editorialSummary",
+            "priceLevel",
+            "types",
+            "addressComponents",
+            "openingHours",
+            "currentOpeningHours",
+            "secondaryOpeningHours",
+            "internationalPhoneNumber",
+            "nationalPhoneNumber",
+        ]
+        details_result = await get_place_details(place_id=place_id, fields=fields)
         if details_result["status"] == "OK" and details_result["place"]:
-            place = details_result["place"]  # Use more detailed place info
-        
+            # Merge to preserve any fields present in the search payload (like currentOpeningHours)
+            place = {**place, **details_result["place"]}
+            logger.info(
+                f"Merged search+details payload. currentOpeningHours present: {bool(place.get('currentOpeningHours'))}"
+            )
         logger.info(f"Found restaurant: {place.get('displayName', {}).get('text')} ({place['id']})")
         
         # Extract photo URL
@@ -530,17 +569,26 @@ async def fetch_restaurant_details(
         lat = location.get("latitude", 0)
         lng = location.get("longitude", 0)
         
-        # Get address components
-        address_components = place.get("addressComponents", {}).get("components", [])
+        # Get address components (API returns a list directly)
+        address_components = place.get("addressComponents", [])
         extracted_city = city
         extracted_country = country
         
         for component in address_components:
             types = component.get("types", [])
             if "locality" in types:
-                extracted_city = component["longText"]
+                extracted_city = component.get("longText") or component.get("shortText")
             elif "country" in types:
-                extracted_country = component["longText"]
+                extracted_country = component.get("longText") or component.get("shortText")
+        
+        # Opening hours and phone numbers
+        current_opening_hours = place.get("currentOpeningHours")
+        secondary_opening_hours = place.get("secondaryOpeningHours")
+        opening_hours = place.get("regularOpeningHours") or place.get("openingHours")
+        international_phone_number = place.get("internationalPhoneNumber")
+        national_phone_number = place.get("nationalPhoneNumber")
+        website_uri = place.get("websiteUri", "")
+        website = website_uri  # alias for model compatibility
         
         return {
             "name": place.get("displayName", {}).get("text", restaurant_name),
@@ -561,8 +609,14 @@ async def fetch_restaurant_details(
                 "PRICE_LEVEL_EXPENSIVE": 3,
                 "PRICE_LEVEL_VERY_EXPENSIVE": 4,
             }.get(place.get("priceLevel", "")),
-            "website_uri": place.get("websiteUri", ""),
+            "website_uri": website_uri,
+            "website": website,
             "editorial_summary": place.get("editorialSummary", {}).get("text", ""),
+            "current_opening_hours": current_opening_hours,
+            "secondary_opening_hours": secondary_opening_hours,
+            "opening_hours": opening_hours,
+            "international_phone_number": international_phone_number,
+            "national_phone_number": national_phone_number,
         }
         
     except HTTPException:

@@ -2,6 +2,12 @@ import { Listing, SearchParams } from '@/lib/types';
 import { CreateListingFormData } from '@/lib/validations/listing-create';
 import api, { adminApi } from '../api';
 
+type ListingApprovalResponse = {
+  message: string;
+  listing_id: string;
+  approved: boolean;
+};
+
 interface PaginatedListingsResponse {
   listings: Listing[];
   total: number;
@@ -86,6 +92,16 @@ export const listingActions = {
     };
     
     const response = await adminApi.put(`/listings/${id}/`, payload);
+    return response.data;
+  },
+
+  approveListing: async (id: string): Promise<ListingApprovalResponse> => {
+    const response = await adminApi.put(`/listings/approve/${id}/`);
+    return response.data;
+  },
+
+  disapproveListing: async (id: string): Promise<ListingApprovalResponse> => {
+    const response = await adminApi.put(`/listings/disapprove/${id}/`);
     return response.data;
   },
 

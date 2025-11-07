@@ -632,7 +632,11 @@ async def store_restaurant_and_listing(
                     business_status=validated["business_status"],
                     photo_url=validated["photo_url"],
                     price_level=validated.get("price_level"),
-                    website=validated.get("website_uri"),
+                    website=validated.get("website") or validated.get("website_uri"),
+                    current_opening_hours=validated.get("current_opening_hours"),
+                    secondary_opening_hours=validated.get("secondary_opening_hours"),
+                    opening_hours=validated.get("opening_hours"),
+                    international_phone_number=validated.get("international_phone_number"),
                     is_active=True,
                 )
                 db.add(restaurant)
@@ -643,8 +647,20 @@ async def store_restaurant_and_listing(
                 # Update enhanced fields when available
                 if validated.get("price_level") is not None:
                     restaurant.price_level = validated.get("price_level")
-                if validated.get("website_uri"):
+                # Prefer explicit website, then fallback to website_uri
+                if validated.get("website"):
+                    restaurant.website = validated.get("website")
+                elif validated.get("website_uri"):
                     restaurant.website = validated.get("website_uri")
+                # Update opening hours and phone fields
+                if validated.get("current_opening_hours") is not None:
+                    restaurant.current_opening_hours = validated.get("current_opening_hours")
+                if validated.get("secondary_opening_hours") is not None:
+                    restaurant.secondary_opening_hours = validated.get("secondary_opening_hours")
+                if validated.get("opening_hours") is not None:
+                    restaurant.opening_hours = validated.get("opening_hours")
+                if validated.get("international_phone_number"):
+                    restaurant.international_phone_number = validated.get("international_phone_number")
                 await db.flush()
 
             # Store tags
