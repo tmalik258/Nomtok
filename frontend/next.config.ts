@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
+// Avoid 'standalone' output on Windows to prevent symlink errors during local builds.
+// Docker builds (Linux) will still use 'standalone'.
+const isWindows = process.platform === 'win32'
+
 const nextConfig: NextConfig = {
-  output: 'standalone', // Enable for Docker production builds
+  ...(isWindows ? {} : { output: 'standalone' }), // Enable for Docker/Linux builds only
   images: {
     remotePatterns: [
       {

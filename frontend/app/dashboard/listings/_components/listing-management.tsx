@@ -20,10 +20,6 @@ import { ListingFilters } from "./listing-filters";
 import { ListingTable } from "./listing-table";
 import { toast } from "sonner";
 import { listingActions } from "@/lib/actions";
-import {
-  CreateListingFormData,
-  EditListingFormData,
-} from "@/lib/validations/listing-create";
 
 export function ListingManagement() {
   const {
