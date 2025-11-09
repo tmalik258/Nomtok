@@ -85,7 +85,7 @@ const InfluencerCard = ({ influencer }: InfluencerCardProps) => {
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="text-center p-3 bg-blue-50 rounded-xl">
               <div className="text-2xl font-bold text-blue-600 mb-1">
-                {influencer?.listings?.length || 0}
+                {typeof influencer.total_listings === 'number' ? influencer.total_listings : (influencer?.listings?.length || 0)}
               </div>
               <div className="text-xs text-gray-600 font-medium">Reviews</div>
             </div>

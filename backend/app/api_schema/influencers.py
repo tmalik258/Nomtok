@@ -83,6 +83,7 @@ class InfluencerResponse(BaseModel):
     youtube_channel_url: Optional[str] = None
     subscriber_count: Optional[int] = None
     total_videos: Optional[int] = None
+    total_listings: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     listings: Optional[List["ListingLightResponse"]] = None

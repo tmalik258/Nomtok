@@ -11,7 +11,10 @@ interface InfluencersHeroProps {
 }
 
 export default function InfluencersHero({ loading, influencers }: InfluencersHeroProps) {
-  const reviews = influencers?.flatMap(i => i.listings)?.length ?? 0;
+  const reviews = (influencers || []).reduce(
+    (sum, i) => sum + (typeof i.total_listings === 'number' ? i.total_listings : (i.listings?.length || 0)),
+    0
+  );
   return (
     <div className="relative min-h-[60vh] flex items-center justify-center overflow-hidden pt-20 rounded-lg">
       {/* Background Image */}

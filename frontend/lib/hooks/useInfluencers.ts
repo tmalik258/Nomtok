@@ -81,10 +81,11 @@ export const useInfluencers = (initialParams?: InfluencersParams) => {
     setError(null);
     
     try {
-      const response = await influencerActions.getInfluencersWithListings({
+      const response = await influencerActions.getInfluencers({
         ...otherParams,
         skip: (page - 1) * limit,
-        limit
+        limit,
+        include_listings: false
       });
       
       // Handle the new backend response structure with total count

@@ -13,6 +13,57 @@ const api = axios.create({
   timeout: 30000,
 });
 
+// Perf: instrument request/response timing and payload size for influencers endpoint
+api.interceptors.request.use((config) => {
+  // Mark start time
+  (config as any).__startTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => {
+    const start = (response.config as any).__startTime || Date.now();
+    const end = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const durationMs = Math.max(0, end - start);
+
+    const url = `${response.config.baseURL || ''}${response.config.url || ''}`;
+    const isInfluencersReq = /\/influencers\/?$/i.test(response.config.url || '') || /\/influencers\//i.test(response.config.url || '');
+
+    // Try to get payload size
+    const headerLen = Number(response.headers?.['content-length']) || Number(response.headers?.['Content-Length']) || 0;
+    let approxBytes = headerLen;
+    if (!approxBytes) {
+      try {
+        const str = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+        approxBytes = str.length; // UTF-16 length; rough estimate
+      } catch {}
+    }
+
+    // Only log influencers metrics to keep console clean
+    if (isInfluencersReq && typeof window !== 'undefined') {
+      // eslint-disable-next-line no-console
+      console.info(
+        `[perf] GET ${url} — ${durationMs.toFixed(0)}ms, ~${approxBytes}B, status ${response.status}`
+      );
+    }
+
+    return response;
+  },
+  (error) => {
+    const cfg = (error?.config || {}) as any;
+    const start = cfg.__startTime || Date.now();
+    const end = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const durationMs = Math.max(0, end - start);
+    const url = `${cfg.baseURL || ''}${cfg.url || ''}`;
+    const isInfluencersReq = /\/influencers\/?$/i.test(cfg.url || '') || /\/influencers\//i.test(cfg.url || '');
+    if (isInfluencersReq && typeof window !== 'undefined') {
+      // eslint-disable-next-line no-console
+      console.warn(`[perf] GET ${url} failed — ${durationMs.toFixed(0)}ms`, error?.message || error);
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Admin API instance for admin endpoints
 export const adminApi = axios.create({
   baseURL: '/api/admin',

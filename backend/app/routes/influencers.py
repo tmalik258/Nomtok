@@ -108,6 +108,17 @@ async def get_influencers(
         video_count_result = await db.execute(video_count_query)
         video_counts = {row.influencer_id: row.video_count for row in video_count_result}
 
+        # Get listing counts for all influencers in one query
+        listing_count_query = select(
+            Listing.influencer_id,
+            func.count(Listing.id).label('listing_count')
+        ).filter(
+            Listing.influencer_id.in_(influencer_ids)
+        ).group_by(Listing.influencer_id)
+
+        listing_count_result = await db.execute(listing_count_query)
+        listing_counts = {row.influencer_id: row.listing_count for row in listing_count_result}
+
         # Convert to response format
         result_list = []
         for influencer in influencers:
@@ -125,6 +136,7 @@ async def get_influencers(
                 youtube_channel_url=influencer.youtube_channel_url,
                 subscriber_count=influencer.subscriber_count,
                 total_videos=video_counts.get(influencer.id, 0),
+                total_listings=listing_counts.get(influencer.id, 0),
                 created_at=influencer.created_at,
                 updated_at=influencer.updated_at,
                 listings=None
@@ -238,7 +250,7 @@ async def get_influencers(
                             id=listing.id,
                             restaurant=restaurant_response,
                             influencer=listing.influencer.id,
-                            video=listing.video.id,
+                            video=listing.video.id if listing.video else None,
                             visit_date=listing.visit_date,
                             review_sections=listing.review_sections,
                             timestamp=listing.timestamp,

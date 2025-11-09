@@ -69,6 +69,7 @@ export interface Influencer {
   youtube_channel_url?: string;
   subscriber_count?: number;
   total_videos?: number;
+  total_listings?: number;
   created_at: string;
   updated_at: string;
   videos?: Video[];
