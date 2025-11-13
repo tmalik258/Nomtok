@@ -9,7 +9,7 @@ import { CreateInfluencerByUrlFormData } from '@/lib/validations/influencer';
 interface ApiError {
   response?: {
     data?: {
-      detail?: string;
+      detail?: string | Array<{ loc: string[]; msg: string; type: string; input?: unknown }>;
     };
   };
   message?: string;
@@ -44,16 +44,28 @@ export function useAdminInfluencer() {
       let response: AdminInfluencerResponse;
       
       // Check if it's YouTube URL-based creation
-      if ('youtube_channel_url' in data && Object.keys(data).length === 1) {
+      if ('youtube_url' in data && Object.keys(data).length === 1) {
         response = await adminInfluencerActions.createInfluencerByUrl(data as CreateInfluencerByUrlFormData);
-        toast.success('Influencer created successfully');
+
         return response;
       }
 
       return null
     } catch (err) {
       const error = err as ApiError;
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to create influencer';
+      let errorMessage = 'Failed to create influencer';
+      
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          // Extract the first validation error message
+          errorMessage = detail[0].msg || 'Validation error occurred';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       setError(errorMessage);
       toast.error(errorMessage);
       return null;
@@ -75,7 +87,19 @@ export function useAdminInfluencer() {
       return response;
     } catch (err) {
       const error = err as ApiError;
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to update influencer';
+      let errorMessage = 'Failed to update influencer';
+      
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          // Extract the first validation error message
+          errorMessage = detail[0].msg || 'Validation error occurred';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       setError(errorMessage);
       toast.error(errorMessage);
       return null;
@@ -94,7 +118,19 @@ export function useAdminInfluencer() {
       return true;
     } catch (err) {
       const error = err as ApiError;
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to delete influencer';
+      let errorMessage = 'Failed to delete influencer';
+      
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          // Extract the first validation error message
+          errorMessage = detail[0].msg || 'Validation error occurred';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       setError(errorMessage);
       toast.error(errorMessage);
       return false;
@@ -112,7 +148,19 @@ export function useAdminInfluencer() {
       return response;
     } catch (err) {
       const error = err as ApiError;
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to fetch influencer';
+      let errorMessage = 'Failed to fetch influencer';
+      
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          // Extract the first validation error message
+          errorMessage = detail[0].msg || 'Validation error occurred';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       setError(errorMessage);
       toast.error(errorMessage);
       return null;

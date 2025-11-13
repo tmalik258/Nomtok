@@ -46,7 +46,7 @@ export const CreateInfluencerModal = ({
   const form = useForm<CreateInfluencerByUrlFormData>({
     resolver: zodResolver(createInfluencerByUrlSchema),
     defaultValues: {
-      youtube_channel_url: "",
+      youtube_url: "",
     },
   });
 
@@ -59,10 +59,29 @@ export const CreateInfluencerModal = ({
       onOpenChange(false);
       onSuccess?.();
     } catch (error: unknown) {
-      const apiError = error as { response?: { data?: { detail?: string } }; message?: string };
-      const errorMessage = apiError?.response?.data?.detail || 
-                          apiError?.message || 
-                          "Failed to create influencer. Please try again.";
+      const apiError = error as { 
+        response?: { 
+          data?: { 
+            detail?: string | Array<{ loc: string[]; msg: string; type: string; input?: unknown }> 
+          } 
+        }; 
+        message?: string 
+      };
+      
+      let errorMessage = "Failed to create influencer. Please try again.";
+      
+      if (apiError?.response?.data?.detail) {
+        const detail = apiError.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          // Extract the first validation error message
+          errorMessage = detail[0].msg || "Validation error occurred";
+        }
+      } else if (apiError?.message) {
+        errorMessage = apiError.message;
+      }
+      
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -92,7 +111,7 @@ export const CreateInfluencerModal = ({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="youtube_channel_url"
+              name="youtube_url"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>YouTube Channel URL</FormLabel>

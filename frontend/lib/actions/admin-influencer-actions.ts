@@ -2,7 +2,7 @@ import { adminApi } from '../api';
 import { Influencer } from '@/lib/types';
 
 interface InfluencerCreateByUrlData {
-  youtube_channel_url: string;
+  youtube_url: string;
 }
 
 interface InfluencerUpdateData {
@@ -26,7 +26,7 @@ export const adminInfluencerActions = {
    * Create a new influencer using YouTube URL
    */
   createInfluencerByUrl: async (data: InfluencerCreateByUrlData): Promise<AdminInfluencerResponse> => {
-    const response = await adminApi.post('/influencers/', data);
+    const response = await adminApi.post('/admin/influencers/', data);
     return response.data;
   },
 

@@ -54,7 +54,7 @@ export function EditInfluencerModal({
       avatar_url: '',
       banner_url: '',
       youtube_channel_id: '',
-      youtube_channel_url: '',
+      youtube_url: '',
       subscriber_count: undefined,
     },
   });
@@ -68,7 +68,7 @@ export function EditInfluencerModal({
         avatar_url: influencer.avatar_url || '',
         banner_url: influencer.banner_url || '',
         youtube_channel_id: influencer.youtube_channel_id || '',
-        youtube_channel_url: influencer.youtube_channel_url || '',
+        youtube_url: influencer.youtube_channel_url || '',
         subscriber_count: influencer.subscriber_count || undefined,
       });
     }
@@ -191,7 +191,7 @@ export function EditInfluencerModal({
               {/* YouTube Channel URL */}
               <FormField
                 control={form.control}
-                name="youtube_channel_url"
+                name="youtube_url"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">

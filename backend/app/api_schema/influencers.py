@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, List, TYPE_CHECKING
 from uuid import UUID
 import re
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from pydantic.config import ConfigDict
 
 if TYPE_CHECKING:
@@ -12,7 +12,7 @@ class InfluencerCreateFromUrl(BaseModel):
     """Schema for creating a new influencer from YouTube URL"""
     youtube_url: str = Field(..., min_length=1, description="YouTube channel URL")
     
-    @validator('youtube_url')
+    @field_validator('youtube_url')
     def validate_youtube_url(cls, v):
         """Validate YouTube channel URL format"""
         youtube_channel_patterns = [

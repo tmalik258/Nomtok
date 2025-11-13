@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // YouTube URL validation regex
-const YOUTUBE_CHANNEL_URL_REGEX = /^https:\/\/(www\.)?youtube\.com\/(channel\/UC[\w-]{22}|c\/[\w-]+|user\/[\w-]+|@[\w.-]+)$/;
+const YOUTUBE_CHANNEL_URL_REGEX = /^(https?:\/\/)?(www\.)?youtube\.com\/(channel\/[\w.-]+|c\/[\w.-]+|user\/[\w.-]+|@[\w.-]+)$/;
 
 // Base schema for common influencer fields
 const baseInfluencerSchema = {
@@ -13,7 +13,7 @@ const baseInfluencerSchema = {
   avatar_url: z.url("Invalid avatar URL").optional().or(z.literal("")),
   banner_url: z.url("Invalid banner URL").optional().or(z.literal("")),
   youtube_channel_id: z.string().min(1, "YouTube Channel ID is required"),
-  youtube_channel_url: z
+  youtube_url: z
     .string()
     .url("Invalid YouTube channel URL")
     .optional()
@@ -26,7 +26,7 @@ const baseInfluencerSchema = {
 
 // Schema for creating influencer with YouTube URL only
 export const createInfluencerByUrlSchema = z.object({
-  youtube_channel_url: z
+  youtube_url: z
     .string()
     .min(1, "YouTube channel URL is required")
     .regex(YOUTUBE_CHANNEL_URL_REGEX, "Please enter a valid YouTube channel URL (e.g., https://www.youtube.com/@channelname or https://www.youtube.com/channel/UCxxxxx)")

@@ -33,9 +33,9 @@ async def create_influencer(
 ):
     """Create a new influencer from YouTube URL (Admin only)"""
     logger.info(f"Admin {current_admin.email} attempting to create influencer from URL: {influencer_data.youtube_url}")
-    
+
     try:
-        # Scrape YouTube channel and create influencer
+        # Scrape YouTube channel data
         channel = get_channel(influencer_data.youtube_url)
 
         if not channel:
@@ -45,18 +45,65 @@ async def create_influencer(
                 detail="Failed to scrape channel data from YouTube URL"
             )
 
+        youtube_channel_id = channel.get('channel_id', '')
+        
+        # Check if influencer already exists by youtube_channel_id
+        existing_query = select(Influencer).filter(Influencer.youtube_channel_id == youtube_channel_id)
+        existing_result = await db.execute(existing_query)
+        existing_influencer = existing_result.scalars().first()
+
+        if existing_influencer:
+            # Update existing influencer
+            logger.info(f"Influencer with YouTube channel ID {youtube_channel_id} already exists. Updating existing influencer.")
+            
+            # Update fields with new data
+            existing_influencer.name = channel.get('name', existing_influencer.name)
+            existing_influencer.bio = channel.get('bio', existing_influencer.bio)
+            existing_influencer.avatar_url = channel.get('avatar_url', existing_influencer.avatar_url)
+            existing_influencer.banner_url = channel.get('banner_url', existing_influencer.banner_url)
+            existing_influencer.youtube_channel_url = channel.get('channel_url', influencer_data.youtube_url)
+            existing_influencer.subscriber_count = channel.get('subscriber_count', existing_influencer.subscriber_count)
+            
+            await db.commit()
+            await db.refresh(existing_influencer)
+            
+            logger.info(f"Admin {current_admin.email} successfully updated influencer: {existing_influencer.name} (ID: {existing_influencer.id})")
+            
+            # Return the updated influencer
+            return InfluencerResponse(
+                id=existing_influencer.id,
+                name=existing_influencer.name,
+                slug=existing_influencer.slug,
+                bio=existing_influencer.bio,
+                avatar_url=existing_influencer.avatar_url,
+                banner_url=existing_influencer.banner_url,
+                youtube_channel_id=existing_influencer.youtube_channel_id,
+                youtube_channel_url=existing_influencer.youtube_channel_url,
+                subscriber_count=existing_influencer.subscriber_count,
+                created_at=existing_influencer.created_at,
+                updated_at=existing_influencer.updated_at,
+                listings=None
+            )
+
+        # Create new influencer
+        logger.info(f"Creating new influencer with YouTube channel ID: {youtube_channel_id}")
+        
+        influencer = Influencer(
+
         influencer = Influencer(
             name=channel.get('name', ''),
             bio=channel.get('bio', ''),
             avatar_url=channel.get('avatar_url', ''),
             banner_url=channel.get('banner_url', ''),
-            youtube_channel_id=channel.get('channel_id', ''),
+            youtube_channel_id=youtube_channel_id,
             youtube_channel_url=channel.get('channel_url', influencer_data.youtube_url),
             subscriber_count=channel.get('subscriber_count', 0),
         )
         db.add(influencer)
         await db.commit()
         await db.refresh(influencer)
+        
+        logger.info(f"Admin {current_admin.email} successfully created new influencer: {influencer.name} (ID: {influencer.id})")
         
         # Return the created influencer
         return InfluencerResponse(
@@ -76,10 +123,10 @@ async def create_influencer(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Unexpected error while creating influencer from YouTube URL: {str(e)}")
+        logger.error(f"Unexpected error while creating/updating influencer from YouTube URL: {str(e)}")
         raise HTTPException(
             status_code=500, 
-            detail="An unexpected error occurred while creating influencer from YouTube URL"
+            detail="An unexpected error occurred while creating/updating influencer from YouTube URL"
         )
 
 @admin_influencers_router.put(
