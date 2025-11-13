@@ -13,6 +13,7 @@ from app.models.influencer import Influencer
 from app.api_schema.videos import VideoResponse, VideoCreate, VideoUpdate, VideoCreateFromUrl
 from app.api_schema.influencers import InfluencerLightResponse
 from app.services.youtube_scraper import get_video_metadata
+import uuid
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from app.utils.logging import setup_logger
@@ -31,25 +32,23 @@ async def create_video(
     """Create a new video (Admin only) - supports both manual creation and YouTube URL"""
     try:
         # Check if this is a YouTube URL creation request
-        if "youtube_url" in video_data.dict():
-            # Handle YouTube URL creation
-            influencer_id = video_data.influencer_id
-            
-            # Create VideoCreateFromUrl instance to extract video ID
+        if isinstance(video_data, VideoCreateFromUrl):
+            # Handle YouTube URL creation with optional influencer association
+            # Extract video ID
             video_id = video_data.extract_video_id()
-            
+
             # Check if video already exists
             query = select(Video).filter(Video.youtube_video_id == video_id)
             result = await db.execute(query)
             existing_video = result.scalars().first()
-            
+
             if existing_video:
                 logger.warning(f"Duplicate video creation attempt for ID: {video_id}")
                 raise HTTPException(
                     status_code=400,
                     detail=f"Video with ID {video_id} already exists"
                 )
-            
+
             # Fetch video metadata from YouTube API
             metadata = get_video_metadata(video_id)
             if not metadata:
@@ -58,7 +57,46 @@ async def create_video(
                     status_code=400,
                     detail="Could not fetch video metadata from YouTube. Please check the URL."
                 )
-            
+
+            channel_id = metadata.get("channel_id")
+            channel_title = metadata.get("channel_title")
+            if not channel_id:
+                logger.error(f"Missing channel_id in metadata for video ID: {video_id}")
+                raise HTTPException(
+                    status_code=400,
+                    detail="YouTube metadata missing channel information; cannot associate influencer."
+                )
+
+            # Try to find existing influencer by YouTube channel ID
+            inf_query = select(Influencer).filter(Influencer.youtube_channel_id == channel_id)
+            inf_result = await db.execute(inf_query)
+            influencer = inf_result.scalars().first()
+
+            if influencer:
+                influencer_id = influencer.id
+            else:
+                # Create new influencer using available metadata
+                try:
+                    influencer = Influencer(
+                        id=uuid.uuid4(),
+                        name=channel_title or "Unknown Channel",
+                        youtube_channel_id=channel_id,
+                        youtube_channel_url=f"https://www.youtube.com/channel/{channel_id}",
+                        bio=None,
+                        avatar_url=None,
+                        banner_url=None,
+                        subscriber_count=None,
+                    )
+                    db.add(influencer)
+                    await db.commit()
+                    await db.refresh(influencer)
+                    influencer_id = influencer.id
+                except IntegrityError as ie:
+                    await db.rollback()
+                    msg = str(ie.orig) if getattr(ie, 'orig', None) else str(ie)
+                    logger.error(f"Integrity error creating influencer for channel {channel_id}: {msg}")
+                    raise HTTPException(status_code=400, detail="Failed to create influencer for this video.")
+
             # Parse published date
             published_at = None
             if metadata.get("published_at"):
@@ -69,7 +107,7 @@ async def create_video(
                 except ValueError:
                     logger.error(f"Invalid published_at format for video ID: {video_id}")
                     pass
-            
+
             # Create new video with extracted metadata
             new_video = Video(
                 influencer_id=influencer_id,
@@ -81,8 +119,8 @@ async def create_video(
             )
         else:
             # Handle manual video creation
-            video = VideoCreate(**video_data)
-            new_video = Video(**video.model_dump())
+            # video_data is already a VideoCreate instance
+            new_video = Video(**video_data.model_dump())
         
         db.add(new_video)
         await db.commit()

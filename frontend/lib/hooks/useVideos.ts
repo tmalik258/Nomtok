@@ -197,7 +197,7 @@ export const useCreateVideo = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createVideoFromUrl = useCallback(async (data: { influencer_id: string; youtube_url: string }) => {
+  const createVideoFromUrl = useCallback(async (data: { youtube_url: string }) => {
     setLoading(true);
     setError(null);
     

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator, validator
 from pydantic.config import ConfigDict
 import re
 
@@ -50,10 +50,9 @@ class VideoUpdate(BaseModel):
 
 class VideoCreateFromUrl(BaseModel):
     """Simplified schema for creating videos from YouTube URL"""
-    influencer_id: UUID
     youtube_url: str
     
-    @validator('youtube_url')
+    @field_validator('youtube_url')
     def validate_youtube_url(cls, v):
         """Validate YouTube URL format"""
         youtube_patterns = [

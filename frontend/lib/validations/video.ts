@@ -43,7 +43,6 @@ export const updateVideoSchema = z.object({
 
 // Schema for creating a video from URL (matches VideoCreateFromUrl)
 export const createVideoFromUrlSchema = z.object({
-  influencer_id: z.string().uuid("Invalid influencer ID"),
   youtube_url: z
     .string()
     .min(1, "YouTube URL is required")

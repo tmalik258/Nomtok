@@ -5,20 +5,17 @@ to replace the deprecated legacy Places API.
 
 Documentation: https://developers.google.com/maps/documentation/places/web-service/places-api-overview
 """
-import json
-import asyncio
 import httpx
-from typing import Optional, Dict, Any, List, Union
+from typing import Optional, Dict, Any, List
 from fastapi import HTTPException, status
-from app.config import GOOGLE_MAPS_API_KEY
+from app.config import GOOGLE_MAPS_API_KEY, PLACES_BASE_URL
 from app.models.restaurant import BusinessStatus
 from app.utils.logging import setup_logger
 
 # Setup logging
 logger = setup_logger(__name__)
 
-# Base URL for Places API
-BASE_URL = "https://places.googleapis.com/v1"
+
 
 # Common headers for Places API
 def get_headers():
@@ -60,7 +57,7 @@ async def search_text(
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.post(
-                f"{BASE_URL}/places:searchText",
+                f"{PLACES_BASE_URL}/places:searchText",
                 headers=headers,
                 json=payload
             )
@@ -101,7 +98,7 @@ async def get_place_details(
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.get(
-                f"{BASE_URL}/places/{place_id}",
+                f"{PLACES_BASE_URL}/places/{place_id}",
                 headers=headers
             )
             
@@ -110,7 +107,6 @@ async def get_place_details(
                 return {"status": "ERROR", "place": None}
             
             data = response.json()
-            logger.info(f"Places API place details success: {data.get('id')}")
             return {"status": "OK", "place": data}
             
     except Exception as e:
@@ -134,49 +130,43 @@ async def get_place_photos(
     logger.info(f"Places API fetching photos for: {place_id}")
     
     # First get place details with photos field
-    headers = get_headers()
-    headers["X-Goog-FieldMask"] = "photos"
-    
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.get(
-                f"{BASE_URL}/places/{place_id}",
-                headers=headers
-            )
-            
-            if response.status_code != 200:
-                logger.error(f"Places API photos error: {response.status_code}, {response.text}")
-                return []
-            
-            data = response.json()
-            photos = data.get("photos", [])[:max_photos]
-            
-            if not photos:
-                logger.info(f"No photos found for place: {place_id}")
-                return []
-                
-            result_photos = []
-            for photo in photos:
-                photo_name = photo.get("name")
-                if photo_name:
-                    # Fetch photo media URL
-                    media_url = await get_photo_media(photo_name)
-                    if media_url:
-                        result_photos.append({
-                            "name": photo_name,
-                            "media_url": media_url,
-                            "width": photo.get("widthPx"),
-                            "height": photo.get("heightPx"),
-                            "author_attribution": photo.get("authorAttributions", [{}])[0].get("displayName")
-                        })
-            
-            return result_photos
-            
+        details_result = await get_place_details(place_id=place_id, fields=["id", "photos"])
+        if details_result["status"] != "OK" or not details_result.get("place"):
+            logger.error(f"Places API photos error: failed to fetch details for {place_id}")
+            return []
+
+        data = details_result["place"]
+        photos = (data.get("photos") or [])[:max_photos]
+        if not photos:
+            logger.info(f"No photos found for place: {place_id}")
+            return []
+        
+        logger.info(f"Found {len(photos)} photos for place: {place_id}")
+
+        result_photos: List[Dict[str, Any]] = []
+        for photo in photos:
+            photo_name = photo.get("name")
+            if not photo_name:
+                continue
+            media_url = await get_photo_media(place_id, photo_name)
+            if media_url:
+                logger.info(f"Got photo media URL: {media_url[:60]}... for photo: {photo_name}")
+                result_photos.append({
+                    "name": photo_name,
+                    "media_url": media_url,
+                    "width": photo.get("widthPx"),
+                    "height": photo.get("heightPx"),
+                    "author_attribution": (photo.get("authorAttributions") or [{}])[0].get("displayName")
+                })
+        return result_photos
+
     except Exception as e:
         logger.error(f"Places API photos exception: {e}")
         return []
 
 async def get_photo_media(
+    place_id: str,
     photo_name: str,
     max_width_px: int = 800,
     max_height_px: Optional[int] = None
@@ -185,6 +175,7 @@ async def get_photo_media(
     Get photo media URL for a photo name.
     
     Args:
+        place_id: The Google Place ID
         photo_name: The photo name from Places API
         max_width_px: Maximum width in pixels
         max_height_px: Maximum height in pixels (optional)
@@ -194,33 +185,30 @@ async def get_photo_media(
     """
     logger.info(f"Places API getting photo media: {photo_name}")
     
-    # Prepare request payload
-    payload = {"maxWidthPx": max_width_px}
-    if max_height_px:
-        payload["maxHeightPx"] = max_height_px
-    
     headers = get_headers()
+    if "X-Goog-FieldMask" in headers:
+        del headers["X-Goog-FieldMask"]
     
     try:
         async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.post(
-                f"{BASE_URL}/{photo_name}:getMedia",
+            response = await client.get(
+                f"{PLACES_BASE_URL}/{photo_name}/media?maxWidthPx={max_width_px}{max_height_px and f'&maxHeightPx={max_height_px}' or ''}&skipHttpRedirect=true",
                 headers=headers,
-                json=payload
             )
             
             if response.status_code != 200:
                 logger.error(f"Places API photo media error: {response.status_code}, {response.text}")
                 return None
-            
+
             data = response.json()
-            media_url = data.get("mediaUrl")
+
+            media_url = data.get("photoUri")
             
             if media_url:
                 logger.info(f"Got photo media URL: {media_url[:60]}...")
                 return media_url
             return None
-            
+
     except Exception as e:
         logger.error(f"Places API photo media exception: {e}")
         return None
@@ -313,7 +301,7 @@ async def get_reviews(
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.get(
-                f"{BASE_URL}/places/{place_id}",
+                f"{PLACES_BASE_URL}/places/{place_id}",
                 headers=headers
             )
             

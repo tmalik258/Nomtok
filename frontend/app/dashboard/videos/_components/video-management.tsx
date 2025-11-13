@@ -284,6 +284,24 @@ export default function VideoManagement() {
           refreshVideos();
           setIsCreateModalOpen(false);
         }}
+        onVideoCreated={(videoId) => {
+          // Find the newly created video in the videos array
+          const newlyCreatedVideo = videos.find((video) => video.id === videoId);
+          if (newlyCreatedVideo) {
+            // Open edit modal with the newly created video
+            handleEditVideo(newlyCreatedVideo);
+          } else {
+            // If video not found in current array, refresh and then try to find it
+            refreshVideos();
+            // Small delay to ensure data is refreshed
+            setTimeout(() => {
+              const updatedVideo = videos.find((video) => video.id === videoId);
+              if (updatedVideo) {
+                handleEditVideo(updatedVideo);
+              }
+            }, 500);
+          }
+        }}
       />
 
       <EditVideoModal

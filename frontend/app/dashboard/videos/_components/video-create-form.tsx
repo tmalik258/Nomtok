@@ -7,13 +7,6 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Form,
   FormControl,
   FormField,
@@ -22,7 +15,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { useInfluencers } from "@/lib/hooks/useInfluencers";
 import { useCreateVideo } from "@/lib/hooks/useVideos";
 import {
   Dialog,
@@ -32,9 +24,7 @@ import {
 } from "@/components/ui/dialog";
 
 const formSchema = z.object({
-  influencer_id: z.string().min(1, "Please select an influencer"),
   youtube_url: z
-    .string()
     .url("Please enter a valid YouTube URL")
     .refine(
       (url) => {
@@ -58,37 +48,27 @@ interface VideoCreateFormModalProps {
   isCreateModalOpen: boolean;
   setIsCreateModalOpen: (isOpen: boolean) => void;
   onSuccess: () => void;
+  onVideoCreated?: (videoId: string) => void;
 }
 
 export function VideoCreateFormModal({
   isCreateModalOpen,
   setIsCreateModalOpen,
   onSuccess,
+  onVideoCreated,
 }: VideoCreateFormModalProps) {
   const form = useForm<VideoFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      influencer_id: "",
       youtube_url: "",
     },
   });
 
   const {
-    influencers,
-    loading: isLoadingInfluencers,
-    error: influencersError,
-  } = useInfluencers();
-  const {
     createVideoFromUrl,
     loading: isCreating,
     error: createError,
   } = useCreateVideo();
-
-  useEffect(() => {
-    if (influencersError) {
-      toast.error(influencersError);
-    }
-  }, [influencersError]);
 
   useEffect(() => {
     if (createError) {
@@ -98,14 +78,17 @@ export function VideoCreateFormModal({
 
   const onSubmit = async (values: VideoFormValues) => {
     try {
-      await createVideoFromUrl({
-        influencer_id: values.influencer_id,
+      const createdVideo = await createVideoFromUrl({
         youtube_url: values.youtube_url,
       });
-      if (!createError) {
+      if (!createError && createdVideo) {
         toast.success("Video created successfully from YouTube URL!");
         form.reset();
         onSuccess();
+        // Call onVideoCreated with the new video's ID to open edit modal
+        if (onVideoCreated && createdVideo.id) {
+          onVideoCreated(createdVideo.id);
+        }
       }
     } catch (error: unknown) {
       console.error("Failed to create video:", error);
@@ -122,40 +105,7 @@ export function VideoCreateFormModal({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="influencer_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Influencer</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={isLoadingInfluencers}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full glass-effect backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-orange-200 dark:border-orange-800 focus:border-orange-500 focus:ring-orange-500/20 text-gray-900 dark:text-white">
-                        <SelectValue
-                          placeholder={
-                            isLoadingInfluencers
-                              ? "Loading influencers..."
-                              : "Select an influencer"
-                          }
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {influencers.map((influencer) => (
-                        <SelectItem key={influencer.id} value={influencer.id}>
-                          {influencer.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Influencer selection removed; influencer will be auto-associated from metadata */}
             <FormField
               control={form.control}
               name="youtube_url"
@@ -175,7 +125,7 @@ export function VideoCreateFormModal({
             />
             <Button
               type="submit"
-              disabled={isCreating || isLoadingInfluencers}
+              disabled={isCreating}
               className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 hover:border-orange-700 transition-all duration-200 disabled:cursor-not-allowed cursor-pointer"
             >
               {isCreating ? "Creating..." : "Create Video"}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
@@ -26,14 +26,38 @@ export default function RestaurantImage({
 }: RestaurantImageProps) {
   const [currentSrc, setCurrentSrc] = useState<string | null>(src ?? null);
   const [isValid, setIsValid] = useState<boolean>(!!src);
-  const [attemptedRefetch, setAttemptedRefetch] = useState<boolean>(false);
+  const [attemptedRefetchForUrl, setAttemptedRefetchForUrl] = useState<string | null>(null);
   const [loadingRefetch, setLoadingRefetch] = useState<boolean>(false);
+
+  // Helper: attempt backend refetch and update image src
+  const tryRefetch = useCallback(async () => {
+    if (!restaurantSlug || attemptedRefetchForUrl === currentSrc || loadingRefetch) return;
+    setAttemptedRefetchForUrl(currentSrc);
+    setLoadingRefetch(true);
+    try {
+      const resp = await api.post(`/restaurants/${restaurantSlug}/refetch-photo/`);
+      const newUrl: string | undefined = resp?.data?.photo_url;
+      if (newUrl) {
+        setCurrentSrc(newUrl);
+        // Re-validate new URL via lightweight preload
+        const recheck = new window.Image();
+        recheck.referrerPolicy = "no-referrer";
+        recheck.src = newUrl;
+        recheck.onload = () => setIsValid(true);
+        recheck.onerror = () => setIsValid(false);
+      }
+    } catch (e) {
+      console.log("Failed to refetch photo", e);
+    } finally {
+      setLoadingRefetch(false);
+    }
+  }, [restaurantSlug, attemptedRefetchForUrl, currentSrc, loadingRefetch]);
 
   // Keep internal src in sync if parent changes
   useEffect(() => {
     setCurrentSrc(src ?? null);
     setIsValid(!!src);
-    setAttemptedRefetch(false);
+    setAttemptedRefetchForUrl(null);
   }, [src]);
 
   useEffect(() => {
@@ -49,31 +73,7 @@ export default function RestaurantImage({
     testImg.onload = () => setIsValid(true);
     testImg.onerror = async () => {
       setIsValid(false);
-
-      // Try refetch once per mount if we have an ID
-      if (!attemptedRefetch && restaurantSlug && !loadingRefetch) {
-        setAttemptedRefetch(true);
-        setLoadingRefetch(true);
-        try {
-          const resp = await api.post(`/restaurants/${restaurantSlug}/refetch-photo/`);
-          const newUrl: string | undefined = resp?.data?.photo_url;
-          if (newUrl) {
-            setCurrentSrc(newUrl);
-            // Re-validate new URL
-            const recheck = new window.Image();
-            recheck.referrerPolicy = "no-referrer";
-            recheck.src = newUrl;
-            recheck.onload = () => setIsValid(true);
-            recheck.onerror = () => setIsValid(false);
-          }
-        } catch (e) {
-          // Silently fail; fallback UI will show
-          // console.warn("Failed to refetch photo", e);
-          console.log("Failed to refetch photo", e);
-        } finally {
-          setLoadingRefetch(false);
-        }
-      }
+      await tryRefetch();
     };
 
     return () => {
@@ -81,7 +81,7 @@ export default function RestaurantImage({
       testImg.onload = null;
       testImg.onerror = null;
     };
-  }, [currentSrc, restaurantSlug, attemptedRefetch, loadingRefetch]);
+  }, [currentSrc, restaurantSlug, attemptedRefetchForUrl, loadingRefetch, tryRefetch]);
 
   if (!isValid) {
     const initial = (nameInitial || (alt?.[0] ?? "")).toUpperCase() || "?";
@@ -106,6 +106,11 @@ export default function RestaurantImage({
       sizes={sizes}
       className={cn("object-cover w-full h-full", className)}
       referrerPolicy="no-referrer"
+      // If Next/Image optimization fails (e.g., upstream 403), trigger backend refetch
+      onError={async () => {
+        setIsValid(false);
+        await tryRefetch();
+      }}
       priority={false}
     />
   );

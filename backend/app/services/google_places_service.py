@@ -1,13 +1,9 @@
-import asyncio
 from typing import Optional
 from fastapi import HTTPException, status
-import httpx
 
-from app.config import GOOGLE_MAPS_API_KEY
-from app.models.restaurant import BusinessStatus
 from app.utils.logging import setup_logger
 from app.services.places_api_new import (
-    get_place_photos, 
+    get_place_photos,
     geocode_address as geocode_address_new,
     fetch_restaurant_details
 )
@@ -34,14 +30,13 @@ async def resolve_google_photo_url(photo_reference: str, maxwidth: int = 800) ->
     return None
 
 
-async def refetch_photo_by_place_id(place_id: str, maxwidth: int = 800) -> Optional[str]:
+async def refetch_photo_by_place_id(place_id: str) -> Optional[str]:
     """
     Refetch a restaurant photo by Google Place ID using Places API (New).
     Returns None if not available or on error.
     
     Args:
         place_id: The Google Place ID
-        maxwidth: Maximum width in pixels
         
     Returns:
         URL to the photo media or None if not found

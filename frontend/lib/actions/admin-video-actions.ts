@@ -2,7 +2,6 @@ import { adminApi } from '../api';
 import { Video } from '@/lib/types';
 
 interface VideoCreateFromUrlData {
-  influencer_id: string;
   youtube_url: string;
 }
 
