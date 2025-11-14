@@ -89,8 +89,6 @@ async def create_influencer(
         logger.info(f"Creating new influencer with YouTube channel ID: {youtube_channel_id}")
         
         influencer = Influencer(
-
-        influencer = Influencer(
             name=channel.get('name', ''),
             bio=channel.get('bio', ''),
             avatar_url=channel.get('avatar_url', ''),
