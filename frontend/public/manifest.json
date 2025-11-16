@@ -1,0 +1,15 @@
+{
+  "name": "Nomtok",
+  "short_name": "Nomtok",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111827",
+  "icons": [
+    { "src": "/logo.png", "sizes": "64x64", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "48x48", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "16x16", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

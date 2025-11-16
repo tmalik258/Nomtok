@@ -1,9 +1,11 @@
-"use client";
+// Server component to allow page-level metadata
 
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import InfluencerCardSkeleton from "./_components/influencer-card-skeleton";
 import InfluencersContent from "./_components/influencers-content";
+import type { Metadata } from "next";
+import { buildPageMetadata } from "@/lib/seo/utils";
 
 function InfluencersLoadingSkeleton() {
   return (
@@ -45,3 +47,13 @@ export default function InfluencersPage() {
     </Suspense>
   );
 }
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Discover Food Influencers",
+  description:
+    "Explore top food influencers and their favorite restaurants. Filter content and find trusted recommendations.",
+  path: "/influencers",
+  type: "website",
+  keywords: ["influencers", "restaurants", "food", "reviews"],
+  imageUrl: "/hero-influencer.jpg",
+});

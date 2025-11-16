@@ -17,6 +17,7 @@ from app.api_schema.listings import ListingLightResponse
 from app.api_schema.influencers import InfluencerResponse, InfluencerLightResponse
 from app.api_schema.restaurants import RestaurantResponse, OptimizedFeaturedResponse, CityRestaurantsResponse, PaginatedRestaurantsResponse, rebuild_models
 from app.services.google_places_service import refetch_photo_by_place_id
+from app.services.cache import CacheService
 
 # Rebuild models to resolve forward references
 rebuild_models()
@@ -637,13 +638,53 @@ async def refetch_restaurant_photo(
         if not restaurant_obj.google_place_id:
             raise HTTPException(status_code=400, detail="Restaurant missing google_place_id")
 
-        final_url = await refetch_photo_by_place_id(restaurant_obj.google_place_id)
+        # Rate limit and dedupe refetches per place_id
+        place_id = restaurant_obj.google_place_id
+        cache = CacheService("refetch")
+        last_key = f"photo:last:{place_id}"
+        lock_key = f"photo:lock:{place_id}"
+
+        # Simple lock: if lock present, reject to prevent thundering herd
+        existing_lock = cache.get(lock_key)
+        if existing_lock is not None:
+            raise HTTPException(status_code=429, detail="Refetch in progress, please retry later")
+
+        # Throttle: if last refetch within 120s, skip external call and return current URL
+        last = cache.get(last_key)
+        try:
+            if last and isinstance(last.get("ts"), (int, float)):
+                import time
+                now = time.time()
+                if (now - float(last["ts"])) < 120:
+                    return {"photo_url": restaurant_obj.photo_url}
+        except Exception:
+            pass
+
+        # Acquire lock with short TTL
+        try:
+            cache.set(lock_key, {"ts": __import__("time").time()}, ttl_seconds=30)
+        except Exception:
+            pass
+
+        final_url = await refetch_photo_by_place_id(place_id)
         if not final_url:
             raise HTTPException(status_code=502, detail="Failed to refetch photo from Google")
 
         restaurant_obj.photo_url = final_url
         await db.commit()
         await db.refresh(restaurant_obj)
+
+        # Update last refetch marker (5 minutes window for metrics, throttle uses 120s)
+        try:
+            cache.set(last_key, {"ts": __import__("time").time(), "url": final_url}, ttl_seconds=300)
+        except Exception:
+            pass
+
+        # Release lock best-effort
+        try:
+            cache.invalidate_prefix(lock_key)
+        except Exception:
+            pass
 
         return {"photo_url": restaurant_obj.photo_url}
     except HTTPException:

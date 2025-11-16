@@ -1,0 +1,10 @@
+{
+  "ytDlpPath": "C:\\Tools\\yt-dlp\\yt-dlp.exe",
+  "backupDir": "C:\\ProgramData\\yt-dlp-updater\\backups",
+  "logDir": "C:\\ProgramData\\yt-dlp-updater\\logs",
+  "stagingDir": "C:\\ProgramData\\yt-dlp-updater\\staging",
+  "maxBackups": 3,
+  "webhookUrl": null,
+  "validationUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  "stopIfRunning": true
+}

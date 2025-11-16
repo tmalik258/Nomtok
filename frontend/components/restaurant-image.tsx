@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
+import { getCachedUrl, setCachedUrl, validateImageUrl } from "@/lib/utils/image-cache";
+import { refetchPhoto } from "@/lib/utils/image-refetch-manager";
 
 interface RestaurantImageProps {
   src?: string | null;
@@ -35,16 +37,12 @@ export default function RestaurantImage({
     setAttemptedRefetchForUrl(currentSrc);
     setLoadingRefetch(true);
     try {
-      const resp = await api.post(`/restaurants/${restaurantSlug}/refetch-photo/`);
-      const newUrl: string | undefined = resp?.data?.photo_url;
+      const newUrl = await refetchPhoto(String(restaurantSlug));
       if (newUrl) {
         setCurrentSrc(newUrl);
-        // Re-validate new URL via lightweight preload
-        const recheck = new window.Image();
-        recheck.referrerPolicy = "no-referrer";
-        recheck.src = newUrl;
-        recheck.onload = () => setIsValid(true);
-        recheck.onerror = () => setIsValid(false);
+        setCachedUrl(String(restaurantSlug), newUrl);
+        const ok = await validateImageUrl(newUrl);
+        setIsValid(!!ok);
       }
     } catch (e) {
       console.log("Failed to refetch photo", e);
@@ -61,26 +59,26 @@ export default function RestaurantImage({
   }, [src]);
 
   useEffect(() => {
-    if (!currentSrc) {
-      setIsValid(false);
-      return;
-    }
-
-    // Preload to detect errors without rendering a broken image
-    const testImg = new window.Image();
-    testImg.referrerPolicy = "no-referrer";
-    testImg.src = currentSrc;
-    testImg.onload = () => setIsValid(true);
-    testImg.onerror = async () => {
-      setIsValid(false);
-      await tryRefetch();
+    const run = async () => {
+      if (!restaurantSlug) return;
+      if (!currentSrc) {
+        const cached = getCachedUrl(String(restaurantSlug));
+        if (cached) {
+          setCurrentSrc(cached);
+          const ok = await validateImageUrl(cached);
+          setIsValid(!!ok);
+          if (!ok) await tryRefetch();
+        } else {
+          setIsValid(false);
+        }
+        return;
+      }
+      const ok = await validateImageUrl(currentSrc);
+      setIsValid(!!ok);
+      if (ok) setCachedUrl(String(restaurantSlug), currentSrc);
+      else await tryRefetch();
     };
-
-    return () => {
-      // Cleanup image object
-      testImg.onload = null;
-      testImg.onerror = null;
-    };
+    run();
   }, [currentSrc, restaurantSlug, attemptedRefetchForUrl, loadingRefetch, tryRefetch]);
 
   if (!isValid) {

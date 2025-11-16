@@ -1,5 +1,7 @@
 import { Suspense } from 'react';
 import { RestaurantsContent } from './_components/restaurants-content';
+import type { Metadata } from 'next';
+import { buildPageMetadata } from '@/lib/seo/utils';
 
 export default function RestaurantsPage() {
   return (
@@ -12,3 +14,13 @@ export default function RestaurantsPage() {
     </Suspense>
   );
 }
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Find Restaurants by City & Influencers',
+  description:
+    'Browse curated restaurant recommendations by influencers. Filter by city and discover top places to eat.',
+  path: '/restaurants',
+  type: 'website',
+  keywords: ['restaurants', 'city', 'influencers', 'food guide'],
+  imageUrl: '/hero-main.jpg',
+});

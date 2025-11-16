@@ -8,6 +8,13 @@ services:
       - "8030:8000"
     environment:
       - REDIS_URL=redis://redis:6379
+      - YTDLP_UPDATER_ENABLED=true
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
+      - NOTIFY_EMAILS=${NOTIFY_EMAILS}
     env_file:
       - ./backend/.env
     volumes:

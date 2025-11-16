@@ -33,6 +33,11 @@ import {
 } from "./_components/utils";
 import RestaurantMap from "@/components/restaurant-map-wrapper";
 import { InfluencerSearchFilter } from "../_components/influencer-search-filter";
+import type { Metadata } from "next";
+import { buildPageMetadata } from "@/lib/seo/utils";
+import { toTitleFromSlug } from "@/lib/seo/site";
+import { buildBreadcrumbJsonLd } from "@/lib/seo/utils";
+import Script from "next/script";
 
 export default function InfluencerDetailPage() {
   const params = useParams() as { slug: string };
@@ -272,6 +277,16 @@ export default function InfluencerDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
+      {/* Breadcrumb JSON-LD */}
+      <Script id="breadcrumb-jsonld" type="application/ld+json">
+        {JSON.stringify(
+          buildBreadcrumbJsonLd([
+            { name: "Home", url: "https://www.nomtok.com" },
+            { name: "Influencers", url: "https://www.nomtok.com/influencers" },
+            { name: toTitleFromSlug(influencerSlug), url: `https://www.nomtok.com/influencers/${influencerSlug}` },
+          ])
+        )}
+      </Script>
       {/* Hero Section */}
       <HeroSection influencer={influencer} />
 
@@ -358,4 +373,17 @@ export default function InfluencerDetailPage() {
       </div>
     </div>
   );
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const title = `${toTitleFromSlug(params.slug)} — Influencer`;
+  const description = `Explore ${toTitleFromSlug(params.slug)} — top picks, videos, and restaurant reviews.`;
+  return buildPageMetadata({
+    title,
+    description,
+    path: `/influencers/${params.slug}`,
+    type: "article",
+    keywords: ["influencer", params.slug, "restaurants", "videos"],
+    imageUrl: "/hero-influencer.jpg",
+  });
 }

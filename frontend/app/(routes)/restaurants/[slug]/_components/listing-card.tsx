@@ -42,7 +42,9 @@ const ListingCard = ({
                     href={`/influencers/${listing?.influencer?.slug}`}
                     className="text-lg font-semibold text-gray-900 hover:text-orange-600 transition-colors"
                   >
-                    {listing?.influencer?.name}
+                    <h3 className="text-lg font-semibold text-gray-900 hover:text-orange-600 transition-colors">
+                      {listing?.influencer?.name}
+                    </h3>
                   </Link>
                   <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
                     {listing.visit_date && (

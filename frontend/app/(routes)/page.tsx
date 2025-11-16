@@ -162,3 +162,5 @@ export default function Home() {
     </div>
   );
 }
+
+// Metadata for the home page is provided at the (routes) layout level.

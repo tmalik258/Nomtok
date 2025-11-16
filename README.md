@@ -51,3 +51,12 @@
 
 - Do not change ports (`3000` frontend, `8030` backend).
 - Backend tests for the new flow exist under `backend/tests/test_admin_videos_create.py`.
+
+## Production yt-dlp Automation
+
+- The production backend container runs a daily cron job at `03:15` that executes `/usr/local/bin/auto-update-ytdlp`.
+- The job calls `/usr/local/bin/update-ytdlp`, logs to `/code/logs/yt-dlp-updater.log`, and can send email notifications if SMTP is configured.
+- Check logs: `dclogs backend` or read `/backend/logs/yt-dlp-updater.log` on the host.
+- Manual trigger: `dce backend /usr/local/bin/auto-update-ytdlp`.
+- Staging testing (recommended): enable updater via staging compose override, run manual trigger, and verify logs and version.
+- Email notifications (optional): set `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, `SMTP_USER`, `SMTP_PASS`, and `NOTIFY_EMAILS` in production. If unset, notifications are skipped.

@@ -1,6 +1,11 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import type { Metadata } from "next";
+import { buildPageMetadata } from "@/lib/seo/utils";
+import { toTitleFromSlug } from "@/lib/seo/site";
+import { buildBreadcrumbJsonLd } from "@/lib/seo/utils";
+import Script from "next/script";
 import { useRestaurantWithListings } from "@/lib/hooks";
 import { MapPin, Users } from "lucide-react";
 import Link from "next/link";
@@ -112,6 +117,16 @@ export default function RestaurantDetailPage() {
         </div>
       </div>
 
+      {/* Breadcrumb JSON-LD */}
+      <Script id="breadcrumb-jsonld" type="application/ld+json">
+        {JSON.stringify(
+          buildBreadcrumbJsonLd([
+            { name: "Home", url: "https://www.nomtok.com" },
+            { name: "Restaurants", url: "https://www.nomtok.com/restaurants" },
+            { name: toTitleFromSlug(String(restaurant.slug)), url: `https://www.nomtok.com/restaurants/${String(restaurant.slug)}` },
+          ])
+        )}
+      </Script>
       {/* Overlapping Restaurant Map */}
       <div className="relative -mt-16 mb-8 mx-2 z-10">
         <RestaurantMap
@@ -165,4 +180,17 @@ export default function RestaurantDetailPage() {
       </div>
     </div>
   );
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const title = `${toTitleFromSlug(params.slug)} — Restaurant`;
+  const description = `Discover ${toTitleFromSlug(params.slug)} — reviews, location, and influencer recommendations.`;
+  return buildPageMetadata({
+    title,
+    description,
+    path: `/restaurants/${params.slug}`,
+    type: "article",
+    keywords: ["restaurant", params.slug, "city", "reviews"],
+    imageUrl: "/hero-main.jpg",
+  });
 }
