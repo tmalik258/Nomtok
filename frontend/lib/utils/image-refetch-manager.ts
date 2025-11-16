@@ -33,13 +33,22 @@ function setLastRefetch(slug: string, ts: number = Date.now()) {
   } catch {}
 }
 
-export async function refetchPhoto(slug: string): Promise<string | null> {
+type HttpError = { response?: { status?: number }; message?: string };
+function isHttpError(e: unknown): e is HttpError {
+  return typeof e === "object" && e !== null && "response" in e;
+}
+
+export async function refetchPhoto(
+  slug: string,
+  opts?: { force?: boolean }
+): Promise<string | null> {
   const existing = inFlight.get(slug);
   if (existing) return existing;
 
+  const force = !!opts?.force;
   const now = Date.now();
   const last = getLastRefetch(slug) || 0;
-  if (now - last < MIN_INTERVAL_MS) {
+  if (!force && now - last < MIN_INTERVAL_MS) {
     console.info(`[image] Refetch throttled for ${slug} (${now - last}ms since last)`);
     return null;
   }
@@ -56,13 +65,14 @@ export async function refetchPhoto(slug: string): Promise<string | null> {
         return url;
       }
       return null;
-    } catch (e: any) {
-      const status = e?.response?.status;
+    } catch (e: unknown) {
+      const status = isHttpError(e) ? e.response?.status : undefined;
       if (status === 429) {
         console.warn(`[image] Refetch rate limited for ${slug}`);
         return null;
       }
-      console.warn(`[image] Refetch failed for ${slug}:`, e?.message || e);
+      const msg = isHttpError(e) ? e.message : String(e);
+      console.warn(`[image] Refetch failed for ${slug}:`, msg);
       return null;
     } finally {
       inFlight.delete(slug);

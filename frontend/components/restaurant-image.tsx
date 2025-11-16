@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import api from "@/lib/api";
 import { getCachedUrl, setCachedUrl, validateImageUrl } from "@/lib/utils/image-cache";
 import { refetchPhoto } from "@/lib/utils/image-refetch-manager";
 
@@ -32,12 +31,12 @@ export default function RestaurantImage({
   const [loadingRefetch, setLoadingRefetch] = useState<boolean>(false);
 
   // Helper: attempt backend refetch and update image src
-  const tryRefetch = useCallback(async () => {
+  const tryRefetch = useCallback(async (force?: boolean) => {
     if (!restaurantSlug || attemptedRefetchForUrl === currentSrc || loadingRefetch) return;
     setAttemptedRefetchForUrl(currentSrc);
     setLoadingRefetch(true);
     try {
-      const newUrl = await refetchPhoto(String(restaurantSlug));
+      const newUrl = await refetchPhoto(String(restaurantSlug), { force: !!force });
       if (newUrl) {
         setCurrentSrc(newUrl);
         setCachedUrl(String(restaurantSlug), newUrl);
@@ -67,16 +66,17 @@ export default function RestaurantImage({
           setCurrentSrc(cached);
           const ok = await validateImageUrl(cached);
           setIsValid(!!ok);
-          if (!ok) await tryRefetch();
+          if (!ok) await tryRefetch(true);
         } else {
           setIsValid(false);
+          await tryRefetch(true);
         }
         return;
       }
       const ok = await validateImageUrl(currentSrc);
       setIsValid(!!ok);
       if (ok) setCachedUrl(String(restaurantSlug), currentSrc);
-      else await tryRefetch();
+      else await tryRefetch(true);
     };
     run();
   }, [currentSrc, restaurantSlug, attemptedRefetchForUrl, loadingRefetch, tryRefetch]);
@@ -104,10 +104,11 @@ export default function RestaurantImage({
       sizes={sizes}
       className={cn("object-cover w-full h-full", className)}
       referrerPolicy="no-referrer"
+      unoptimized={(() => { try { const u = new URL(currentSrc || ""); return u.hostname === "lh3.googleusercontent.com"; } catch { return false; } })()}
       // If Next/Image optimization fails (e.g., upstream 403), trigger backend refetch
       onError={async () => {
         setIsValid(false);
-        await tryRefetch();
+        await tryRefetch(true);
       }}
       priority={false}
     />

@@ -151,7 +151,6 @@ async def get_place_photos(
                 continue
             media_url = await get_photo_media(place_id, photo_name)
             if media_url:
-                logger.info(f"Got photo media URL: {media_url[:60]}... for photo: {photo_name}")
                 result_photos.append({
                     "name": photo_name,
                     "media_url": media_url,
@@ -183,8 +182,6 @@ async def get_photo_media(
     Returns:
         URL to the photo media or None if not found
     """
-    logger.info(f"Places API getting photo media: {photo_name}")
-    
     headers = get_headers()
     if "X-Goog-FieldMask" in headers:
         del headers["X-Goog-FieldMask"]
@@ -205,7 +202,6 @@ async def get_photo_media(
             media_url = data.get("photoUri")
             
             if media_url:
-                logger.info(f"Got photo media URL: {media_url[:60]}...")
                 return media_url
             return None
 
