@@ -38,10 +38,10 @@ def get_db():
 try:
     async_engine = create_async_engine(
         ASYNC_DATABASE_URL,
-        pool_size=5,           # Number of connections to keep open
-        max_overflow=10,       # Extra connections allowed under load
-        pool_timeout=30,       # Seconds to wait for a connection
-        pool_recycle=1800,     # Recycle connections after 30 minutes
+        pool_size=20,
+        max_overflow=20,
+        pool_timeout=60,
+        pool_recycle=1800,
         echo=False,
     )
 except Exception as e:

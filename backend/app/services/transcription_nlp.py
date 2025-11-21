@@ -1,4 +1,7 @@
 import os
+import re
+import json
+import time
 import uuid
 import redis
 import yt_dlp
@@ -6,9 +9,6 @@ import asyncio
 import tempfile
 import subprocess
 from datetime import datetime, timedelta
-import json
-import time
-import re
 from typing import Optional, Dict, Any, Tuple
 
 from googleapiclient.http import HttpRequest
@@ -25,10 +25,9 @@ from sqlalchemy.sql import func, case
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Video, Restaurant, Listing, Influencer, Tag, RestaurantTag, Cuisine, RestaurantCuisine, BusinessStatus
+from app.models import Video, Restaurant, Listing, Influencer, Tag, RestaurantTag, Cuisine, RestaurantCuisine
 from app.models.video import VideoProcessingStatus
 from app.config import (
-    GOOGLE_MAPS_API_KEY,
     REDIS_URL,
     TRANSCRIPTION_NLP_LOCK,
     AUDIO_BASE_DIR,
@@ -40,11 +39,7 @@ from app.config import (
     POT_SCRIPT_PATH,
     POT_DISABLE_INNERTUBE,
     YTDLP_PLAYER_CLIENT,
-    YTDLP_COOKIES_FROM_BROWSER,
-    YTDLP_BROWSER_PROFILE,
     YTDLP_PROXY,
-    YTDLP_GEO_BYPASS,
-    YTDLP_GEO_COUNTRY,
 )
 from app.database import AsyncSessionLocal
 from app.services.jobs import JobService
@@ -891,8 +886,7 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
     errors_list: list[dict] = []
     
     try:
-        # Limit to 4-5 concurrent downloads to avoid rate limits
-        semaphore = asyncio.Semaphore(5)  # Only 5 concurrent downloads
+        semaphore = asyncio.Semaphore(max(1, int(os.getenv("TRANSCRIPTION_CONCURRENCY", "5"))))
 
         # Select videos to process
         if video_ids:
@@ -945,19 +939,15 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
             
             async with semaphore:
                 try:
-                    # Update heartbeat and check for cancellation
                     if job_id:
-                        await JobService.update_heartbeat(db, job_id)
-                        
-                        # Check for cancellation
-                        current_job = await JobService.get_job(db, job_id)
-                        if current_job and current_job.cancellation_requested:
-                            logger.info(f"Job {job_id} cancellation requested, stopping pipeline")
-                            await JobService.cancel_job(db, job_id)
-                            return None
-                        
-                        # Update items in progress
-                        await JobService.update_progress(db, job_id, min(5, total_videos - processed_videos - failed_videos))
+                        async with AsyncSessionLocal() as job_session:
+                            await JobService.update_heartbeat(job_session, job_id)
+                            current_job = await JobService.get_job(job_session, job_id)
+                            if current_job and current_job.cancellation_requested:
+                                logger.info(f"Job {job_id} cancellation requested, stopping pipeline")
+                                await JobService.cancel_job(job_session, job_id)
+                                return None
+                            await JobService.update_progress(job_session, job_id, min(5, total_videos - processed_videos - failed_videos))
                     
                     await asyncio.sleep(1)  # Add 1-second delay between downloads
                     logger.info(f"Processing video {video.id} ({video.youtube_video_id})")
@@ -965,23 +955,18 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
                     logger.info(f"Video {video.id} ({video.youtube_video_id}) processed successfully")
                     processed_videos += 1
                     
-                    # Update progress and processing rate
                     if job_id:
                         elapsed_time = time.time() - start_time
                         processing_rate = processed_videos / (elapsed_time / 60) if elapsed_time > 0 else 0
-                        
-                        await JobService.update_progress(db, job_id, processed_videos + failed_videos, total_videos)
-                        await JobService.update_tracking_stats(db, job_id,
-                            processing_rate=processing_rate
-                        )
-                        
-                        # Estimate completion time
-                        if processing_rate > 0:
-                            remaining_items = total_videos - processed_videos - failed_videos
-                            estimated_minutes = remaining_items / processing_rate
-                            estimated_completion = datetime.now() + timedelta(minutes=estimated_minutes)
-                            job_data = JobUpdateRequest(estimated_completion_time=estimated_completion)
-                            await JobService.update_job(db, job_id, job_data)
+                        async with AsyncSessionLocal() as job_session:
+                            await JobService.update_progress(job_session, job_id, processed_videos + failed_videos, total_videos)
+                            await JobService.update_tracking_stats(job_session, job_id, processing_rate=processing_rate)
+                            if processing_rate > 0:
+                                remaining_items = total_videos - processed_videos - failed_videos
+                                estimated_minutes = remaining_items / processing_rate
+                                estimated_completion = datetime.now() + timedelta(minutes=estimated_minutes)
+                                job_data = JobUpdateRequest(estimated_completion_time=estimated_completion)
+                                await JobService.update_job(job_session, job_id, job_data)
                     
                     # Return True for successful processing
                     return True
@@ -989,7 +974,8 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
                 except Exception as e:
                     failed_videos += 1
                     if job_id:
-                        await JobService.update_tracking_stats(db, job_id, failed_items=failed_videos)
+                        async with AsyncSessionLocal() as job_session:
+                            await JobService.update_tracking_stats(job_session, job_id, failed_items=failed_videos)
                     logger.error(f"Error processing video {video.id}: {e}")
                     # Collect structured error info
                     try:
@@ -1024,7 +1010,8 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
                         # Update job with latest error message immediately for visibility
                         if job_id and msg_to_append:
                             try:
-                                await JobService.append_error_message(db, job_id, msg_to_append)
+                                async with AsyncSessionLocal() as job_session:
+                                    await JobService.append_error_message(job_session, job_id, msg_to_append)
                             except Exception as _update_err:
                                 logger.warning(f"Failed to append error message: {_update_err}")
                         # Persist FAILED status and error_message for the video
@@ -1065,10 +1052,6 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
         
         # Final job update
         # Build result_data including error summary; errors list returned in result for admin
-        summary: dict[str, int] = {}
-        for er in errors_list:
-            tp = er.get("type", "unknown")
-            summary[tp] = summary.get(tp, 0) + 1
         result_data = {
             "videos_processed": successful,
             "total_videos": total_videos,

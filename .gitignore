@@ -1,3 +1,4 @@
 /docs/
 .vercel
 .env
+.trunk/

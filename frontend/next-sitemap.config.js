@@ -8,6 +8,13 @@ const config = {
       'https://nomtok.com/restaurants-sitemap.xml',
       'https://nomtok.com/influencers-sitemap.xml',
     ],
+    // Exclude /dashboard from crawling
+    policies: [
+      {
+        userAgent: '*', // Apply the rule to all bots
+        disallow: ['/dashboard'], // Exclude /dashboard path
+      },
+    ],
   },
 }
 

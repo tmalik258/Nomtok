@@ -12,7 +12,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const title = `${toTitleFromSlug(slug)} — Restaurant`;
+  const title = `${toTitleFromSlug(slug)} — Restaurant Review`;
   const description = `Discover ${toTitleFromSlug(slug)} — reviews, location, and influencer recommendations.`;
   return buildPageMetadata({
     title,
