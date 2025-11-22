@@ -1014,16 +1014,16 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
                                     await JobService.append_error_message(job_session, job_id, msg_to_append)
                             except Exception as _update_err:
                                 logger.warning(f"Failed to append error message: {_update_err}")
-                        # Persist FAILED status and error_message for the video
                         try:
-                            v_stmt = select(Video).where(Video.id == video.id)
-                            v_res = await db.execute(v_stmt)
-                            v_obj = v_res.scalar_one_or_none()
-                            if v_obj:
-                                v_obj.status = VideoProcessingStatus.FAILED
-                                v_obj.error_message = msg_to_append or str(e)
-                                db.add(v_obj)
-                                await db.commit()
+                            async with AsyncSessionLocal() as v_session:
+                                v_stmt = select(Video).where(Video.id == video.id)
+                                v_res = await v_session.execute(v_stmt)
+                                v_obj = v_res.scalar_one_or_none()
+                                if v_obj:
+                                    v_obj.status = VideoProcessingStatus.FAILED
+                                    v_obj.error_message = msg_to_append or str(e)
+                                    v_session.add(v_obj)
+                                    await v_session.commit()
                         except Exception as _persist_err:
                             logger.warning(f"Failed to persist FAILED status for video {getattr(video, 'id', None)}: {_persist_err}")
                     except Exception:
@@ -1084,5 +1084,4 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
             "success": False
         }
     finally:
-        await db.close()
-        redis_client.delete(TRANSCRIPTION_NLP_LOCK)  # Ensure lock is released
+        pass

@@ -132,7 +132,13 @@ async def trigger_transcription_nlp(
     db: AsyncSession = Depends(get_async_db),
     admin_user = Depends(get_current_admin)
 ):
-    """Trigger asynchronous video transcription and NLP processing with Redis lock and job tracking."""
+    """Trigger asynchronous video transcription and NLP processing.
+
+    Starts a background job with Redis lock and returns a response containing
+    `job_id`, `task_id`, and `video_count` when specific videos are requested.
+    The job reports progress, appends error messages, and marks completion or
+    failure without raising exceptions from the background task.
+    """
     if release_lock:
         redis_client.delete(TRANSCRIPTION_NLP_LOCK)  # Release lock if requested
         # return {"message": "Redis lock released successfully"}
@@ -198,21 +204,28 @@ async def trigger_transcription_nlp(
                     return result
                 
                 result = await monitored_pipeline()
-                
+
                 if result and result.get("cancelled"):
                     return
-                
-                if result and result.get("failed_videos") == result.get("total_videos"):
-                    # If all failed, fail job with detailed errors
-                    details = {
-                        "summary": result.get("error_summary"),
-                        "errors": result.get("errors"),
-                        "videos_processed": result.get("videos_processed"),
-                        "total_videos": result.get("total_videos"),
-                        "failed_videos": result.get("failed_videos"),
-                    }
-                    await JobService.fail_job(task_session, job_id, json.dumps(details))
-                    raise Exception(f"Transcription and NLP pipeline completed with {result.get('failed_videos')} failures.")
+
+                if result:
+                    if result.get("error"):
+                        await JobService.fail_job(task_session, job_id, result.get("error"))
+                        logger.error(f"Transcription and NLP pipeline failed with error: {result.get('error')}")
+                        return
+                    failed = result.get("failed_videos")
+                    total = result.get("total_videos")
+                    if isinstance(failed, int) and isinstance(total, int) and total > 0 and failed == total:
+                        details = {
+                            "summary": result.get("error_summary"),
+                            "errors": result.get("errors"),
+                            "videos_processed": result.get("videos_processed"),
+                            "total_videos": result.get("total_videos"),
+                            "failed_videos": result.get("failed_videos"),
+                        }
+                        await JobService.fail_job(task_session, job_id, json.dumps(details))
+                        logger.error("Transcription and NLP pipeline failed: all videos failed")
+                        return
                 
                 # Complete the job
                 elapsed_time = time.time() - start_time
