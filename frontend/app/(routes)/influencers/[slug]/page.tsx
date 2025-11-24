@@ -8,6 +8,8 @@ import type { Influencer } from "@/lib/types";
 
 type Props = { params: Promise<{ slug: string }> };
 
+export const revalidate = 3600;
+
 export default async function InfluencerDetailPage({ params }: Props) {
   const { slug } = await params;
   let initialInfluencer: Influencer | undefined;

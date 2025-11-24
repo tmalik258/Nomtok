@@ -7,6 +7,8 @@ import InfluencersContent from "./_components/influencers-content";
 import type { Metadata } from "next";
 import { buildPageMetadata } from "@/lib/seo/utils";
 
+export const revalidate = 3600;
+
 function InfluencersLoadingSkeleton() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 p-2">

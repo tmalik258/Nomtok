@@ -3,6 +3,8 @@ import { RestaurantsContent } from './_components/restaurants-content';
 import type { Metadata } from 'next';
 import { buildPageMetadata } from '@/lib/seo/utils';
 
+export const revalidate = 3600;
+
 export default function RestaurantsPage() {
   return (
     <Suspense fallback={

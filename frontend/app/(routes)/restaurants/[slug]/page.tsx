@@ -8,6 +8,8 @@ import type { Restaurant } from "@/lib/types";
 
 type Props = { params: Promise<{ slug: string }> };
 
+export const revalidate = 3600;
+
 export default async function RestaurantDetailPage({ params }: Props) {
   const { slug } = await params;
   let initialRestaurant: Restaurant | undefined;
@@ -27,7 +29,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
   } catch {}
   return (
     <>
-      <h1 className="sr-only">{initialRestaurant?.name || toTitleFromSlug(slug)}</h1>
+      {/* <h1 className="sr-only">{initialRestaurant?.name || toTitleFromSlug(slug)}</h1> */}
       <RestaurantDetailClient slug={slug} initialRestaurant={initialRestaurant} />
     </>
   );
