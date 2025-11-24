@@ -5,7 +5,7 @@ import { buildBreadcrumbJsonLd } from "@/lib/seo/utils";
 import Script from "next/script";
 import { useRestaurantWithListings } from "@/lib/hooks";
 import type { Restaurant } from "@/lib/types";
-import { MapPin, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,10 +14,9 @@ import RestaurantMap from "@/components/dynamic-restaurant-map";
 import GoogleReviews from "@/components/google-reviews";
 import ErrorCard from "@/components/error-card";
 import SkeletonLoading from "../_components/skeleton-loading";
-import SocialShareButtons from "@/components/social-share-buttons";
 import ListingCard from "../_components/listing-card";
 import RestaurantKeyDetails from "../_components/restaurant-key-details";
-import RestaurantImage from "@/components/restaurant-image";
+import RestaurantHero from "./restaurant-hero";
 
 export default function RestaurantDetailClient({ slug, initialRestaurant, renderHero = true }: { slug: string; initialRestaurant?: Restaurant; renderHero?: boolean }) {
   const {
@@ -58,54 +57,12 @@ export default function RestaurantDetailClient({ slug, initialRestaurant, render
     );
   }
 
-  const business_status =
-    hydratedRestaurant?.business_status?.toLowerCase() === "operational"
-      ? "Open"
-      : hydratedRestaurant?.business_status;
+  
 
   return (
     <div className="min-h-screen bg-white p-2 mb-5">
-      {renderHero && (
-        <div className="relative h-[calc(65vh)] rounded-xl overflow-hidden">
-          <RestaurantImage
-            src={hydratedRestaurant?.photo_url || undefined}
-            alt={hydratedRestaurant?.name}
-            restaurantSlug={String(hydratedRestaurant?.slug)}
-            className="brightness-[0.5] filter"
-            sizes="100vw"
-            fill
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-          <div className="absolute bottom-20 left-0 right-0 text-center p-6 md:p-8 z-50">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 drop-shadow-xl">
-              {hydratedRestaurant?.name}
-            </h1>
-            <div className="text-white mb-4">{hydratedRestaurant?.address}</div>
-            <div className="flex items-center justify-center rounded-lg text-white gap-5 mb-4">
-              <div className="flex items-center gap-1">
-                <Badge className="bg-white text-black">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                    <span>{hydratedRestaurant?.city}</span>
-                  </div>
-                </Badge>
-              </div>
-              <div className="flex items-center">
-                <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
-                  {business_status}
-                </Badge>
-              </div>
-            </div>
-            <div className="flex justify-center">
-              <SocialShareButtons
-                url={typeof window !== "undefined" ? window.location.href : ""}
-                title={`Check out ${hydratedRestaurant?.name} - Amazing restaurant in ${hydratedRestaurant?.city}`}
-                variant="inline"
-                className="bg-white backdrop-blur-sm border-white/20 px-4 py-1 rounded-lg"
-              />
-            </div>
-          </div>
-        </div>
+      {renderHero && hydratedRestaurant && (
+        <RestaurantHero restaurant={hydratedRestaurant} />
       )}
 
       <Script id="breadcrumb-jsonld" type="application/ld+json">

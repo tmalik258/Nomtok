@@ -7,7 +7,7 @@ import type { Restaurant } from "@/lib/types";
 export default function RestaurantHero({ restaurant }: { restaurant: Restaurant }) {
   const status = restaurant?.business_status?.toLowerCase() === "operational" ? "Open" : restaurant?.business_status;
   return (
-    <div className="relative h-[calc(65vh)] rounded-xl overflow-hidden">
+    <div className="relative h-[calc(75vh)] rounded-xl overflow-hidden">
       <RestaurantImage
         src={restaurant.photo_url || undefined}
         alt={restaurant.name}

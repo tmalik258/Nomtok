@@ -30,7 +30,9 @@ export default async function RestaurantDetailPage({ params }: Props) {
   } catch {}
   return (
     <>
-      {initialRestaurant && <RestaurantHero restaurant={initialRestaurant} />}
+      {initialRestaurant && <div className="p-2">
+        <RestaurantHero restaurant={initialRestaurant} />
+      </div>}
       <RestaurantDetailClient slug={slug} initialRestaurant={initialRestaurant} renderHero={!initialRestaurant} />
     </>
   );

@@ -32,7 +32,7 @@ import { buildBreadcrumbJsonLd } from "@/lib/seo/utils";
 import Script from "next/script";
 import { InfluencerSearchFilter } from "../../_components/influencer-search-filter";
 
-export default function InfluencerDetailClient({ slug, initialInfluencer, renderHero = true }: { slug: string; initialInfluencer?: Influencer; renderHero?: boolean }) {
+export default function InfluencerDetailClient({ slug, initialInfluencer, initialListings, renderHero = true }: { slug: string; initialInfluencer?: Influencer; initialListings?: Listing[]; renderHero?: boolean }) {
   const influencerSlug = slug;
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -94,8 +94,9 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, render
   }, [countryParam]);
 
   useEffect(() => {
-    if (listings.length > 0) {
-      let filtered = [...listings];
+    const baseListings = listings.length > 0 ? listings : (initialListings || []);
+    if (baseListings.length > 0) {
+      let filtered = [...baseListings];
 
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -149,7 +150,7 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, render
 
       setFilteredListings(filtered);
     }
-  }, [listings, searchQuery, searchType, sortBy, country]);
+  }, [listings, initialListings, searchQuery, searchType, sortBy, country]);
 
   const updateSearchQuery = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -227,6 +228,7 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, render
   };
 
   const hydratedInfluencer = influencer || initialInfluencer;
+  const hydratedListings = listings.length > 0 ? listings : (initialListings || []);
   const loading = (influencerLoading || listingsLoading || videosLoading) && !hydratedInfluencer;
   const error = influencerError || listingsError || videosError;
 
@@ -256,7 +258,7 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, render
   const uniqueCities = getUniqueCitiesCount(filteredListings || []);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-2">
+    <div className="min-h-screen bg-gray-50">
       <Script id="breadcrumb-jsonld" type="application/ld+json">
         {JSON.stringify(
           buildBreadcrumbJsonLd([
@@ -335,7 +337,7 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, render
           />
         </div>
 
-        <AllReviews listings={filteredListings || []} />
+        <AllReviews listings={filteredListings || []} loading={listingsLoading && hydratedListings.length === 0} />
       </div>
     </div>
   );
