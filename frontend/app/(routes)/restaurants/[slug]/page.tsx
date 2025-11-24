@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { toTitleFromSlug } from "@/lib/seo/site";
 import { buildPageMetadata } from "@/lib/seo/utils";
 import RestaurantDetailClient from "./_components/restaurant-detail-client";
+import RestaurantHero from "./_components/restaurant-hero";
 import axios from "axios";
 import { unstable_cache } from "next/cache";
 import type { Restaurant } from "@/lib/types";
@@ -29,8 +30,9 @@ export default async function RestaurantDetailPage({ params }: Props) {
   } catch {}
   return (
     <>
-      {/* <h1 className="sr-only">{initialRestaurant?.name || toTitleFromSlug(slug)}</h1> */}
-      <RestaurantDetailClient slug={slug} initialRestaurant={initialRestaurant} />
+      <h1 className="sr-only">{initialRestaurant?.name || toTitleFromSlug(slug)}</h1>
+      {initialRestaurant && <RestaurantHero restaurant={initialRestaurant} />}
+      <RestaurantDetailClient slug={slug} initialRestaurant={initialRestaurant} renderHero={!initialRestaurant} />
     </>
   );
 }

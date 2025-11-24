@@ -19,7 +19,7 @@ import ListingCard from "../_components/listing-card";
 import RestaurantKeyDetails from "../_components/restaurant-key-details";
 import RestaurantImage from "@/components/restaurant-image";
 
-export default function RestaurantDetailClient({ slug, initialRestaurant }: { slug: string; initialRestaurant?: Restaurant }) {
+export default function RestaurantDetailClient({ slug, initialRestaurant, renderHero = true }: { slug: string; initialRestaurant?: Restaurant; renderHero?: boolean }) {
   const {
     restaurant,
     loading,
@@ -65,47 +65,48 @@ export default function RestaurantDetailClient({ slug, initialRestaurant }: { sl
 
   return (
     <div className="min-h-screen bg-white p-2 mb-5">
-      <div className="relative h-[calc(65vh)] rounded-xl overflow-hidden">
-        <RestaurantImage
-          src={hydratedRestaurant?.photo_url || undefined}
-          alt={hydratedRestaurant?.name}
-          restaurantSlug={String(hydratedRestaurant?.slug)}
-          className="brightness-[0.5] filter"
-          sizes="100vw"
-          fill
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-
-        <div className="absolute bottom-20 left-0 right-0 text-center p-6 md:p-8 z-50">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 drop-shadow-xl">
-            {hydratedRestaurant?.name}
-          </h1>
-          <div className="text-white mb-4">{hydratedRestaurant?.address}</div>
-          <div className="flex items-center justify-center rounded-lg text-white gap-5 mb-4">
-            <div className="flex items-center gap-1">
-              <Badge className="bg-white text-black">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  <span>{hydratedRestaurant?.city}</span>
-                </div>
-              </Badge>
+      {renderHero && (
+        <div className="relative h-[calc(65vh)] rounded-xl overflow-hidden">
+          <RestaurantImage
+            src={hydratedRestaurant?.photo_url || undefined}
+            alt={hydratedRestaurant?.name}
+            restaurantSlug={String(hydratedRestaurant?.slug)}
+            className="brightness-[0.5] filter"
+            sizes="100vw"
+            fill
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+          <div className="absolute bottom-20 left-0 right-0 text-center p-6 md:p-8 z-50">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 drop-shadow-xl">
+              {hydratedRestaurant?.name}
+            </h1>
+            <div className="text-white mb-4">{hydratedRestaurant?.address}</div>
+            <div className="flex items-center justify-center rounded-lg text-white gap-5 mb-4">
+              <div className="flex items-center gap-1">
+                <Badge className="bg-white text-black">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    <span>{hydratedRestaurant?.city}</span>
+                  </div>
+                </Badge>
+              </div>
+              <div className="flex items-center">
+                <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
+                  {business_status}
+                </Badge>
+              </div>
             </div>
-            <div className="flex items-center">
-              <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
-                {business_status}
-              </Badge>
+            <div className="flex justify-center">
+              <SocialShareButtons
+                url={typeof window !== "undefined" ? window.location.href : ""}
+                title={`Check out ${hydratedRestaurant?.name} - Amazing restaurant in ${hydratedRestaurant?.city}`}
+                variant="inline"
+                className="bg-white backdrop-blur-sm border-white/20 px-4 py-1 rounded-lg"
+              />
             </div>
-          </div>
-          <div className="flex justify-center">
-            <SocialShareButtons
-              url={typeof window !== "undefined" ? window.location.href : ""}
-              title={`Check out ${hydratedRestaurant?.name} - Amazing restaurant in ${hydratedRestaurant?.city}`}
-              variant="inline"
-              className="bg-white backdrop-blur-sm border-white/20 px-4 py-1 rounded-lg"
-            />
           </div>
         </div>
-      </div>
+      )}
 
       <Script id="breadcrumb-jsonld" type="application/ld+json">
         {JSON.stringify(

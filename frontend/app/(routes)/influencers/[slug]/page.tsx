@@ -5,6 +5,7 @@ import InfluencerDetailClient from "./_components/influencer-detail-client";
 import axios from "axios";
 import { unstable_cache } from "next/cache";
 import type { Influencer } from "@/lib/types";
+import { HeroSection } from "./_components/hero-section";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -28,7 +29,8 @@ export default async function InfluencerDetailPage({ params }: Props) {
   return (
     <>
       <h1 className="sr-only">{initialInfluencer?.name || toTitleFromSlug(slug)}</h1>
-      <InfluencerDetailClient slug={slug} initialInfluencer={initialInfluencer} />
+      {initialInfluencer && <HeroSection influencer={initialInfluencer} />}
+      <InfluencerDetailClient slug={slug} initialInfluencer={initialInfluencer} renderHero={!initialInfluencer} />
     </>
   );
 }

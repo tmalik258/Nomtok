@@ -32,7 +32,7 @@ import { buildBreadcrumbJsonLd } from "@/lib/seo/utils";
 import Script from "next/script";
 import { InfluencerSearchFilter } from "../../_components/influencer-search-filter";
 
-export default function InfluencerDetailClient({ slug, initialInfluencer }: { slug: string; initialInfluencer?: Influencer }) {
+export default function InfluencerDetailClient({ slug, initialInfluencer, renderHero = true }: { slug: string; initialInfluencer?: Influencer; renderHero?: boolean }) {
   const influencerSlug = slug;
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -266,7 +266,7 @@ export default function InfluencerDetailClient({ slug, initialInfluencer }: { sl
           ])
         )}
       </Script>
-      <HeroSection influencer={hydratedInfluencer} />
+      {renderHero && <HeroSection influencer={hydratedInfluencer} />}
 
       <div className="relative z-20 -mt-20 mb-8 max-w-6xl mx-auto px-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
