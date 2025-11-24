@@ -7,7 +7,12 @@ type Props = { params: Promise<{ slug: string }> };
 
 export default async function RestaurantDetailPage({ params }: Props) {
   const { slug } = await params;
-  return <RestaurantDetailClient slug={slug} />;
+  return (
+    <>
+      <h1 className="sr-only">{toTitleFromSlug(slug)}</h1>
+      <RestaurantDetailClient slug={slug} />
+    </>
+  );
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

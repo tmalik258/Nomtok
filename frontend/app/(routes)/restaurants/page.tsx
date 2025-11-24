@@ -10,6 +10,7 @@ export default function RestaurantsPage() {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
       </div>
     }>
+      <h1 className="sr-only">Find Restaurants by City &amp; Influencers</h1>
       <RestaurantsContent />
     </Suspense>
   );

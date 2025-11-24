@@ -43,6 +43,7 @@ function InfluencersLoadingSkeleton() {
 export default function InfluencersPage() {
   return (
     <Suspense fallback={<InfluencersLoadingSkeleton />}>
+      <h1 className="sr-only">Discover Food Influencers</h1>
       <InfluencersContent />
     </Suspense>
   );
