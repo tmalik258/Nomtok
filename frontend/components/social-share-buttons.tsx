@@ -1,3 +1,5 @@
+"use client";
+
 import { Share2, Facebook, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
