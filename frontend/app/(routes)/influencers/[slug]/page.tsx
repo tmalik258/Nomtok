@@ -28,7 +28,6 @@ export default async function InfluencerDetailPage({ params }: Props) {
   } catch {}
   return (
     <>
-      <h1 className="sr-only">{initialInfluencer?.name || toTitleFromSlug(slug)}</h1>
       {initialInfluencer && <HeroSection influencer={initialInfluencer} />}
       <InfluencerDetailClient slug={slug} initialInfluencer={initialInfluencer} renderHero={!initialInfluencer} />
     </>

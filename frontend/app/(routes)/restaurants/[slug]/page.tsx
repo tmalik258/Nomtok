@@ -30,7 +30,6 @@ export default async function RestaurantDetailPage({ params }: Props) {
   } catch {}
   return (
     <>
-      <h1 className="sr-only">{initialRestaurant?.name || toTitleFromSlug(slug)}</h1>
       {initialRestaurant && <RestaurantHero restaurant={initialRestaurant} />}
       <RestaurantDetailClient slug={slug} initialRestaurant={initialRestaurant} renderHero={!initialRestaurant} />
     </>
