@@ -2,15 +2,31 @@ import type { Metadata } from "next";
 import { toTitleFromSlug } from "@/lib/seo/site";
 import { buildPageMetadata } from "@/lib/seo/utils";
 import InfluencerDetailClient from "./_components/influencer-detail-client";
+import axios from "axios";
+import { unstable_cache } from "next/cache";
+import type { Influencer } from "@/lib/types";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export default async function InfluencerDetailPage({ params }: Props) {
   const { slug } = await params;
+  let initialInfluencer: Influencer | undefined;
+  try {
+    const getInfluencerCached = unstable_cache(
+      async () => {
+        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
+        const { data } = await axios.get(`${base}/influencers/${slug}/`);
+        return data as Influencer;
+      },
+      ["influencer-detail", slug],
+      { revalidate: 3600 }
+    );
+    initialInfluencer = await getInfluencerCached();
+  } catch {}
   return (
     <>
-      <h1 className="sr-only">{toTitleFromSlug(slug)}</h1>
-      <InfluencerDetailClient slug={slug} />
+      <h1 className="sr-only">{initialInfluencer?.name || toTitleFromSlug(slug)}</h1>
+      <InfluencerDetailClient slug={slug} initialInfluencer={initialInfluencer} />
     </>
   );
 }

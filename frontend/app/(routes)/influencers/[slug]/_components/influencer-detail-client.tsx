@@ -11,7 +11,7 @@ import {
 import { Play } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatNumberAbbreviated } from "@/lib/utils/number-formatter";
-import { Listing } from "@/lib/types";
+import { Listing, Influencer } from "@/lib/types";
 import ErrorCard from "@/components/error-card";
 import { VideoSlider } from "@/components/video-slider";
 import { StatsCard } from "../_components/stats-card";
@@ -32,7 +32,7 @@ import { buildBreadcrumbJsonLd } from "@/lib/seo/utils";
 import Script from "next/script";
 import { InfluencerSearchFilter } from "../../_components/influencer-search-filter";
 
-export default function InfluencerDetailClient({ slug }: { slug: string }) {
+export default function InfluencerDetailClient({ slug, initialInfluencer }: { slug: string; initialInfluencer?: Influencer }) {
   const influencerSlug = slug;
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -226,14 +226,15 @@ export default function InfluencerDetailClient({ slug }: { slug: string }) {
     refetchVideos?.();
   };
 
-  const loading = influencerLoading || listingsLoading || videosLoading;
+  const hydratedInfluencer = influencer || initialInfluencer;
+  const loading = (influencerLoading || listingsLoading || videosLoading) && !hydratedInfluencer;
   const error = influencerError || listingsError || videosError;
 
   if (loading) {
     return <LoadingSkeleton />;
   }
 
-  if (error || !influencer) {
+  if (error || !hydratedInfluencer) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
         <ErrorCard
@@ -265,14 +266,14 @@ export default function InfluencerDetailClient({ slug }: { slug: string }) {
           ])
         )}
       </Script>
-      <HeroSection influencer={influencer} />
+      <HeroSection influencer={hydratedInfluencer} />
 
       <div className="relative z-20 -mt-20 mb-8 max-w-6xl mx-auto px-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatsCard value={uniqueRestaurants} label="Restaurants" />
           <StatsCard value={uniqueCities} label="Cities" />
           <StatsCard
-            value={formatNumberAbbreviated(influencer.subscriber_count)}
+            value={formatNumberAbbreviated(hydratedInfluencer.subscriber_count)}
             label="Subscribers"
           />
           <StatsCard
@@ -286,7 +287,7 @@ export default function InfluencerDetailClient({ slug }: { slug: string }) {
 
       <div className="max-w-6xl mx-auto px-4 pt-8">
         <div className="mb-6">
-          <ProfileDetails influencer={influencer} />
+          <ProfileDetails influencer={hydratedInfluencer} />
         </div>
 
         <div className="mb-6">

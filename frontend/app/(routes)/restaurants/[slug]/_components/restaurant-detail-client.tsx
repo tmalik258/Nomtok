@@ -4,6 +4,7 @@ import { toTitleFromSlug } from "@/lib/seo/site";
 import { buildBreadcrumbJsonLd } from "@/lib/seo/utils";
 import Script from "next/script";
 import { useRestaurantWithListings } from "@/lib/hooks";
+import type { Restaurant } from "@/lib/types";
 import { MapPin, Users } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,7 +19,7 @@ import ListingCard from "../_components/listing-card";
 import RestaurantKeyDetails from "../_components/restaurant-key-details";
 import RestaurantImage from "@/components/restaurant-image";
 
-export default function RestaurantDetailClient({ slug }: { slug: string }) {
+export default function RestaurantDetailClient({ slug, initialRestaurant }: { slug: string; initialRestaurant?: Restaurant }) {
   const {
     restaurant,
     loading,
@@ -26,7 +27,8 @@ export default function RestaurantDetailClient({ slug }: { slug: string }) {
     refetch: refetchRestaurant,
   } = useRestaurantWithListings(slug, true);
 
-  const listings = restaurant?.listings || [];
+  const hydratedRestaurant = restaurant || initialRestaurant;
+  const listings = hydratedRestaurant?.listings || [];
 
   const handleRefresh = () => {
     refetchRestaurant?.();
@@ -34,11 +36,11 @@ export default function RestaurantDetailClient({ slug }: { slug: string }) {
 
   const error = restaurantError;
 
-  if (loading) {
+  if (loading && !hydratedRestaurant) {
     return <SkeletonLoading />;
   }
 
-  if (error || !restaurant) {
+  if (error || !hydratedRestaurant) {
     return (
       <div className="min-h-screen bg-white">
         <ErrorCard
@@ -57,17 +59,17 @@ export default function RestaurantDetailClient({ slug }: { slug: string }) {
   }
 
   const business_status =
-    restaurant?.business_status?.toLowerCase() === "operational"
+    hydratedRestaurant?.business_status?.toLowerCase() === "operational"
       ? "Open"
-      : restaurant?.business_status;
+      : hydratedRestaurant?.business_status;
 
   return (
     <div className="min-h-screen bg-white p-2 mb-5">
       <div className="relative h-[calc(65vh)] rounded-xl overflow-hidden">
         <RestaurantImage
-          src={restaurant.photo_url || undefined}
-          alt={restaurant.name}
-          restaurantSlug={String(restaurant.slug)}
+          src={hydratedRestaurant?.photo_url || undefined}
+          alt={hydratedRestaurant?.name}
+          restaurantSlug={String(hydratedRestaurant?.slug)}
           className="brightness-[0.5] filter"
           sizes="100vw"
           fill
@@ -76,15 +78,15 @@ export default function RestaurantDetailClient({ slug }: { slug: string }) {
 
         <div className="absolute bottom-20 left-0 right-0 text-center p-6 md:p-8 z-50">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 drop-shadow-xl">
-            {restaurant.name}
+            {hydratedRestaurant?.name}
           </h1>
-          <div className="text-white mb-4">{restaurant.address}</div>
+          <div className="text-white mb-4">{hydratedRestaurant?.address}</div>
           <div className="flex items-center justify-center rounded-lg text-white gap-5 mb-4">
             <div className="flex items-center gap-1">
               <Badge className="bg-white text-black">
                 <div className="flex items-center gap-1">
                   <MapPin className="w-4 h-4" />
-                  <span>{restaurant.city}</span>
+                  <span>{hydratedRestaurant?.city}</span>
                 </div>
               </Badge>
             </div>
@@ -97,7 +99,7 @@ export default function RestaurantDetailClient({ slug }: { slug: string }) {
           <div className="flex justify-center">
             <SocialShareButtons
               url={typeof window !== "undefined" ? window.location.href : ""}
-              title={`Check out ${restaurant.name} - Amazing restaurant in ${restaurant.city}`}
+              title={`Check out ${hydratedRestaurant?.name} - Amazing restaurant in ${hydratedRestaurant?.city}`}
               variant="inline"
               className="bg-white backdrop-blur-sm border-white/20 px-4 py-1 rounded-lg"
             />
@@ -111,8 +113,8 @@ export default function RestaurantDetailClient({ slug }: { slug: string }) {
             { name: "Home", url: "https://www.nomtok.com" },
             { name: "Restaurants", url: "https://www.nomtok.com/restaurants" },
             {
-              name: toTitleFromSlug(String(restaurant.slug)),
-              url: `https://www.nomtok.com/restaurants/${String(restaurant.slug)}`,
+              name: toTitleFromSlug(String(hydratedRestaurant?.slug)),
+              url: `https://www.nomtok.com/restaurants/${String(hydratedRestaurant?.slug)}`,
             },
           ])
         )}
@@ -120,8 +122,8 @@ export default function RestaurantDetailClient({ slug }: { slug: string }) {
 
       <div className="relative -mt-16 mb-8 mx-2 z-10">
         <RestaurantMap
-          restaurants={[restaurant]}
-          selectedRestaurant={restaurant}
+          restaurants={hydratedRestaurant ? [hydratedRestaurant] : []}
+          selectedRestaurant={hydratedRestaurant}
           onRestaurantSelect={() => {}}
           className="h-[300px] md:h-[350px] max-w-6xl w-[70vw] max-md:w-[80vw] mx-auto rounded-xl shadow-lg"
           showRestaurantCount={false}
@@ -129,7 +131,7 @@ export default function RestaurantDetailClient({ slug }: { slug: string }) {
       </div>
 
       <div className="max-w-6xl mx-auto px-4">
-        <RestaurantKeyDetails restaurant={restaurant} />
+        {hydratedRestaurant && <RestaurantKeyDetails restaurant={hydratedRestaurant} />}
 
         {listings.length > 0 && (
           <div className="mb-8">
@@ -142,7 +144,7 @@ export default function RestaurantDetailClient({ slug }: { slug: string }) {
             </h2>
             <div className="space-y-6">
               {listings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} restaurant_name={restaurant?.name} />
+                <ListingCard key={listing.id} listing={listing} restaurant_name={hydratedRestaurant?.name} />
               ))}
             </div>
           </div>
@@ -160,7 +162,7 @@ export default function RestaurantDetailClient({ slug }: { slug: string }) {
           </Card>
         )}
 
-        {restaurant.google_place_id && <GoogleReviews placeId={restaurant.google_place_id} />}
+        {hydratedRestaurant?.google_place_id && <GoogleReviews placeId={hydratedRestaurant.google_place_id} />}
       </div>
     </div>
   );

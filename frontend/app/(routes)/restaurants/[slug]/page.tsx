@@ -2,15 +2,33 @@ import type { Metadata } from "next";
 import { toTitleFromSlug } from "@/lib/seo/site";
 import { buildPageMetadata } from "@/lib/seo/utils";
 import RestaurantDetailClient from "./_components/restaurant-detail-client";
+import axios from "axios";
+import { unstable_cache } from "next/cache";
+import type { Restaurant } from "@/lib/types";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export default async function RestaurantDetailPage({ params }: Props) {
   const { slug } = await params;
+  let initialRestaurant: Restaurant | undefined;
+  try {
+    const getRestaurantCached = unstable_cache(
+      async () => {
+        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
+        const { data } = await axios.get(`${base}/restaurants/${slug}/`, {
+          params: { include_listings: true, include_video_details: true },
+        });
+        return data as Restaurant;
+      },
+      ["restaurant-detail", slug],
+      { revalidate: 3600 }
+    );
+    initialRestaurant = await getRestaurantCached();
+  } catch {}
   return (
     <>
-      <h1 className="sr-only">{toTitleFromSlug(slug)}</h1>
-      <RestaurantDetailClient slug={slug} />
+      <h1 className="sr-only">{initialRestaurant?.name || toTitleFromSlug(slug)}</h1>
+      <RestaurantDetailClient slug={slug} initialRestaurant={initialRestaurant} />
     </>
   );
 }
