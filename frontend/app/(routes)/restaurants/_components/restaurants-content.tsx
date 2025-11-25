@@ -411,7 +411,7 @@ export function RestaurantsContent() {
                 />
                 {/* Latest Listings Section (only for map view) */}
                 <RestaurantLatestListings
-                  restaurants={filteredRestaurants.slice(0, 3)}
+                  restaurants={filteredRestaurants}
                   loading={loading}
                 />
               </>

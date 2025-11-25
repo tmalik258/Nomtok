@@ -53,7 +53,7 @@ export function CountrySelect({
     );
   }
 
-  if (error) {
+  if (error && countries.length === 0) {
     return (
       <div className={cn("w-full", className)}>
         <Button
