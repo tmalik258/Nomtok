@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   useInfluencer,
-  useInfluencerListings,
   useInfluencerVideos,
   useMostRecentListing,
+  useListings,
 } from "@/lib/hooks";
 import { Play } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,11 +57,16 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
   } = useInfluencer(influencerSlug);
 
   const {
-    listings,
+    listings: paginatedListings,
+    totalCount: paginatedTotal,
+    totalPages: paginatedTotalPages,
     loading: listingsLoading,
     error: listingsError,
-    refetch: refetchListings,
-  } = useInfluencerListings(influencerSlug);
+    setPage,
+    updateParams,
+    params,
+    refetch,
+  } = useListings({ influencer_slug: influencerSlug, approved_status: 'Approved', page: 1, limit: 10 });
 
   const {
     videos,
@@ -94,7 +99,9 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
   }, [countryParam]);
 
   useEffect(() => {
-    const baseListings = listings.length > 0 ? listings : (initialListings || []);
+    const baseListings = paginatedListings.length > 0
+      ? paginatedListings
+      : ((params?.page || 1) === 1 ? (initialListings || []) : []);
     if (baseListings.length > 0) {
       let filtered = [...baseListings];
 
@@ -150,7 +157,11 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
 
       setFilteredListings(filtered);
     }
-  }, [listings, initialListings, searchQuery, searchType, sortBy, country]);
+  }, [paginatedListings, initialListings, searchQuery, searchType, sortBy, country, params?.page]);
+
+  useEffect(() => {
+    updateParams({ search: searchQuery });
+  }, [searchQuery, updateParams]);
 
   const updateSearchQuery = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -222,13 +233,13 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
 
   const handleRefresh = () => {
     refetchInfluencer?.();
-    refetchListings?.();
     refetchMostRecent?.();
     refetchVideos?.();
   };
 
+  const reviewsSectionRef = useRef<HTMLDivElement>(null);
+
   const hydratedInfluencer = influencer || initialInfluencer;
-  const hydratedListings = listings.length > 0 ? listings : (initialListings || []);
   const loading = (influencerLoading || listingsLoading || videosLoading) && !hydratedInfluencer;
   const error = influencerError || listingsError || videosError;
 
@@ -279,7 +290,7 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
             label="Subscribers"
           />
           <StatsCard
-            value={getMostReviewedCuisine(listings || [])}
+            value={getMostReviewedCuisine(filteredListings || [])}
             label="Most Reviewed"
             isGradient
             showBadge
@@ -337,7 +348,20 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
           />
         </div>
 
-        <AllReviews listings={filteredListings || []} loading={listingsLoading && hydratedListings.length === 0} />
+        <div ref={reviewsSectionRef}>
+          <AllReviews
+            listings={filteredListings || []}
+            loading={listingsLoading}
+            currentPage={(params?.page) || 1}
+            totalPages={paginatedTotalPages || Math.ceil((paginatedTotal || 0) / ((params?.limit) || 10))}
+            onPageChange={(page) => {
+              setPage(page);
+              reviewsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            error={listingsError || null}
+            onRefetch={refetch}
+          />
+        </div>
       </div>
     </div>
   );

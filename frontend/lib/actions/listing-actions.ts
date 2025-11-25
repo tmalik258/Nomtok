@@ -29,10 +29,13 @@ export const listingActions = {
     video_title?: string;
     approved?: boolean;
     status?: 'approved' | 'rejected' | 'pending' | 'all';
+    page?: number;
     skip?: number;
     limit?: number;
     sort_by?: string;
     sort_order?: 'asc' | 'desc';
+    influencer_slug?: string;
+    approved_status?: string;
   }): Promise<PaginatedListingsResponse> => {
     try {
       const response = await api.get('/listings/', { params });

@@ -73,21 +73,21 @@ export default function InfluencersPagination({
   const pageNumbers = generatePageNumbers();
 
   return (
-    <div className="flex justify-center mt-12 mb-8">
+    <div className="flex justify-center mt-12 mb-8" data-loading={loading ? 'true' : 'false'}>
       <Pagination>
-        <PaginationContent>
+        <PaginationContent aria-busy={loading}>
           {/* Previous Button */}
           <PaginationItem>
             <PaginationPrevious
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                if (currentPage > 1 && !loading) {
+                if (currentPage > 1) {
                   onPageChange(currentPage - 1);
                 }
               }}
               className={`${
-                currentPage <= 1 || loading
+                currentPage <= 1
                   ? 'pointer-events-none opacity-50'
                   : 'hover:bg-orange-50 hover:text-orange-600 cursor-pointer'
               }`}
@@ -104,15 +104,13 @@ export default function InfluencersPagination({
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    if (!loading && page !== currentPage) {
+                    if (page !== currentPage) {
                       onPageChange(page);
                     }
                   }}
                   isActive={page === currentPage}
                   className={`${
-                    loading
-                      ? 'pointer-events-none opacity-50'
-                      : page === currentPage
+                    page === currentPage
                       ? 'bg-orange-600 text-white hover:bg-orange-700'
                       : 'hover:bg-orange-50 hover:text-orange-600 cursor-pointer'
                   }`}
@@ -129,12 +127,12 @@ export default function InfluencersPagination({
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                if (currentPage < totalPages && !loading) {
+                if (currentPage < totalPages) {
                   onPageChange(currentPage + 1);
                 }
               }}
               className={`${
-                currentPage >= totalPages || loading
+                currentPage >= totalPages
                   ? 'pointer-events-none opacity-50'
                   : 'hover:bg-orange-50 hover:text-orange-600 cursor-pointer'
               }`}

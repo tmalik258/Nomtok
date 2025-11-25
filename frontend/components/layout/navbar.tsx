@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Home, Users, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -15,6 +18,12 @@ export function Navbar() {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
+  };
+
+  const isActive = (href: string) => {
+    if (!pathname) return false;
+    if (href === '/') return pathname === '/';
+    return pathname === href || pathname.startsWith(href + '/');
   };
 
   return (
@@ -38,20 +47,47 @@ export function Navbar() {
 
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center gap-2 text-slate-300">
-            <Button asChild variant="ghost" className="flex items-center gap-2">
-              <Link href="/">
+            <Button
+              asChild
+              variant="ghost"
+              className={cn(
+                'flex items-center gap-2 cursor-pointer',
+                isActive('/') && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Link href="/" aria-current={isActive('/') ? 'page' : undefined}>
                 <Home className="w-4 h-4" />
                 Home
               </Link>
             </Button>
-            <Button asChild variant="ghost" className="flex items-center gap-2">
-              <Link href="/restaurants">
+            <Button
+              asChild
+              variant="ghost"
+              className={cn(
+                'flex items-center gap-2 cursor-pointer',
+                isActive('/restaurants') && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Link
+                href="/restaurants"
+                aria-current={isActive('/restaurants') ? 'page' : undefined}
+              >
                 <MapPin className="w-4 h-4" />
                 Restaurants
               </Link>
             </Button>
-            <Button asChild variant="ghost" className="flex items-center gap-2">
-              <Link href="/influencers">
+            <Button
+              asChild
+              variant="ghost"
+              className={cn(
+                'flex items-center gap-2 cursor-pointer',
+                isActive('/influencers') && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Link
+                href="/influencers"
+                aria-current={isActive('/influencers') ? 'page' : undefined}
+              >
                 <Users className="w-4 h-4" />
                 Influencers
               </Link>
@@ -78,35 +114,50 @@ export function Navbar() {
         {isMobileMenuOpen && (
           <div className="md:hidden mt-4 pt-4 border-t border-slate-600/30">
             <div className="flex flex-col space-y-2">
-              <Button 
-                asChild 
-                variant="ghost" 
-                className="flex items-center gap-3 justify-start text-slate-300 hover:text-slate-200 hover:bg-slate-700/30 p-3 rounded-lg"
+              <Button
+                asChild
+                variant="ghost"
+                className={cn(
+                  'flex items-center gap-3 justify-start text-slate-300 hover:text-slate-200 hover:bg-slate-700/30 p-3 rounded-lg cursor-pointer',
+                  isActive('/') && 'bg-slate-700/30 text-slate-200'
+                )}
                 onClick={closeMobileMenu}
               >
-                <Link href="/">
+                <Link href="/" aria-current={isActive('/') ? 'page' : undefined}>
                   <Home className="w-4 h-4" />
                   Home
                 </Link>
               </Button>
-              <Button 
-                asChild 
-                variant="ghost" 
-                className="flex items-center gap-3 justify-start text-slate-300 hover:text-slate-200 hover:bg-slate-700/30 p-3 rounded-lg"
+              <Button
+                asChild
+                variant="ghost"
+                className={cn(
+                  'flex items-center gap-3 justify-start text-slate-300 hover:text-slate-200 hover:bg-slate-700/30 p-3 rounded-lg cursor-pointer',
+                  isActive('/restaurants') && 'bg-slate-700/30 text-slate-200'
+                )}
                 onClick={closeMobileMenu}
               >
-                <Link href="/restaurants">
+                <Link
+                  href="/restaurants"
+                  aria-current={isActive('/restaurants') ? 'page' : undefined}
+                >
                   <MapPin className="w-4 h-4" />
                   Restaurants
                 </Link>
               </Button>
-              <Button 
-                asChild 
-                variant="ghost" 
-                className="flex items-center gap-3 justify-start text-slate-300 hover:text-slate-200 hover:bg-slate-700/30 p-3 rounded-lg"
+              <Button
+                asChild
+                variant="ghost"
+                className={cn(
+                  'flex items-center gap-3 justify-start text-slate-300 hover:text-slate-200 hover:bg-slate-700/30 p-3 rounded-lg cursor-pointer',
+                  isActive('/influencers') && 'bg-slate-700/30 text-slate-200'
+                )}
                 onClick={closeMobileMenu}
               >
-                <Link href="/influencers">
+                <Link
+                  href="/influencers"
+                  aria-current={isActive('/influencers') ? 'page' : undefined}
+                >
                   <Users className="w-4 h-4" />
                   Influencers
                 </Link>

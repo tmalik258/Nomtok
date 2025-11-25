@@ -12,6 +12,7 @@ interface CustomPaginationProps {
   onPageChange: (page: number) => void;
   onItemsPerPageChange: (itemsPerPage: number) => void;
   loading?: boolean;
+  itemName?: string;
 }
 
 export function CustomPagination({
@@ -21,6 +22,7 @@ export function CustomPagination({
   onPageChange,
   onItemsPerPageChange,
   loading = false,
+  itemName = 'items',
 }: CustomPaginationProps) {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startItem = (currentPage - 1) * itemsPerPage + 1;
@@ -87,7 +89,7 @@ export function CustomPagination({
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
       <div className="flex items-center gap-4">
         <div className="text-sm text-gray-700 dark:text-gray-300">
-          Showing {startItem} to {endItem} of {totalItems} videos
+          Showing {startItem} to {endItem} of {totalItems} {itemName}
         </div>
         
         <div className="flex items-center gap-2">

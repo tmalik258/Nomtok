@@ -16,6 +16,8 @@ interface PaginatedListingsParams {
   limit?: number;
   sort_by?: string;
   sort_order?: 'asc' | 'desc';
+  influencer_slug?: string;
+  approved_status?: string;
 }
 
 interface PaginatedListingsResponse {
@@ -55,7 +57,7 @@ export const useListings = (initialParams?: PaginatedListingsParams, options?: {
     try {
       const response = await listingActions.getPaginatedListings({
         ...otherParams,
-        skip: (page - 1) * limit,
+        page,
         limit
       });
       

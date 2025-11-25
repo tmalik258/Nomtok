@@ -76,7 +76,7 @@ export function InfluencerSearchFilter({
   const sortOptions = customSortOptions || 
     (influencerSlug ? RESTAURANT_SORT_OPTIONS : DEFAULT_SORT_OPTIONS);
   // Only fetch countries if country filter is enabled
-  const { countries, loading, error } = useCountries(
+  const { countries, loading, error, refetch } = useCountries(
     countriesSource, 
     influencerSlug,
     disableCountryFilter
@@ -134,15 +134,27 @@ export function InfluencerSearchFilter({
 
         {/* Country Filter */}
         {!disableCountryFilter && (
-          <CountrySelect
-            value={country ? country : ""}
-            onValueChange={(value) => onCountryChange(value || "")}
-            placeholder="All Countries"
-            className="w-full lg:w-48"
-            countries={countries}
-            loading={loading}
-            error={error || ""}
-          />
+          <div className="flex items-center gap-2 w-full lg:w-48">
+            <CountrySelect
+              value={country ? country : ""}
+              onValueChange={(value) => onCountryChange(value || "")}
+              placeholder="All Countries"
+              className="w-full"
+              countries={countries}
+              loading={loading}
+              error={error || ""}
+            />
+            {error && !loading && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refetch}
+                className="h-10 cursor-pointer"
+              >
+                Retry
+              </Button>
+            )}
+          </div>
         )}
         {/* Commented out for influencers list page - countries search functionality disabled */}
         {/* {disableCountryFilter && (
