@@ -101,15 +101,25 @@ async function fetchInitialData() {
   }
 
   // Get restaurants for About section (with photos)
+  // Prioritize restaurants with photos, but fallback to any restaurants if needed
   let aboutRestaurants: Restaurant[] = [];
   if (restaurantsForAboutData.status === "fulfilled") {
     const restaurants =
       restaurantsForAboutData.value.data.restaurants ||
       restaurantsForAboutData.value.data ||
       [];
-    aboutRestaurants = restaurants
-      .filter((r: Restaurant) => r.photo_url)
-      .slice(0, 5);
+    // Filter for restaurants with photos first
+    const restaurantsWithPhotos = restaurants.filter((r: Restaurant) => r.photo_url);
+    
+    if (restaurantsWithPhotos.length >= 5) {
+      aboutRestaurants = restaurantsWithPhotos.slice(0, 5);
+    } else if (restaurantsWithPhotos.length > 0) {
+      // If we have some but not 5, use what we have
+      aboutRestaurants = restaurantsWithPhotos;
+    } else if (restaurants.length > 0) {
+      // Fallback: use any restaurants if none have photos (up to 5)
+      aboutRestaurants = restaurants.slice(0, 5);
+    }
   }
 
   // Fetch city-specific restaurants for top 2 cities

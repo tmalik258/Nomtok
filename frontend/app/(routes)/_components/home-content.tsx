@@ -42,22 +42,26 @@ export default function HomeContent({
   } = useRecentListings();
 
   // Top Reviews - First City
+  // Only fetch client-side if initial data is not available (for fallback/updates)
   const firstCity = popularCities[0];
+  const shouldFetchCity1 = initialCity1Restaurants.length === 0 && firstCity;
   const {
     restaurants: city1Restaurants,
     loading: city1Loading,
     error: city1Error,
     refetch: refetchCity1,
-  } = useCityListings(firstCity || "");
+  } = useCityListings(shouldFetchCity1 ? firstCity : "");
 
   // Top Reviews - Second City
+  // Only fetch client-side if initial data is not available (for fallback/updates)
   const secondCity = popularCities[1];
+  const shouldFetchCity2 = initialCity2Restaurants.length === 0 && secondCity;
   const {
     restaurants: city2Restaurants,
     loading: city2Loading,
     error: city2Error,
     refetch: refetchCity2,
-  } = useCityListings(secondCity || "");
+  } = useCityListings(shouldFetchCity2 ? secondCity : "");
 
   // Latest Reviews by Mark Weins
   const {
@@ -93,12 +97,17 @@ export default function HomeContent({
     return Array.from(restaurantMap.values());
   }, [markWeinsListings, initialMarkWeinsRestaurants]);
 
-  // Use initial data if available, otherwise use hook data
-  const displayRecentRestaurants = recentRestaurants.length > 0 ? recentRestaurants : initialRecentRestaurants;
-  const displayCity1Restaurants = city1Restaurants.length > 0 ? city1Restaurants : initialCity1Restaurants;
-  const displayCity2Restaurants = city2Restaurants.length > 0 ? city2Restaurants : initialCity2Restaurants;
-  const displayMarkWeinsRestaurants = markWeinsRestaurants.length > 0 ? markWeinsRestaurants : initialMarkWeinsRestaurants;
-  const displayAboutRestaurants = initialAboutRestaurants.length > 0 ? initialAboutRestaurants : [];
+  // Prioritize server-side initial data for SEO and performance
+  // Only use client-side hook data if initial data is not available (fallback for dynamic updates)
+  const displayRecentRestaurants = initialRecentRestaurants.length > 0 ? initialRecentRestaurants : recentRestaurants;
+  const displayCity1Restaurants = initialCity1Restaurants.length > 0 ? initialCity1Restaurants : city1Restaurants;
+  const displayCity2Restaurants = initialCity2Restaurants.length > 0 ? initialCity2Restaurants : city2Restaurants;
+  const displayMarkWeinsRestaurants = initialMarkWeinsRestaurants.length > 0 ? initialMarkWeinsRestaurants : markWeinsRestaurants;
+  
+  // For About section, use initial data if available, otherwise try to get from recent restaurants
+  const displayAboutRestaurants = initialAboutRestaurants.length > 0 
+    ? initialAboutRestaurants 
+    : displayRecentRestaurants.filter(r => r.photo_url).slice(0, 5);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,16 +222,44 @@ export default function HomeContent({
         </div>
       </div>
 
-      {/* About Nomtok Section */}
-      {displayAboutRestaurants.length > 0 && (
+      {/* About Nomtok Section - Always show if we have restaurants */}
+      {displayAboutRestaurants.length > 0 ? (
         <AboutNomtokSection restaurants={displayAboutRestaurants} />
+      ) : (
+        // Fallback: Show section with placeholder if no restaurants with photos
+        <div className="py-12 px-4 bg-gray-50">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6">
+                <h2 className="text-4xl font-bold tracking-tight">
+                  About Nomtok
+                </h2>
+                <div className="space-y-4 text-lg text-gray-700">
+                  <p>
+                    Nomtok is your trusted guide to discovering exceptional
+                    restaurants curated by the world&apos;s top food creators and
+                    celebrity chefs. We transform authentic video reviews into
+                    actionable recommendations, helping you find the perfect dining
+                    experience in your city.
+                  </p>
+                  <p>
+                    Our platform aggregates expert reviews from renowned food
+                    influencers, providing you with honest insights, detailed
+                    recommendations, and city-specific picks that go beyond typical
+                    restaurant listings.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Top Reviews Section - First City */}
-      {firstCity && (
+      {firstCity && displayCity1Restaurants.length > 0 && (
         <div className="py-12 px-4 bg-white">
           <div className="max-w-7xl mx-auto">
-            {city1Error ? (
+            {city1Error && initialCity1Restaurants.length === 0 ? (
               <ErrorCard
                 title={`Unable to Load Top Reviews for ${firstCity}`}
                 message={city1Error}
@@ -235,7 +272,7 @@ export default function HomeContent({
                 title={`Top Reviews - ${firstCity}`}
                 description={`Discover the best restaurant recommendations in ${firstCity}`}
                 maxItems={6}
-                loading={city1Loading && displayCity1Restaurants.length === 0}
+                loading={city1Loading && displayCity1Restaurants.length === 0 && initialCity1Restaurants.length === 0}
               />
             )}
           </div>
@@ -265,10 +302,10 @@ export default function HomeContent({
       </div>
 
       {/* Top Reviews Section - Second City */}
-      {secondCity && (
+      {secondCity && displayCity2Restaurants.length > 0 && (
         <div className="py-12 px-4 bg-white">
           <div className="max-w-7xl mx-auto">
-            {city2Error ? (
+            {city2Error && initialCity2Restaurants.length === 0 ? (
               <ErrorCard
                 title={`Unable to Load Top Reviews for ${secondCity}`}
                 message={city2Error}
@@ -281,7 +318,7 @@ export default function HomeContent({
                 title={`Top Reviews - ${secondCity}`}
                 description={`Discover the best restaurant recommendations in ${secondCity}`}
                 maxItems={6}
-                loading={city2Loading && displayCity2Restaurants.length === 0}
+                loading={city2Loading && displayCity2Restaurants.length === 0 && initialCity2Restaurants.length === 0}
               />
             )}
           </div>
