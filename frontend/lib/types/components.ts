@@ -225,6 +225,9 @@ export interface RestaurantSearchFilterProps {
   selectedInfluencerId?: string;
   onInfluencerIdChange: (id?: string) => void;
   updateSelectedInfluencerId: (id?: string) => void;
+  selectedPriceLevel?: number;
+  onPriceLevelChange: (priceLevel?: number) => void;
+  updateSelectedPriceLevel: (priceLevel?: number) => void;
   city?: string;
 }
 

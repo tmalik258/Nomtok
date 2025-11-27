@@ -33,6 +33,7 @@ export function RestaurantsContent() {
   const searchTypeParam = searchParams.get("searchType") || "";
   const sortByParam = searchParams.get("sortBy") || "";
   const influencerSlugParam = searchParams.get("influencer-slug") || undefined;
+  const priceLevelParam = searchParams.get("priceLevel");
   const pageParam = Number(searchParams.get("page") || "1") || 1;
   const limitParam = Number(searchParams.get("limit") || "12") || 12;
 
@@ -40,6 +41,9 @@ export function RestaurantsContent() {
   const [searchType, setSearchType] = useState(searchTypeParam);
   const [sortBy, setSortByState] = useState(sortByParam);
   const [selectedInfluencerId, setSelectedInfluencerId] = useState<string | undefined>(influencerSlugParam);
+  const [selectedPriceLevel, setSelectedPriceLevel] = useState<number | undefined>(
+    priceLevelParam ? Number(priceLevelParam) : undefined
+  );
   const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[]>(
     []
   );
@@ -167,6 +171,26 @@ export function RestaurantsContent() {
     setSelectedInfluencerId(id);
   };
 
+  // Function to update URL with selected price level
+  const updateSelectedPriceLevel = (priceLevel?: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (!priceLevel) {
+      params.delete("priceLevel");
+    } else {
+      params.set("priceLevel", priceLevel.toString());
+    }
+    const newUrl = params.toString()
+      ? `${pathname}?${params.toString()}`
+      : pathname;
+
+    router.replace(newUrl, { scroll: false });
+    setSelectedPriceLevel(priceLevel);
+  };
+
+  const onPriceLevelChange = (priceLevel?: number) => {
+    setSelectedPriceLevel(priceLevel);
+  };
+
   const onInfluencerIdChange = (id?: string) => {
     setSelectedInfluencerId(id);
   };
@@ -183,12 +207,14 @@ export function RestaurantsContent() {
     setSortBy,
     setSearchQuery: setBackendSearchQuery,
     setCuisineFilter,
+    setPriceLevelFilter,
   } = useRestaurantsPaginated({
     city: city || undefined,
     name: searchQuery || undefined,
     influencer_id: influencerSlugParam,
     sort_by: sortByParam || undefined,
     cuisine: initialSelectedCuisines[0]?.name,
+    price_level: selectedPriceLevel,
     page: pageParam,
     limit: limitParam,
   });
@@ -273,6 +299,15 @@ export function RestaurantsContent() {
       setCuisineFilter("");
     }
   }, [selectedCuisines, setCuisineFilter]);
+
+  // NEW: Trigger backend price level filter when price level selection changes
+  useEffect(() => {
+    if (selectedPriceLevel) {
+      setPriceLevelFilter(selectedPriceLevel);
+    } else {
+      setPriceLevelFilter(undefined);
+    }
+  }, [selectedPriceLevel, setPriceLevelFilter]);
 
   // Fallback: preserve typed influencer name filtering client-side (backend supports only influencer_id)
   useEffect(() => {
@@ -385,6 +420,9 @@ export function RestaurantsContent() {
           selectedInfluencerId={selectedInfluencerId}
           onInfluencerIdChange={onInfluencerIdChange}
           updateSelectedInfluencerId={updateSelectedInfluencerId}
+          selectedPriceLevel={selectedPriceLevel}
+          onPriceLevelChange={onPriceLevelChange}
+          updateSelectedPriceLevel={updateSelectedPriceLevel}
         />
 
         {filteredRestaurants.length === 0 && !loading ? (

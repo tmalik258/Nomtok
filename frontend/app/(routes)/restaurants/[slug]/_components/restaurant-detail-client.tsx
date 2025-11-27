@@ -3,7 +3,7 @@
 import { toTitleFromSlug } from "@/lib/seo/site";
 import { buildBreadcrumbJsonLd } from "@/lib/seo/utils";
 import Script from "next/script";
-import { useRestaurantWithListings } from "@/lib/hooks";
+import { useRestaurantWithListings, useCityListings } from "@/lib/hooks";
 import type { Restaurant } from "@/lib/types";
 import { Users } from "lucide-react";
 import Link from "next/link";
@@ -17,8 +17,21 @@ import SkeletonLoading from "../_components/skeleton-loading";
 import ListingCard from "../_components/listing-card";
 import RestaurantKeyDetails from "../_components/restaurant-key-details";
 import RestaurantHero from "./restaurant-hero";
+import { ReviewsSlider } from "@/app/(routes)/_components/reviews-slider";
 
-export default function RestaurantDetailClient({ slug, initialRestaurant, renderHero = true }: { slug: string; initialRestaurant?: Restaurant; renderHero?: boolean }) {
+interface RestaurantDetailClientProps {
+  slug: string;
+  initialRestaurant?: Restaurant;
+  renderHero?: boolean;
+  initialCityRestaurants?: Restaurant[];
+}
+
+export default function RestaurantDetailClient({ 
+  slug, 
+  initialRestaurant, 
+  renderHero = true,
+  initialCityRestaurants = [],
+}: RestaurantDetailClientProps) {
   const {
     restaurant,
     loading,
@@ -28,6 +41,25 @@ export default function RestaurantDetailClient({ slug, initialRestaurant, render
 
   const hydratedRestaurant = restaurant || initialRestaurant;
   const listings = hydratedRestaurant?.listings || [];
+  const restaurantCity = hydratedRestaurant?.city;
+
+  // Fetch city restaurants for Recent Reviews section
+  const {
+    restaurants: cityRestaurants,
+    loading: cityLoading,
+    error: cityError,
+    refetch: refetchCity,
+  } = useCityListings(restaurantCity || "");
+
+  // Use initial data if available, otherwise use hook data
+  const displayCityRestaurants = cityRestaurants.length > 0 
+    ? cityRestaurants 
+    : initialCityRestaurants;
+
+  // Filter out the current restaurant from city restaurants
+  const filteredCityRestaurants = displayCityRestaurants.filter(
+    (r) => r.slug !== slug
+  );
 
   const handleRefresh = () => {
     refetchRestaurant?.();
@@ -122,6 +154,30 @@ export default function RestaurantDetailClient({ slug, initialRestaurant, render
 
         {hydratedRestaurant?.google_place_id && <GoogleReviews placeId={hydratedRestaurant.google_place_id} />}
       </div>
+
+      {/* Recent Reviews in City Section */}
+      {restaurantCity && (
+        <div className="py-12 px-4 bg-white mt-8">
+          <div className="max-w-7xl mx-auto">
+            {cityError ? (
+              <ErrorCard
+                title={`Unable to Load Recent Reviews in ${restaurantCity}`}
+                message={cityError}
+                onRefresh={refetchCity}
+                showRefreshButton={true}
+              />
+            ) : (
+              <ReviewsSlider
+                restaurants={filteredCityRestaurants}
+                title={`Recent Reviews in ${restaurantCity}`}
+                description={`Discover more restaurant recommendations in ${restaurantCity}`}
+                maxItems={6}
+                loading={cityLoading && filteredCityRestaurants.length === 0}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

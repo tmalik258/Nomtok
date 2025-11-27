@@ -45,6 +45,7 @@ export interface SearchParams {
   influencer_id?: string;
   tag?: string;
   cuisine?: string;
+  price_level?: number;
   sort_by?: string;
   skip?: number;
   limit?: number;

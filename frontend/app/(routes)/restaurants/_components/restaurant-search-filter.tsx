@@ -38,6 +38,9 @@ export function RestaurantSearchFilter({
   selectedInfluencerId,
   onInfluencerIdChange,
   updateSelectedInfluencerId,
+  selectedPriceLevel,
+  onPriceLevelChange,
+  updateSelectedPriceLevel,
 }: RestaurantSearchFilterProps) {
   // Fetch influencers for async select via hook
   const { fetchInfluencerOptions } = useInfluencerOptions();
@@ -74,25 +77,27 @@ export function RestaurantSearchFilter({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="flex-1 h-11 border-gray-200 focus:border-orange-500 focus:ring-orange-500">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent className="z-[1000]">
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="rating">Rating</SelectItem>
-              <SelectItem value="city">City</SelectItem>
-            </SelectContent>
-          </Select>
-          {/* <div className="flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="w-full">
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full h-11 border-gray-200 focus:border-orange-500 focus:ring-orange-500">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent className="z-[1000]">
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="rating">Rating</SelectItem>
+                <SelectItem value="city">City</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {/* <div className="w-full">
             <TagFilterDropdown
               city={city}
               selectedTags={selectedTags}
               onTagsChange={onTagsChange}
             />
           </div> */}
-          <div className="flex-1">
+          <div className="w-full">
             <CuisineFilterDropdown
               city={city}
               selectedCuisines={selectedCuisines}
@@ -100,7 +105,7 @@ export function RestaurantSearchFilter({
             />
           </div>
           {/* Influencer dropdown */}
-          <div className="flex-1">
+          <div className="w-full">
             <AsyncSearchableSelect
               value={selectedInfluencerId}
               onValueChange={(val) => {
@@ -112,6 +117,27 @@ export function RestaurantSearchFilter({
               className="border-gray-200 focus:border-orange-500 focus:ring-orange-500"
             />
           </div>
+          {/* Price Level dropdown */}
+          <div className="w-full">
+            <Select
+              value={selectedPriceLevel?.toString() || "all"}
+              onValueChange={(val) => {
+                const priceLevel = val === "all" ? undefined : parseInt(val, 10);
+                onPriceLevelChange(priceLevel);
+              }}
+            >
+              <SelectTrigger className="w-full h-11 border-gray-200 focus:border-orange-500 focus:ring-orange-500">
+                <SelectValue placeholder="Price Level" />
+              </SelectTrigger>
+              <SelectContent className="z-[1000]">
+                <SelectItem value="all">All Prices</SelectItem>
+                <SelectItem value="1">$ (Inexpensive)</SelectItem>
+                <SelectItem value="2">$$ (Moderate)</SelectItem>
+                <SelectItem value="3">$$$ (Expensive)</SelectItem>
+                <SelectItem value="4">$$$$ (Very Expensive)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -120,7 +146,8 @@ export function RestaurantSearchFilter({
         searchQuery ||
         searchType ||
         sortBy ||
-        selectedInfluencerId) && (
+        selectedInfluencerId ||
+        selectedPriceLevel) && (
         <div className="flex flex-wrap gap-2 mt-4">
           {/* Search Query Badge */}
           {searchQuery && (
@@ -243,12 +270,42 @@ export function RestaurantSearchFilter({
             </Badge>
           )}
 
+          {/* Price Level Filter Badge */}
+          {selectedPriceLevel && (
+            <Badge
+              variant="secondary"
+              className="flex items-center gap-1 pr-1 cursor-pointer hover:bg-gray-200 transition-colors duration-200"
+            >
+              <span className="text-xs text-muted-foreground">Price:</span>
+              <span>
+                {selectedPriceLevel === 1
+                  ? "$"
+                  : selectedPriceLevel === 2
+                  ? "$$"
+                  : selectedPriceLevel === 3
+                  ? "$$$"
+                  : selectedPriceLevel === 4
+                  ? "$$$$"
+                  : ""}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-4 w-4 p-0 hover:bg-gray-300 cursor-pointer transition-colors duration-200"
+                onClick={() => updateSelectedPriceLevel(undefined)}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </Badge>
+          )}
+
           {/* Clear All Button */}
           {(selectedCuisines.length > 0 ||
             searchQuery ||
             searchType ||
             sortBy ||
-            selectedInfluencerId) && (
+            selectedInfluencerId ||
+            selectedPriceLevel) && (
             <Button
               variant="ghost"
               size="sm"
@@ -260,6 +317,8 @@ export function RestaurantSearchFilter({
                 updateSortBy("");
                 updateSelectedInfluencerId(undefined);
                 onInfluencerIdChange(undefined);
+                updateSelectedPriceLevel(undefined);
+                onPriceLevelChange(undefined);
               }}
               className="h-8 px-3 text-sm text-muted-foreground hover:text-foreground cursor-pointer border-gray-200 hover:border-gray-300"
             >

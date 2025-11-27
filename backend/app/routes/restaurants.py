@@ -42,9 +42,10 @@ async def get_restaurants(
     include_listings: Optional[bool] = Query(False, description="Include listings with restaurants"),
     include_video_details: Optional[bool] = Query(False, description="Include full video details (description, transcription)"),
     slug: str | None = None,
-    influencer_id: Optional[str] = Query(None, description="Filter restaurants reviewed by influencer (UUID or slug)")
+    influencer_id: Optional[str] = Query(None, description="Filter restaurants reviewed by influencer (UUID or slug)"),
+    price_level: Optional[int] = Query(None, description="Filter by price level: 1=$, 2=$$, 3=$$$, 4=$$$$")
 ):
-    """Get restaurants with filters for name, ID, city, country, Google Place ID, tags, and cuisines."""
+    """Get restaurants with filters for name, ID, city, country, Google Place ID, tags, cuisines, and price level."""
     try:
         # Base query for filtering
         base_filter = Restaurant.is_active == True
@@ -63,6 +64,10 @@ async def get_restaurants(
             filters.append(Restaurant.slug.ilike(f"%{slug}%"))
         if google_place_id:
             filters.append(Restaurant.google_place_id == google_place_id)
+        
+        # Price level filtering
+        if price_level is not None:
+            filters.append(Restaurant.price_level == price_level)
         
         # Tag filtering - join with restaurant_tags and tags table
         if tag:
