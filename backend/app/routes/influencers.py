@@ -6,7 +6,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Influencer, Listing, Video
+from app.models import Influencer, Listing, Video, Restaurant
 from app.database import get_async_db
 from app.utils.logging import setup_logger
 from app.api_schema.influencers import InfluencerLightResponse, InfluencerResponse, PaginatedInfluencersResponse, rebuild_models
@@ -29,16 +29,23 @@ async def get_influencers(
     id: str | None = None,
     youtube_channel_id: str | None = None,
     youtube_channel_url: str | None = None,
+    city: str | None = Query(None, description="Filter influencers by city (through restaurant listings)"),
     skip: int = 0,
     limit: int = 100,
     include_listings: Optional[bool] = Query(False, description="Include listings with influencers"),
     include_video_details: Optional[bool] = Query(False, description="Include full video details (description, transcription, summary)"),
     slug: str | None = None
 ):
-    """Get influencers with filters for name, ID, YouTube channel ID, or URL."""
+    """Get influencers with filters for name, ID, YouTube channel ID, URL, or city."""
     try:
         # Base query for counting total records
         count_query = select(Influencer)
+        
+        # Join with listings and restaurants if city filter is applied
+        if city:
+            count_query = count_query.join(Listing, Influencer.id == Listing.influencer_id).join(
+                Restaurant, Listing.restaurant_id == Restaurant.id
+            )
         
         # Apply filters to count query
         if name:
@@ -51,14 +58,25 @@ async def get_influencers(
             count_query = count_query.filter(Influencer.youtube_channel_url == youtube_channel_url)
         if slug:
             count_query = count_query.filter(Influencer.slug.ilike(f"%{slug}%"))
+        if city:
+            count_query = count_query.filter(Restaurant.city.ilike(f"%{city}%"))
         
-        # Get total count
-        total_count_query = select(func.count()).select_from(count_query.subquery())
+        # Get total count (distinct for city filter)
+        if city:
+            total_count_query = select(func.count(func.distinct(Influencer.id))).select_from(count_query.subquery())
+        else:
+            total_count_query = select(func.count()).select_from(count_query.subquery())
         total_result = await db.execute(total_count_query)
         total_count = total_result.scalar()
         
         # Base query for actual data
         query = select(Influencer)
+        
+        # Join with listings and restaurants if city filter is applied
+        if city:
+            query = query.join(Listing, Influencer.id == Listing.influencer_id).join(
+                Restaurant, Listing.restaurant_id == Restaurant.id
+            )
         
         # Add listings if requested
         if include_listings:
@@ -88,9 +106,20 @@ async def get_influencers(
             query = query.filter(Influencer.youtube_channel_url == youtube_channel_url)
         if slug:
             query = query.filter(Influencer.slug.ilike(f"%{slug}%"))
+        if city:
+            query = query.filter(Restaurant.city.ilike(f"%{city}%"))
+        
+        # Distinct if city filter is applied to avoid duplicate influencers
+        if city:
+            query = query.distinct()
 
         result = await db.execute(query.offset(skip).limit(limit))
-        influencers = result.unique().scalars().all()
+        # Use unique() if city filter is not applied (to handle joinedload duplicates)
+        # If city is applied, distinct() is already in the query
+        if not city:
+            influencers = result.unique().scalars().all()
+        else:
+            influencers = result.scalars().all()
 
         # Return empty result with total count if no influencers found
         if not influencers:

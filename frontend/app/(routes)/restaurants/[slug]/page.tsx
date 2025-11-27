@@ -5,7 +5,7 @@ import RestaurantDetailClient from "./_components/restaurant-detail-client";
 import RestaurantHero from "./_components/restaurant-hero";
 import axios from "axios";
 import { unstable_cache } from "next/cache";
-import type { Restaurant } from "@/lib/types";
+import type { Restaurant, Listing } from "@/lib/types";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -55,14 +55,14 @@ export default async function RestaurantDetailPage({ params }: Props) {
                 r.slug !== slug &&
                 r.listings &&
                 r.listings.length > 0 &&
-                r.listings.some((l: any) => l.approved === true)
+                r.listings.some((l: Listing) => l.approved === true)
             );
             
             // Filter listings to only approved ones for each restaurant
             const restaurantsWithApprovedListings = restaurantsWithListings.map(
               (r: Restaurant) => ({
                 ...r,
-                listings: r.listings?.filter((l: any) => l.approved === true) || [],
+                listings: r.listings?.filter((l: Listing) => l.approved === true) || [],
               })
             );
             

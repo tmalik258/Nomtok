@@ -42,8 +42,11 @@ export function RestaurantSearchFilter({
   onPriceLevelChange,
   updateSelectedPriceLevel,
 }: RestaurantSearchFilterProps) {
-  // Fetch influencers for async select via hook
-  const { fetchInfluencerOptions } = useInfluencerOptions();
+  // Determine effective city: from URL param or from searchQuery when searchType is "city"
+  const effectiveCity = city || (searchType === "city" && searchQuery ? searchQuery : undefined);
+  
+  // Fetch influencers for async select via hook with city filter
+  const { fetchInfluencerOptions } = useInfluencerOptions(effectiveCity);
   // Fetch selected influencer details by slug to show name in badge
   const { influencer } = useInfluencer(selectedInfluencerId || "", {
     include_listings: false,
@@ -99,7 +102,7 @@ export function RestaurantSearchFilter({
           </div> */}
           <div className="w-full">
             <CuisineFilterDropdown
-              city={city}
+              city={effectiveCity}
               selectedCuisines={selectedCuisines}
               onCuisinesChange={onCuisinesChange}
             />

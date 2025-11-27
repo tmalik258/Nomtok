@@ -7,7 +7,6 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import Image from "next/image";
 import { Restaurant } from "@/lib/types";
 import RestaurantImage from "@/components/restaurant-image";
 
@@ -99,7 +98,7 @@ export function AboutNomtokSection({
               className="w-full"
             >
               <CarouselContent>
-                {displayRestaurants.map((restaurant, index) => (
+                {displayRestaurants.map((restaurant) => (
                   <CarouselItem key={restaurant.slug}>
                     <div className="relative h-96 rounded-lg overflow-hidden">
                       <RestaurantImage

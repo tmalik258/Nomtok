@@ -9,7 +9,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { RestaurantCard } from "@/components/restaurant-card";
-import { Restaurant, Listing } from "@/lib/types";
+import { Restaurant } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ReviewsSliderProps {

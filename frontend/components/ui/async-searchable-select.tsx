@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Check, ChevronDown, Loader2, Search, X } from "lucide-react";
+import { Check, ChevronDown, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -147,16 +147,12 @@ export function AsyncSearchableSelect({
       <PopoverContent className="w-full p-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-white/20 dark:border-gray-700/30">
         <Command>
           <div className="flex items-center border-b border-white/20 dark:border-gray-700/30 px-3">
-            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <Input
               placeholder={searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="border-0 bg-transparent focus:ring-0 focus:ring-offset-0 placeholder:text-gray-500 dark:placeholder:text-gray-400"
             />
-            {loading && (
-              <Loader2 className="ml-2 h-4 w-4 animate-spin opacity-50" />
-            )}
           </div>
           <CommandList>
             <CommandEmpty>
