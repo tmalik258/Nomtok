@@ -38,7 +38,9 @@ export const restaurantActions = {
         include_video_details: includeVideoDetails
       }
     });
-    return response.data;
+    const data = response.data;
+    // Handle both array and paginated response formats
+    return Array.isArray(data) ? data : (data?.restaurants || []);
   },
 
   getPopularCities: async (): Promise<string[]> => {

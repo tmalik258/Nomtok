@@ -1,28 +1,104 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useFeaturedOptimized } from "@/lib/hooks/useFeaturedOptimized";
-import { usePopularCities } from "@/lib/hooks";
-import { FeaturedRestaurantsCarousel } from "../_components/featured-restaurants-carousel";
+import { usePopularCities, useRecentListings, useCityListings, useInfluencerListings } from "@/lib/hooks";
+import { ReviewsSlider } from "../_components/reviews-slider";
+import { AboutNomtokSection } from "../_components/about-nomtok-section";
+import { Restaurant, Listing } from "@/lib/types";
 import ErrorCard from "@/components/error-card";
 
-export default function HomeContent() {
+interface HomeContentProps {
+  initialRecentRestaurants?: Restaurant[];
+  initialCity1Restaurants?: Restaurant[];
+  initialCity2Restaurants?: Restaurant[];
+  initialMarkWeinsRestaurants?: Restaurant[];
+  initialAboutRestaurants?: Restaurant[];
+}
+
+export default function HomeContent({
+  initialRecentRestaurants = [],
+  initialCity1Restaurants = [],
+  initialCity2Restaurants = [],
+  initialMarkWeinsRestaurants = [],
+  initialAboutRestaurants = [],
+}: HomeContentProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
-  const {
-    data: featuredData,
-    loading: featuredLoading,
-    error: featuredError,
-    refetch,
-  } = useFeaturedOptimized();
   const { cities: popularCities, loading: citiesLoading } = usePopularCities();
+  
+  // Recent Reviews Section
+  const {
+    restaurants: recentRestaurants,
+    loading: recentLoading,
+    error: recentError,
+    refetch: refetchRecent,
+  } = useRecentListings();
+
+  // Top Reviews - First City
+  const firstCity = popularCities[0];
+  const {
+    restaurants: city1Restaurants,
+    loading: city1Loading,
+    error: city1Error,
+    refetch: refetchCity1,
+  } = useCityListings(firstCity || "");
+
+  // Top Reviews - Second City
+  const secondCity = popularCities[1];
+  const {
+    restaurants: city2Restaurants,
+    loading: city2Loading,
+    error: city2Error,
+    refetch: refetchCity2,
+  } = useCityListings(secondCity || "");
+
+  // Latest Reviews by Mark Weins
+  const {
+    listings: markWeinsListings,
+    loading: markWeinsLoading,
+    error: markWeinsError,
+    refetch: refetchMarkWeins,
+  } = useInfluencerListings("mark-wiens");
+
+  // Convert Mark Weins listings to restaurants
+  const markWeinsRestaurants = useMemo(() => {
+    if (!markWeinsListings || markWeinsListings.length === 0) {
+      return initialMarkWeinsRestaurants;
+    }
+    const restaurantMap = new Map<string, Restaurant>();
+    markWeinsListings.slice(0, 6).forEach((listing: Listing) => {
+      if (listing.restaurant) {
+        const restaurantId = listing.restaurant.id;
+        if (!restaurantMap.has(restaurantId)) {
+          restaurantMap.set(restaurantId, {
+            ...listing.restaurant,
+            listings: [],
+          });
+        }
+        const restaurant = restaurantMap.get(restaurantId)!;
+        if (restaurant.listings) {
+          restaurant.listings.push(listing);
+        } else {
+          restaurant.listings = [listing];
+        }
+      }
+    });
+    return Array.from(restaurantMap.values());
+  }, [markWeinsListings, initialMarkWeinsRestaurants]);
+
+  // Use initial data if available, otherwise use hook data
+  const displayRecentRestaurants = recentRestaurants.length > 0 ? recentRestaurants : initialRecentRestaurants;
+  const displayCity1Restaurants = city1Restaurants.length > 0 ? city1Restaurants : initialCity1Restaurants;
+  const displayCity2Restaurants = city2Restaurants.length > 0 ? city2Restaurants : initialCity2Restaurants;
+  const displayMarkWeinsRestaurants = markWeinsRestaurants.length > 0 ? markWeinsRestaurants : initialMarkWeinsRestaurants;
+  const displayAboutRestaurants = initialAboutRestaurants.length > 0 ? initialAboutRestaurants : [];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,37 +191,102 @@ export default function HomeContent() {
         </div>
       </div>
 
-      <div className="py-20 px-4 bg-white">
+      {/* Recent Reviews Section */}
+      <div className="py-12 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
-          {featuredError ? (
+          {recentError ? (
             <ErrorCard
-              title="Unable to Load Featured Restaurants"
-              message={featuredError}
-              onRefresh={refetch}
+              title="Unable to Load Recent Reviews"
+              message={recentError}
+              onRefresh={refetchRecent}
               showRefreshButton={true}
             />
-          ) : featuredLoading ? (
-            <div className="space-y-8">
-              <div className="text-center">
-                <div className="h-8 bg-gray-200 rounded w-64 mx-auto mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-96 mx-auto"></div>
-              </div>
-              <div className="flex justify-center gap-4 overflow-hidden">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="flex-shrink-0 w-80">
-                    <Skeleton className="h-96 w-full rounded-lg" />
-                  </div>
-                ))}
-              </div>
-              <div className="text-center">
-                <div className="h-10 bg-gray-200 rounded w-72 mx-auto mt-2"></div>
-              </div>
-            </div>
           ) : (
-            <FeaturedRestaurantsCarousel cities={featuredData?.cities || []} />
+            <ReviewsSlider
+              restaurants={displayRecentRestaurants}
+              title="Recent Reviews"
+              description="Discover the latest restaurant recommendations from top food creators"
+              maxItems={6}
+              loading={recentLoading && displayRecentRestaurants.length === 0}
+            />
           )}
         </div>
       </div>
+
+      {/* About Nomtok Section */}
+      {displayAboutRestaurants.length > 0 && (
+        <AboutNomtokSection restaurants={displayAboutRestaurants} />
+      )}
+
+      {/* Top Reviews Section - First City */}
+      {firstCity && (
+        <div className="py-12 px-4 bg-white">
+          <div className="max-w-7xl mx-auto">
+            {city1Error ? (
+              <ErrorCard
+                title={`Unable to Load Top Reviews for ${firstCity}`}
+                message={city1Error}
+                onRefresh={refetchCity1}
+                showRefreshButton={true}
+              />
+            ) : (
+              <ReviewsSlider
+                restaurants={displayCity1Restaurants}
+                title={`Top Reviews - ${firstCity}`}
+                description={`Discover the best restaurant recommendations in ${firstCity}`}
+                maxItems={6}
+                loading={city1Loading && displayCity1Restaurants.length === 0}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Latest Reviews by Mark Weins */}
+      <div className="py-12 px-4 bg-white">
+        <div className="max-w-7xl mx-auto">
+          {markWeinsError ? (
+            <ErrorCard
+              title="Unable to Load Mark Weins Reviews"
+              message={markWeinsError}
+              onRefresh={refetchMarkWeins}
+              showRefreshButton={true}
+            />
+          ) : (
+            <ReviewsSlider
+              restaurants={displayMarkWeinsRestaurants}
+              title="Latest Reviews by Mark Weins"
+              description="Explore the most recent restaurant recommendations from Mark Weins"
+              maxItems={6}
+              loading={markWeinsLoading && displayMarkWeinsRestaurants.length === 0}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Top Reviews Section - Second City */}
+      {secondCity && (
+        <div className="py-12 px-4 bg-white">
+          <div className="max-w-7xl mx-auto">
+            {city2Error ? (
+              <ErrorCard
+                title={`Unable to Load Top Reviews for ${secondCity}`}
+                message={city2Error}
+                onRefresh={refetchCity2}
+                showRefreshButton={true}
+              />
+            ) : (
+              <ReviewsSlider
+                restaurants={displayCity2Restaurants}
+                title={`Top Reviews - ${secondCity}`}
+                description={`Discover the best restaurant recommendations in ${secondCity}`}
+                maxItems={6}
+                loading={city2Loading && displayCity2Restaurants.length === 0}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
