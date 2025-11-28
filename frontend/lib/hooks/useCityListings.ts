@@ -4,13 +4,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { Restaurant } from '@/lib/types';
 import { restaurantActions } from '@/lib/actions';
 
-export const useCityListings = (city: string) => {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [loading, setLoading] = useState(true);
+export const useCityListings = (city: string, skipFetch = false, initialData: Restaurant[] = []) => {
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(initialData);
+  const [loading, setLoading] = useState(!skipFetch && initialData.length === 0);
   const [error, setError] = useState<string | null>(null);
 
   const fetchCityListings = useCallback(async () => {
-    if (!city) {
+    if (!city || skipFetch) {
       setLoading(false);
       return;
     }
@@ -70,11 +70,17 @@ export const useCityListings = (city: string) => {
     } finally {
       setLoading(false);
     }
-  }, [city]);
+  }, [city, skipFetch]);
 
   useEffect(() => {
-    fetchCityListings();
-  }, [fetchCityListings]);
+    // Only fetch if skipFetch is false AND we have a city AND no initial data
+    if (!skipFetch && city && initialData.length === 0) {
+      fetchCityListings();
+    } else if (skipFetch || initialData.length > 0) {
+      // If we have initial data or should skip, ensure loading is false
+      setLoading(false);
+    }
+  }, [city, skipFetch, initialData.length, fetchCityListings]);
 
   return {
     restaurants,

@@ -219,6 +219,7 @@ async function fetchInitialData() {
     city2Restaurants,
     markWeinsRestaurants,
     aboutRestaurants,
+    popularCities,
   };
 }
 
@@ -235,6 +236,7 @@ export default async function Home() {
     city2Restaurants,
     markWeinsRestaurants,
     aboutRestaurants,
+    popularCities,
   } = await getCachedData();
 
   return (
@@ -244,6 +246,7 @@ export default async function Home() {
       initialCity2Restaurants={city2Restaurants}
       initialMarkWeinsRestaurants={markWeinsRestaurants}
       initialAboutRestaurants={aboutRestaurants}
+      initialPopularCities={popularCities}
     />
   );
 }

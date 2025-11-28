@@ -19,6 +19,7 @@ interface HomeContentProps {
   initialCity2Restaurants?: Restaurant[];
   initialMarkWeinsRestaurants?: Restaurant[];
   initialAboutRestaurants?: Restaurant[];
+  initialPopularCities?: string[];
 }
 
 export default function HomeContent({
@@ -27,11 +28,14 @@ export default function HomeContent({
   initialCity2Restaurants = [],
   initialMarkWeinsRestaurants = [],
   initialAboutRestaurants = [],
+  initialPopularCities = [],
 }: HomeContentProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
-  const { cities: popularCities, loading: citiesLoading } = usePopularCities();
+  // Use server-side cities if available, otherwise fallback to client-side hook
+  const { cities: clientPopularCities, loading: citiesLoading } = usePopularCities();
+  const popularCities = initialPopularCities.length > 0 ? initialPopularCities : clientPopularCities;
   
   // Recent Reviews Section
   const {
@@ -42,26 +46,38 @@ export default function HomeContent({
   } = useRecentListings();
 
   // Top Reviews - First City
-  // Only fetch client-side if initial data is not available (for fallback/updates)
+  // ALWAYS skip client-side fetch if we have initial server data (ISR/SSR) for instant display
+  // Only fetch client-side as fallback if server data is missing
+  const hasInitialCity1Data = initialCity1Restaurants.length > 0;
   const firstCity = popularCities[0];
-  const shouldFetchCity1 = initialCity1Restaurants.length === 0 && firstCity;
+  // Only pass city if we don't have initial data (to avoid hook from running unnecessarily)
   const {
     restaurants: city1Restaurants,
-    loading: city1Loading,
-    error: city1Error,
-    refetch: refetchCity1,
-  } = useCityListings(shouldFetchCity1 ? firstCity : "");
+    loading: _city1Loading, // Unused when we have server data
+    error: _city1Error, // Unused when we have server data
+    refetch: _refetchCity1, // Unused when we have server data
+  } = useCityListings(
+    hasInitialCity1Data ? "" : (firstCity || ""), 
+    hasInitialCity1Data, 
+    initialCity1Restaurants
+  );
 
   // Top Reviews - Second City
-  // Only fetch client-side if initial data is not available (for fallback/updates)
+  // ALWAYS skip client-side fetch if we have initial server data (ISR/SSR) for instant display
+  // Only fetch client-side as fallback if server data is missing
+  const hasInitialCity2Data = initialCity2Restaurants.length > 0;
   const secondCity = popularCities[1];
-  const shouldFetchCity2 = initialCity2Restaurants.length === 0 && secondCity;
+  // Only pass city if we don't have initial data (to avoid hook from running unnecessarily)
   const {
     restaurants: city2Restaurants,
-    loading: city2Loading,
-    error: city2Error,
-    refetch: refetchCity2,
-  } = useCityListings(shouldFetchCity2 ? secondCity : "");
+    loading: _city2Loading, // Unused when we have server data
+    error: _city2Error, // Unused when we have server data
+    refetch: _refetchCity2, // Unused when we have server data
+  } = useCityListings(
+    hasInitialCity2Data ? "" : (secondCity || ""), 
+    hasInitialCity2Data, 
+    initialCity2Restaurants
+  );
 
   // Latest Reviews by Mark Weins
   const {
@@ -97,8 +113,8 @@ export default function HomeContent({
     return Array.from(restaurantMap.values());
   }, [markWeinsListings, initialMarkWeinsRestaurants]);
 
-  // Prioritize server-side initial data for SEO and performance
-  // Only use client-side hook data if initial data is not available (fallback for dynamic updates)
+  // ALWAYS prioritize server-side initial data (ISR/SSR) for instant display and SEO
+  // Client-side hooks are ONLY used as fallback if server data fails to load
   const displayRecentRestaurants = initialRecentRestaurants.length > 0 ? initialRecentRestaurants : recentRestaurants;
   const displayCity1Restaurants = initialCity1Restaurants.length > 0 ? initialCity1Restaurants : city1Restaurants;
   const displayCity2Restaurants = initialCity2Restaurants.length > 0 ? initialCity2Restaurants : city2Restaurants;
@@ -255,26 +271,17 @@ export default function HomeContent({
         </div>
       )}
 
-      {/* Top Reviews Section - First City */}
-      {firstCity && displayCity1Restaurants.length > 0 && (
+      {/* Top Reviews Section - First City - Show immediately if we have server data */}
+      {displayCity1Restaurants.length > 0 && (
         <div className="py-12 px-4 bg-white">
           <div className="max-w-7xl mx-auto">
-            {city1Error && initialCity1Restaurants.length === 0 ? (
-              <ErrorCard
-                title={`Unable to Load Top Reviews for ${firstCity}`}
-                message={city1Error}
-                onRefresh={refetchCity1}
-                showRefreshButton={true}
-              />
-            ) : (
-              <ReviewsSlider
-                restaurants={displayCity1Restaurants}
-                title={`Top Reviews - ${firstCity}`}
-                description={`Discover the best restaurant recommendations in ${firstCity}`}
-                maxItems={6}
-                loading={city1Loading && displayCity1Restaurants.length === 0 && initialCity1Restaurants.length === 0}
-              />
-            )}
+            <ReviewsSlider
+              restaurants={displayCity1Restaurants}
+              title={`Top Reviews - ${firstCity || initialPopularCities[0] || 'City'}`}
+              description={`Discover the best restaurant recommendations in ${firstCity || initialPopularCities[0] || 'this city'}`}
+              maxItems={6}
+              loading={false}
+            />
           </div>
         </div>
       )}
@@ -301,26 +308,17 @@ export default function HomeContent({
         </div>
       </div>
 
-      {/* Top Reviews Section - Second City */}
-      {secondCity && displayCity2Restaurants.length > 0 && (
+      {/* Top Reviews Section - Second City - Show immediately if we have server data */}
+      {displayCity2Restaurants.length > 0 && (
         <div className="py-12 px-4 bg-white">
           <div className="max-w-7xl mx-auto">
-            {city2Error && initialCity2Restaurants.length === 0 ? (
-              <ErrorCard
-                title={`Unable to Load Top Reviews for ${secondCity}`}
-                message={city2Error}
-                onRefresh={refetchCity2}
-                showRefreshButton={true}
-              />
-            ) : (
-              <ReviewsSlider
-                restaurants={displayCity2Restaurants}
-                title={`Top Reviews - ${secondCity}`}
-                description={`Discover the best restaurant recommendations in ${secondCity}`}
-                maxItems={6}
-                loading={city2Loading && displayCity2Restaurants.length === 0 && initialCity2Restaurants.length === 0}
-              />
-            )}
+            <ReviewsSlider
+              restaurants={displayCity2Restaurants}
+              title={`Top Reviews - ${secondCity || initialPopularCities[1] || 'City'}`}
+              description={`Discover the best restaurant recommendations in ${secondCity || initialPopularCities[1] || 'this city'}`}
+              maxItems={6}
+              loading={false}
+            />
           </div>
         </div>
       )}
