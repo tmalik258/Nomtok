@@ -53,9 +53,9 @@ export default function HomeContent({
   // Only pass city if we don't have initial data (to avoid hook from running unnecessarily)
   const {
     restaurants: city1Restaurants,
-    loading: _city1Loading, // Unused when we have server data
-    error: _city1Error, // Unused when we have server data
-    refetch: _refetchCity1, // Unused when we have server data
+    loading: city1Loading,
+    error: city1Error,
+    refetch: refetchCity1,
   } = useCityListings(
     hasInitialCity1Data ? "" : (firstCity || ""), 
     hasInitialCity1Data, 
@@ -70,9 +70,9 @@ export default function HomeContent({
   // Only pass city if we don't have initial data (to avoid hook from running unnecessarily)
   const {
     restaurants: city2Restaurants,
-    loading: _city2Loading, // Unused when we have server data
-    error: _city2Error, // Unused when we have server data
-    refetch: _refetchCity2, // Unused when we have server data
+    loading: city2Loading,
+    error: city2Error,
+    refetch: refetchCity2,
   } = useCityListings(
     hasInitialCity2Data ? "" : (secondCity || ""), 
     hasInitialCity2Data, 
@@ -271,17 +271,26 @@ export default function HomeContent({
         </div>
       )}
 
-      {/* Top Reviews Section - First City - Show immediately if we have server data */}
-      {displayCity1Restaurants.length > 0 && (
+      {/* Top Reviews Section - First City */}
+      {(displayCity1Restaurants.length > 0 || (firstCity && !hasInitialCity1Data && city1Loading)) && (
         <div className="py-12 px-4 bg-white">
           <div className="max-w-7xl mx-auto">
-            <ReviewsSlider
-              restaurants={displayCity1Restaurants}
-              title={`Top Reviews - ${firstCity || initialPopularCities[0] || 'City'}`}
-              description={`Discover the best restaurant recommendations in ${firstCity || initialPopularCities[0] || 'this city'}`}
-              maxItems={6}
-              loading={false}
-            />
+            {city1Error && !hasInitialCity1Data ? (
+              <ErrorCard
+                title={`Unable to Load Top Reviews for ${firstCity}`}
+                message={city1Error}
+                onRefresh={refetchCity1}
+                showRefreshButton={true}
+              />
+            ) : (
+              <ReviewsSlider
+                restaurants={displayCity1Restaurants}
+                title={`Top Reviews - ${firstCity || initialPopularCities[0] || 'City'}`}
+                description={`Discover the best restaurant recommendations in ${firstCity || initialPopularCities[0] || 'this city'}`}
+                maxItems={6}
+                loading={!hasInitialCity1Data && city1Loading && displayCity1Restaurants.length === 0}
+              />
+            )}
           </div>
         </div>
       )}
@@ -308,17 +317,26 @@ export default function HomeContent({
         </div>
       </div>
 
-      {/* Top Reviews Section - Second City - Show immediately if we have server data */}
-      {displayCity2Restaurants.length > 0 && (
+      {/* Top Reviews Section - Second City */}
+      {(displayCity2Restaurants.length > 0 || (secondCity && !hasInitialCity2Data && city2Loading)) && (
         <div className="py-12 px-4 bg-white">
           <div className="max-w-7xl mx-auto">
-            <ReviewsSlider
-              restaurants={displayCity2Restaurants}
-              title={`Top Reviews - ${secondCity || initialPopularCities[1] || 'City'}`}
-              description={`Discover the best restaurant recommendations in ${secondCity || initialPopularCities[1] || 'this city'}`}
-              maxItems={6}
-              loading={false}
-            />
+            {city2Error && !hasInitialCity2Data ? (
+              <ErrorCard
+                title={`Unable to Load Top Reviews for ${secondCity}`}
+                message={city2Error}
+                onRefresh={refetchCity2}
+                showRefreshButton={true}
+              />
+            ) : (
+              <ReviewsSlider
+                restaurants={displayCity2Restaurants}
+                title={`Top Reviews - ${secondCity || initialPopularCities[1] || 'City'}`}
+                description={`Discover the best restaurant recommendations in ${secondCity || initialPopularCities[1] || 'this city'}`}
+                maxItems={6}
+                loading={!hasInitialCity2Data && city2Loading && displayCity2Restaurants.length === 0}
+              />
+            )}
           </div>
         </div>
       )}
