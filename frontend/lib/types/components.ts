@@ -125,11 +125,6 @@ export interface VideoSliderProps {
   className?: string;
 }
 
-// Featured components
-export interface FeaturedRestaurantsCarouselProps {
-  cities: OptimizedFeaturedResponse["cities"];
-}
-
 // UI components
 export interface ErrorCardProps {
   title?: string;
@@ -232,4 +227,4 @@ export interface RestaurantSearchFilterProps {
 }
 
 // Import base types
-import type { Restaurant, Influencer, Video, Tag, Cuisine, OptimizedFeaturedResponse } from './index';
+import type { Restaurant, Influencer, Video, Tag, Cuisine } from './index';

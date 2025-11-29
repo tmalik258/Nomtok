@@ -1,5 +1,5 @@
 import api, { adminApi } from '../api';
-import { Restaurant, SearchParams, PaginatedRestaurantsResponse, OptimizedFeaturedResponse } from '@/lib/types';
+import { Restaurant, SearchParams, PaginatedRestaurantsResponse } from '@/lib/types';
 
 export const restaurantActions = {
   getRestaurants: async (params?: SearchParams): Promise<PaginatedRestaurantsResponse> => {
@@ -17,23 +17,11 @@ export const restaurantActions = {
     return response.data;
   },
   
-  // New method to get restaurants with listings (optimized for performance)
-  getRestaurantsWithListings: async (params?: Omit<SearchParams, 'include_listings'>, includeVideoDetails = false): Promise<PaginatedRestaurantsResponse> => {
-    const response = await api.get('/restaurants/', {
-      params: {
-        ...params,
-        include_listings: true,
-        include_video_details: includeVideoDetails
-      }
-    });
-    return response.data;
-  },
-  
   searchRestaurantsByCity: async (city: string, includeListings = false, includeVideoDetails = false): Promise<Restaurant[]> => {
     const response = await api.get('/restaurants/', {
       params: { 
         city, 
-        limit: 50,
+        limit: 6,
         include_listings: includeListings,
         include_video_details: includeVideoDetails
       }
@@ -48,8 +36,13 @@ export const restaurantActions = {
     return response.data;
   },
 
-  getFeaturedOptimized: async (): Promise<OptimizedFeaturedResponse> => {
-    const response = await api.get('/restaurants/featured-optimized/');
+  getTopCitiesWithRestaurants: async (limit = 2, restaurantsPerCity = 6) => {
+    const response = await api.get('/restaurants/top-cities-with-restaurants/', {
+      params: {
+        limit,
+        restaurants_per_city: restaurantsPerCity,
+      },
+    });
     return response.data;
   },
 

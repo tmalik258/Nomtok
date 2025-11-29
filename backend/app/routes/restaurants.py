@@ -1,5 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
+from datetime import datetime
+import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -10,12 +12,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Restaurant, RestaurantTag, RestaurantCuisine, Listing, Tag, Cuisine, Influencer
 from app.database import get_async_db
 from app.utils.logging import setup_logger
+from app.utils.restaurant_queries import (
+    get_top_cities_with_approved_listings,
+    get_restaurant_ids_by_cities,
+    fetch_restaurants_data,
+    fetch_cuisines_data,
+    fetch_listings_data,
+    build_restaurant_response
+)
 from app.api_schema.tags import TagResponse
 from app.api_schema.cuisines import CuisineResponse
 from app.api_schema.videos import VideoResponse
 from app.api_schema.listings import ListingLightResponse
-from app.api_schema.influencers import InfluencerResponse, InfluencerLightResponse
-from app.api_schema.restaurants import RestaurantResponse, OptimizedFeaturedResponse, CityRestaurantsResponse, PaginatedRestaurantsResponse, rebuild_models
+from app.api_schema.influencers import InfluencerLightResponse
+from app.api_schema.restaurants import RestaurantResponse, PaginatedRestaurantsResponse, CityWithRestaurants, TopCitiesWithRestaurantsResponse, rebuild_models
 from app.services.google_places_service import refetch_photo_by_place_id
 from app.services.cache import CacheService
 
@@ -271,6 +281,81 @@ async def get_popular_cities(db: AsyncSession = Depends(get_async_db)):
         logger.error(f"Error fetching popular cities: {e}")
         return []
 
+@router.get("/top-cities-with-restaurants/", response_model=TopCitiesWithRestaurantsResponse)
+async def get_top_cities_with_restaurants(
+    db: AsyncSession = Depends(get_async_db),
+    limit: int = Query(2, description="Number of top cities to return"),
+    restaurants_per_city: int = Query(6, description="Number of restaurants per city")
+):
+    """Get top cities with their restaurants optimized for home page display.
+    Only returns restaurants with approved listings and essential fields only."""
+    try:
+        # Get top cities with most restaurants that have approved listings
+        city_names = await get_top_cities_with_approved_listings(db, limit)
+        
+        if not city_names:
+            return TopCitiesWithRestaurantsResponse(cities=[])
+        
+        # Get restaurant IDs grouped by city
+        city_restaurant_ids = await get_restaurant_ids_by_cities(db, city_names)
+        
+        if not city_restaurant_ids:
+            return TopCitiesWithRestaurantsResponse(cities=[])
+        
+        # Get all restaurant IDs (limit per city for filtering)
+        all_restaurant_ids = [
+            rid for ids in city_restaurant_ids.values() 
+            for rid in ids[:restaurants_per_city * 2]
+        ]
+        
+        if not all_restaurant_ids:
+            return TopCitiesWithRestaurantsResponse(cities=[])
+        
+        # Fetch all required data in parallel
+        restaurants_data, cuisines_data, listings_data = await asyncio.gather(
+            fetch_restaurants_data(db, all_restaurant_ids),
+            fetch_cuisines_data(db, all_restaurant_ids),
+            fetch_listings_data(db, all_restaurant_ids)
+        )
+        
+        # Build response with restaurants for each city
+        cities_with_restaurants = []
+        for city in city_names:
+            if city not in city_restaurant_ids:
+                continue
+            
+            restaurant_responses = []
+            for restaurant_id in city_restaurant_ids[city][:restaurants_per_city * 2]:
+                if restaurant_id not in restaurants_data:
+                    continue
+                
+                restaurant_response = build_restaurant_response(
+                    restaurant_id,
+                    restaurants_data[restaurant_id],
+                    cuisines_data,
+                    listings_data
+                )
+                
+                if restaurant_response:
+                    restaurant_responses.append(restaurant_response)
+            
+            # Sort by rating or number of listings
+            restaurant_responses.sort(key=lambda r: (
+                -(r.google_rating or 0),
+                -(len(r.listings) if r.listings else 0)
+            ))
+            
+            if restaurant_responses:
+                cities_with_restaurants.append(CityWithRestaurants(
+                    city=city,
+                    restaurants=restaurant_responses[:restaurants_per_city]
+                ))
+        
+        return TopCitiesWithRestaurantsResponse(cities=cities_with_restaurants)
+    except Exception as e:
+        logger.exception("Error fetching top cities with restaurants")
+        raise HTTPException(status_code=500, detail="Failed to fetch cities with restaurants. Please try again later.")
+
 @router.get("/countries/")
 async def get_countries(db: AsyncSession = Depends(get_async_db), influencer: Optional[str] = None):
     """Get unique countries from restaurants, optionally filtered by influencer (UUID or slug)."""
@@ -306,159 +391,6 @@ async def get_countries(db: AsyncSession = Depends(get_async_db), influencer: Op
     except Exception as e:
         logger.error(f"Error fetching countries from restaurants: {e}")
         return {"country": []}
-
-@router.get("/featured-optimized/", response_model=OptimizedFeaturedResponse)
-async def get_featured_optimized(db: AsyncSession = Depends(get_async_db)):
-    """Get top 5 cities with 3 latest restaurants each in a single optimized call.
-    
-    Enhanced implementation that:
-    - Retrieves complete restaurant information including all fields and associated tags
-    - Includes optimized listings with influencer details only (excludes restaurant and video data)
-    - Maintains data integrity while significantly improving API efficiency and performance
-    """
-    try:
-        # Get top 5 cities with most restaurants in a single query
-        popular_cities_query = select(
-            Restaurant.city
-        ).filter(
-            Restaurant.is_active == True,
-            Restaurant.city.isnot(None)
-        ).group_by(Restaurant.city).order_by(
-            func.count(Restaurant.city).desc()
-        ).limit(5)
-        
-        result = await db.execute(popular_cities_query)
-        popular_cities = result.fetchall()
-        
-        if not popular_cities:
-            return OptimizedFeaturedResponse(cities=[])
-        
-        city_names = [city[0] for city in popular_cities]
-        
-        # Single optimized query to get all restaurants for all cities with proper joins
-        # Using window function to get top 3 restaurants per city efficiently
-        restaurants_query = select(Restaurant).options(
-            joinedload(Restaurant.restaurant_tags).joinedload(RestaurantTag.tag),
-            joinedload(Restaurant.restaurant_cuisines).joinedload(RestaurantCuisine.cuisine),
-            joinedload(Restaurant.listings).joinedload(Listing.influencer)
-        ).filter(
-            Restaurant.city.in_(city_names),
-            Restaurant.is_active == True
-        ).order_by(Restaurant.city, Restaurant.created_at.desc())
-        
-        result = await db.execute(restaurants_query)
-        all_restaurants = result.scalars().unique().all()
-        
-        # Group restaurants by city and limit to 3 per city
-        city_restaurant_map = {}
-        for restaurant in all_restaurants:
-            city = restaurant.city
-            if city not in city_restaurant_map:
-                city_restaurant_map[city] = []
-            if len(city_restaurant_map[city]) < 3:
-                city_restaurant_map[city].append(restaurant)
-        
-        # Build response with optimized data structure
-        city_restaurants = []
-        for city in city_names:
-            if city not in city_restaurant_map:
-                continue
-                
-            restaurants = city_restaurant_map[city]
-            restaurant_responses = []
-            
-            for restaurant in restaurants:
-                # Convert SQLAlchemy object to dictionary for clean serialization
-                restaurant_dict = {
-                    'id': restaurant.id,
-                    'name': restaurant.name,
-                    'slug': restaurant.slug,
-                    'address': restaurant.address,
-                    'latitude': restaurant.latitude,
-                    'longitude': restaurant.longitude,
-                    'city': restaurant.city,
-                    'country': restaurant.country,
-                    'google_place_id': restaurant.google_place_id,
-                    'google_rating': restaurant.google_rating,
-                    'business_status': restaurant.business_status,
-                    'photo_url': restaurant.photo_url,
-                    'is_active': restaurant.is_active,
-                    'created_at': restaurant.created_at,
-                    'updated_at': restaurant.updated_at,
-                    'current_opening_hours': restaurant.current_opening_hours,
-                    'secondary_opening_hours': restaurant.secondary_opening_hours,
-                    'international_phone_number': restaurant.international_phone_number,
-                    'opening_hours': restaurant.opening_hours,
-                    'price_level': restaurant.price_level,
-                    'website': restaurant.website
-                }
-                
-                # Process optimized listings (exclude restaurant and video data)
-                listings_data = []
-                for listing in restaurant.listings:
-                    if listing.influencer:
-                        # Create optimized listing with only essential data
-                        # Manually construct InfluencerLightResponse to avoid lazy loading issues
-                        influencer_response = InfluencerLightResponse(
-                            id=listing.influencer.id,
-                            name=listing.influencer.name,
-                            slug=listing.influencer.slug,
-                            bio=listing.influencer.bio,
-                            avatar_url=listing.influencer.avatar_url,
-                            banner_url=listing.influencer.banner_url,
-                            youtube_channel_id=listing.influencer.youtube_channel_id,
-                            youtube_channel_url=listing.influencer.youtube_channel_url,
-                            subscriber_count=listing.influencer.subscriber_count,
-                            created_at=listing.influencer.created_at,
-                            updated_at=listing.influencer.updated_at,
-                        )
-                        
-                        listing_optimized = ListingLightResponse(
-                            id=listing.id,
-                            restaurant_id=listing.restaurant.id,
-                            influencer=influencer_response,
-                            visit_date=listing.visit_date,
-                            confidence_score=listing.confidence_score,
-                            review_sections=listing.review_sections,
-                            timestamp=listing.timestamp,
-                            approved=listing.approved,
-                            created_at=listing.created_at,
-                            updated_at=listing.updated_at
-                        )
-                        listings_data.append(listing_optimized)
-
-                restaurant_dict['listings'] = listings_data
-                
-                # Process tags with complete data integrity
-                tags_data = []
-                if restaurant.restaurant_tags:
-                    for restaurant_tag in restaurant.restaurant_tags:
-                        if restaurant_tag.tag:
-                            tags_data.append(TagResponse.model_validate(restaurant_tag.tag))
-                restaurant_dict['tags'] = tags_data if tags_data else None
-                
-                # Process cuisines with complete data integrity
-                cuisines_data = []
-                if restaurant.restaurant_cuisines:
-                    for restaurant_cuisine in restaurant.restaurant_cuisines:
-                        if restaurant_cuisine.cuisine:
-                            cuisines_data.append(CuisineResponse.model_validate(restaurant_cuisine.cuisine))
-                restaurant_dict['cuisines'] = cuisines_data if cuisines_data else None
-                
-                # Create RestaurantResponse with all fields maintained
-                restaurant_response = RestaurantResponse.model_validate(restaurant_dict)
-                restaurant_responses.append(restaurant_response)
-            
-            if restaurant_responses:  # Only add cities that have restaurants
-                city_restaurants.append(CityRestaurantsResponse(
-                    city=city,
-                    restaurants=restaurant_responses
-                ))
-        
-        return OptimizedFeaturedResponse(cities=city_restaurants)
-    except Exception as e:
-        logger.exception("Error fetching featured optimized data")
-        raise HTTPException(status_code=500, detail="Failed to fetch featured data. Please try again later.")
 
 @router.get("/{restaurant}/", response_model=RestaurantResponse)
 async def get_restaurant(

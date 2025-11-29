@@ -40,23 +40,23 @@ class RestaurantResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-class CityRestaurantsResponse(BaseModel):
-    """Response model for city with its top restaurants"""
+class PaginatedRestaurantsResponse(BaseModel):
+    """Response model for paginated restaurants with total count"""
+    restaurants: List[RestaurantResponse]
+    total: int
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class CityWithRestaurants(BaseModel):
+    """Response model for a city with its restaurants"""
     city: str
     restaurants: List[RestaurantResponse]
     
     model_config = ConfigDict(from_attributes=True)
 
-class OptimizedFeaturedResponse(BaseModel):
-    """Response model for optimized featured cities and restaurants"""
-    cities: List[CityRestaurantsResponse]
-    
-    model_config = ConfigDict(from_attributes=True)
-
-class PaginatedRestaurantsResponse(BaseModel):
-    """Response model for paginated restaurants with total count"""
-    restaurants: List[RestaurantResponse]
-    total: int
+class TopCitiesWithRestaurantsResponse(BaseModel):
+    """Response model for top cities with their restaurants"""
+    cities: List[CityWithRestaurants]
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -65,6 +65,4 @@ def rebuild_models():
     """Rebuild models to resolve forward references after all imports are complete"""
     from app.api_schema.listings import ListingLightResponse
     RestaurantResponse.model_rebuild()
-    CityRestaurantsResponse.model_rebuild()
-    OptimizedFeaturedResponse.model_rebuild()
     PaginatedRestaurantsResponse.model_rebuild()

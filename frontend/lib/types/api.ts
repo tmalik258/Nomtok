@@ -81,7 +81,7 @@ export interface CityRestaurants {
   restaurants: Restaurant[];
 }
 
-export interface OptimizedFeaturedResponse {
+export interface TopCitiesWithRestaurantsResponse {
   cities: CityRestaurants[];
 }
 

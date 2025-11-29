@@ -41,10 +41,11 @@ export const useRestaurantsPaginated = (initialParams?: PaginatedRestaurantsPara
     setError(null);
     
     try {
-      const response = await restaurantActions.getRestaurantsWithListings({
+      const response = await restaurantActions.getRestaurants({
         ...otherParams,
         skip: (page - 1) * limit,
-        limit
+        limit,
+        include_listings: true,
       });
       
       // Handle the paginated response from the API
