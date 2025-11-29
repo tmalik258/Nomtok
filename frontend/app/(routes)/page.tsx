@@ -9,7 +9,10 @@ export const revalidate = 3600;
 
 export default async function Home() {
   const getCachedData = unstable_cache(
-    async () => fetchHomePageData(),
+    async () => {
+      console.log('[HomePage] Cache miss - fetching fresh data');
+      return await fetchHomePageData();
+    },
     ["home-page-data"],
     { revalidate: 3600 }
   );
@@ -23,6 +26,14 @@ export default async function Home() {
 
   try {
     const data = await getCachedData();
+    console.log('[HomePage] Data received:', {
+      recent: data.recentRestaurants?.length || 0,
+      city1: data.city1Restaurants?.length || 0,
+      city2: data.city2Restaurants?.length || 0,
+      markWeins: data.markWeinsRestaurants?.length || 0,
+      about: data.aboutRestaurants?.length || 0,
+      cities: data.popularCities?.length || 0,
+    });
     recentRestaurants = data.recentRestaurants || [];
     city1Restaurants = data.city1Restaurants || [];
     city2Restaurants = data.city2Restaurants || [];

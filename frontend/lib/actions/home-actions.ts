@@ -16,10 +16,11 @@ export async function fetchHomePageData(): Promise<HomePageData> {
   const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8030';
   const apiClient = axios.create({
     baseURL: base,
-    timeout: 30000,
+    timeout: 60000, // Increased timeout to 60 seconds for heavy queries
   });
 
   // Fetch all data in parallel
+  console.log('[HomePage] Fetching data from:', base);
   const [
     popularCitiesData,
     topCitiesData,
@@ -28,33 +29,56 @@ export async function fetchHomePageData(): Promise<HomePageData> {
     restaurantsForAboutData,
   ] = await Promise.allSettled([
     // Popular cities (full list of top 5)
-    apiClient.get('/restaurants/popular-cities/').then(res => res.data),
+    apiClient.get('/restaurants/popular-cities/').then(res => {
+      console.log('[HomePage] Popular cities fetched:', res.data?.length || 0);
+      return res.data;
+    }),
     // Top cities with restaurants (top 2 cities with their restaurants)
     apiClient.get('/restaurants/top-cities-with-restaurants/', {
       params: { limit: 2, restaurants_per_city: 6 },
-    }).then(res => res.data),
+    }).then(res => {
+      console.log('[HomePage] Top cities fetched:', res.data?.cities?.length || 0);
+      return res.data;
+    }),
     // Recent restaurants (with listings to sort by most recent listing)
+    // Reduced limit to 20 to avoid timeout - we only need 6 anyway
     apiClient.get('/restaurants/', {
       params: {
         sort_by: 'updated',
-        limit: 50,
+        limit: 6,
         include_listings: true,
       },
-    }).then(res => res.data),
+    }).then(res => {
+      const data = res.data;
+      const restaurants = Array.isArray(data) ? data : (data?.restaurants || []);
+      console.log('[HomePage] Recent restaurants fetched:', restaurants.length);
+      return res.data;
+    }),
     // Mark Weins restaurants
+    // Reduced limit to 20 to avoid timeout - we only need 6 anyway
     apiClient.get('/restaurants/', {
       params: {
         influencer_id: 'mark-wiens',
-        limit: 50,
+        limit: 6,
         include_listings: true,
       },
-    }).then(res => res.data),
+    }).then(res => {
+      const data = res.data;
+      const restaurants = Array.isArray(data) ? data : (data?.restaurants || []);
+      console.log('[HomePage] Mark Weins restaurants fetched:', restaurants.length);
+      return res.data;
+    }),
     // Restaurants for About section (5 restaurants with photos)
     apiClient.get('/restaurants/', {
       params: {
         limit: 10,
       },
-    }).then(res => res.data),
+    }).then(res => {
+      const data = res.data;
+      const restaurants = Array.isArray(data) ? data : (data?.restaurants || []);
+      console.log('[HomePage] About restaurants fetched:', restaurants.length);
+      return res.data;
+    }),
   ]);
 
   // Get popular cities (full list)
@@ -86,6 +110,8 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       ? data
       : data?.restaurants || [];
     recentRestaurants = processRecentRestaurants(restaurants);
+  } else {
+    console.error('Failed to fetch recent restaurants:', recentRestaurantsData.reason);
   }
 
   // Process Mark Weins restaurants: filter for approved listings
@@ -96,6 +122,8 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       ? data
       : data?.restaurants || [];
     markWeinsRestaurants = processInfluencerRestaurants(restaurants);
+  } else {
+    console.error('Failed to fetch Mark Weins restaurants:', markWeinsRestaurantsData.reason);
   }
 
   // Get restaurants for About section (with photos)
