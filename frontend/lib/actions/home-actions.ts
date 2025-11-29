@@ -18,6 +18,12 @@ export async function fetchHomePageData(): Promise<HomePageData> {
     (process.env.NODE_ENV === 'production' ? 'http://backend:8000' : 'http://localhost:8030')
   ).replace(/\/$/, '');
 
+  console.log('[HomePage] Fetching data from API:', API_URL);
+  console.log('[HomePage] Environment:', {
+    NODE_ENV: process.env.NODE_ENV,
+    hasNextPublicApiUrl: !!process.env.NEXT_PUBLIC_API_URL,
+  });
+
   const [
     popularCitiesData,
     topCitiesData,
@@ -90,6 +96,16 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       ? popularCitiesData.value
       : [];
 
+  if (popularCitiesData.status === 'rejected') {
+    const error = popularCitiesData.reason;
+    console.error('[HomePage] Failed to fetch popular cities:', {
+      message: error?.message || String(error),
+      code: error?.code,
+      response: error?.response?.status,
+      url: error?.config?.url || `${API_URL}/restaurants/popular-cities/`,
+    });
+  }
+
   // Extract restaurants from top cities response
   let city1Restaurants: Restaurant[] = [];
   let city2Restaurants: Restaurant[] = [];
@@ -103,6 +119,14 @@ export async function fetchHomePageData(): Promise<HomePageData> {
     if (citiesData.length > 1) {
       city2Restaurants = processCityRestaurants(citiesData[1].restaurants || []);
     }
+  } else if (topCitiesData.status === 'rejected') {
+    const error = topCitiesData.reason;
+    console.error('[HomePage] Failed to fetch top cities with restaurants:', {
+      message: error?.message || String(error),
+      code: error?.code,
+      response: error?.response?.status,
+      url: error?.config?.url || `${API_URL}/restaurants/top-cities-with-restaurants/`,
+    });
   }
 
   // Process recent restaurants: filter for approved listings and sort by most recent listing
@@ -113,6 +137,14 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       ? data
       : data?.restaurants || [];
     recentRestaurants = processRecentRestaurants(restaurants);
+  } else if (recentRestaurantsData.status === 'rejected') {
+    const error = recentRestaurantsData.reason;
+    console.error('[HomePage] Failed to fetch recent restaurants:', {
+      message: error?.message || String(error),
+      code: error?.code,
+      response: error?.response?.status,
+      url: error?.config?.url || `${API_URL}/restaurants/`,
+    });
   }
 
   // Process Mark Weins restaurants: filter for approved listings
@@ -123,6 +155,14 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       ? data
       : data?.restaurants || [];
     markWeinsRestaurants = processInfluencerRestaurants(restaurants);
+  } else if (markWeinsRestaurantsData.status === 'rejected') {
+    const error = markWeinsRestaurantsData.reason;
+    console.error('[HomePage] Failed to fetch Mark Weins restaurants:', {
+      message: error?.message || String(error),
+      code: error?.code,
+      response: error?.response?.status,
+      url: error?.config?.url || `${API_URL}/restaurants/`,
+    });
   }
 
   // Get restaurants for About section (with photos)
@@ -147,7 +187,26 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       // Fallback: use any restaurants if none have photos (up to 5)
       aboutRestaurants = restaurants.slice(0, 5);
     }
+  } else if (restaurantsForAboutData.status === 'rejected') {
+    const error = restaurantsForAboutData.reason;
+    console.error('[HomePage] Failed to fetch about restaurants:', {
+      message: error?.message || String(error),
+      code: error?.code,
+      response: error?.response?.status,
+      url: error?.config?.url || `${API_URL}/restaurants/`,
+    });
   }
+
+  // Log summary of fetched data
+  console.log('[HomePage] Data fetch summary:', {
+    popularCities: popularCities.length,
+    city1Restaurants: city1Restaurants.length,
+    city2Restaurants: city2Restaurants.length,
+    recentRestaurants: recentRestaurants.length,
+    markWeinsRestaurants: markWeinsRestaurants.length,
+    aboutRestaurants: aboutRestaurants.length,
+    apiUrl: API_URL,
+  });
 
   return {
     recentRestaurants,

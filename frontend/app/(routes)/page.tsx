@@ -15,8 +15,7 @@ export default async function Home() {
   let aboutRestaurants: Restaurant[] = [];
   let popularCities: string[] = [];
 
-  // Use the same pattern as restaurant/influencer detail pages
-  // Wrap in try-catch and silently handle errors during build
+  // Fetch home page data with error logging
   try {
     const getCachedData = unstable_cache(
       async () => {
@@ -34,8 +33,14 @@ export default async function Home() {
     markWeinsRestaurants = data.markWeinsRestaurants || [];
     aboutRestaurants = data.aboutRestaurants || [];
     popularCities = data.popularCities || [];
-  } catch {
-    // Silently handle errors during build (same as detail pages)
+  } catch (error) {
+    // Log errors but still render page with empty data
+    // This allows the page to render during build even if backend isn't available
+    console.error('[HomePage] Error fetching home page data:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+    });
     // Page will render with empty data, and ISR will fetch fresh data on first request
   }
 
