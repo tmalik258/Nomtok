@@ -306,7 +306,7 @@ async def get_reviews(
                 return {"status": "ERROR", "reviews": [], "rating": 0, "user_ratings_total": 0}
             
             data = response.json()
-            reviews = data.get("reviews", [])[:max_reviews]
+            reviews = data.get("reviews", [])[:(max_reviews+1)]
             rating = data.get("rating", 0)
             user_ratings_count = data.get("userRatingCount", 0)
             

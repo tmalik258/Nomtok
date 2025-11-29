@@ -13,7 +13,25 @@ interface HomePageData {
 export async function fetchHomePageData(): Promise<HomePageData> {
   // Use direct axios calls for server-side rendering
   // The /api proxy doesn't work in server components
-  const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8030';
+  // In Docker production, use the internal service name from environment
+  // NEXT_PUBLIC_* vars are embedded at build time, but should still work at runtime in server components
+  let base = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL;
+  
+  // Fallback for Docker production - use internal service name
+  if (!base || base === 'undefined') {
+    // In Docker, backend service is accessible via service name
+    base = process.env.NODE_ENV === 'production' 
+      ? 'http://backend:8000' 
+      : 'http://localhost:8030';
+  }
+  
+  console.log('[HomePage] Environment check:', {
+    NODE_ENV: process.env.NODE_ENV,
+    hasNextPublicApiUrl: !!process.env.NEXT_PUBLIC_API_URL,
+    hasApiUrl: !!process.env.API_URL,
+    usingBase: base,
+  });
+  
   const apiClient = axios.create({
     baseURL: base,
     timeout: 60000, // Increased timeout to 60 seconds for heavy queries
