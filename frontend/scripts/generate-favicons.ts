@@ -23,9 +23,56 @@ async function ensureFileExists(file: string) {
 }
 
 async function createPng(size: number, sourcePath: string, bg: { r: number; g: number; b: number; alpha: number }, output: string) {
-  const buf = await sharp(sourcePath)
-    .resize({ width: size, height: size, fit: 'contain', background: bg })
-    .png()
+  // Get source image metadata to check dimensions
+  const metadata = await sharp(sourcePath).metadata()
+  
+  // For very small sizes, use multi-step downscaling for better quality
+  let pipeline = sharp(sourcePath)
+  
+  // If source is much larger than target, resize in steps for better quality
+  if (metadata.width && metadata.width > size * 4) {
+    // First resize to 4x the target size
+    const step1Size = size * 4
+    pipeline = pipeline.resize({
+      width: step1Size,
+      height: step1Size,
+      fit: 'contain',
+      background: bg,
+      kernel: sharp.kernel.lanczos3,
+      withoutEnlargement: false,
+    })
+  }
+  
+  if (metadata.width && metadata.width > size * 2) {
+    // Second resize to 2x the target size
+    const step2Size = size * 2
+    pipeline = pipeline.resize({
+      width: step2Size,
+      height: step2Size,
+      fit: 'contain',
+      background: bg,
+      kernel: sharp.kernel.lanczos3,
+      withoutEnlargement: false,
+    })
+  }
+  
+  // Final resize to target size with enhanced sharpening
+  const buf = await pipeline
+    .resize({
+      width: size,
+      height: size,
+      fit: 'contain',
+      background: bg,
+      kernel: sharp.kernel.lanczos3,
+      withoutEnlargement: false,
+    })
+    .sharpen(2.0)
+    .png({
+      quality: 100,
+      compressionLevel: 6,
+      adaptiveFiltering: true,
+      force: true,
+    })
     .toBuffer()
   await fs.promises.writeFile(output, buf)
 }

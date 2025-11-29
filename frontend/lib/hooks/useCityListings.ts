@@ -111,7 +111,7 @@ export const useCityListings = (city: string, skipFetch = false, initialData: Re
     } else if (!city) {
       setLoading(false);
     }
-  }, [city, skipFetch, initialData.length, fetchCityListings, restaurants.length]);
+  }, [city, skipFetch, initialData, fetchCityListings, restaurants.length]);
 
   return {
     restaurants,
