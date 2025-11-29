@@ -5,7 +5,7 @@ import { buildPageMetadata } from "@/lib/seo/utils";
 import { fetchHomePageData } from "@/lib/actions";
 import type { Restaurant } from "@/lib/types";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   let recentRestaurants: Restaurant[] = [];

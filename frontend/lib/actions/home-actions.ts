@@ -14,9 +14,8 @@ export async function fetchHomePageData(): Promise<HomePageData> {
   // Use the same pattern as sitemap generation
   // NEXT_PUBLIC_API_URL is available at both build-time and runtime
   // Falls back to 'http://backend:8000' for Docker production, or 'http://localhost:8030' for local dev
-  const API_URL = (process.env.NEXT_PUBLIC_API_URL || 
-    (process.env.NODE_ENV === 'production' ? 'http://backend:8000' : 'http://localhost:8030')
-  ).replace(/\/$/, '');
+  const raw = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'http://backend:8000' : 'http://localhost:8030');
+  const API_URL = raw.replace(/[`'"\s]+/g, '').replace(/\/$/, '');
 
   console.log('[HomePage] Fetching data from API:', API_URL);
   console.log('[HomePage] Environment:', {
@@ -324,4 +323,3 @@ function processCityRestaurants(restaurants: Restaurant[]): Restaurant[] {
     })
     .slice(0, 6);
 }
-
