@@ -6,10 +6,14 @@
   "background_color": "#ffffff",
   "theme_color": "#111827",
   "icons": [
-    { "src": "/logo.png", "sizes": "64x64", "type": "image/png" },
-    { "src": "/logo.png", "sizes": "48x48", "type": "image/png" },
-    { "src": "/logo.png", "sizes": "32x32", "type": "image/png" },
-    { "src": "/logo.png", "sizes": "16x16", "type": "image/png" },
-    { "src": "/logo.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+    { "src": "/favicon-light-16x16.png", "sizes": "16x16", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon-light-32x32.png", "sizes": "32x32", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon-light-48x48.png", "sizes": "48x48", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon-light-64x64.png", "sizes": "64x64", "type": "image/png", "purpose": "any" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon-dark-16x16.png", "sizes": "16x16", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon-dark-32x32.png", "sizes": "32x32", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon-dark-48x48.png", "sizes": "48x48", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon-dark-64x64.png", "sizes": "64x64", "type": "image/png", "purpose": "any" }
   ]
 }
