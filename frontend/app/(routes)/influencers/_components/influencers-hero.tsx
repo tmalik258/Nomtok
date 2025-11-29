@@ -20,7 +20,7 @@ export default function InfluencersHero({ loading, influencers }: InfluencersHer
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
-          src="/hero-influencer.jpg"
+          src="/hero-influencer.webp"
           alt="Food influencers background"
           fill
           className="object-cover"

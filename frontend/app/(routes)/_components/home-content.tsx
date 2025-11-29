@@ -62,7 +62,7 @@ export default function HomeContent({
       <div className="relative min-h-[calc(100vh-1rem)] flex items-center justify-center overflow-hidden pt-20 rounded-2xl">
         <div className="absolute inset-0">
           <Image
-            src="/hero-main.jpg"
+            src="/hero-main.webp"
             alt="Food background"
             fill
             className="object-cover"
