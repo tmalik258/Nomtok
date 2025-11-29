@@ -11,19 +11,12 @@ interface HomePageData {
 }
 
 export async function fetchHomePageData(): Promise<HomePageData> {
-  // Use the same pattern as detail pages
-  // Check runtime env var first (for Docker), then build-time NEXT_PUBLIC_ var, then fallback
-  const base = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
-  const baseUrl = base.replace(/\/$/, '');
-  
-  // In Docker production, if no env var is set, use internal service name
-  const apiBaseUrl = baseUrl && baseUrl !== 'undefined'
-    ? baseUrl
-    : (process.env.NODE_ENV === 'production'
-        ? 'http://backend:8000'
-        : 'http://localhost:8030');
-  
-  const finalBaseUrl = apiBaseUrl.replace(/\/$/, '');
+  // Use the same pattern as sitemap generation
+  // NEXT_PUBLIC_API_URL is available at both build-time and runtime
+  // Falls back to 'http://backend:8000' for Docker production, or 'http://localhost:8030' for local dev
+  const API_URL = (process.env.NEXT_PUBLIC_API_URL || 
+    (process.env.NODE_ENV === 'production' ? 'http://backend:8000' : 'http://localhost:8030')
+  ).replace(/\/$/, '');
 
   const [
     popularCitiesData,
@@ -33,12 +26,12 @@ export async function fetchHomePageData(): Promise<HomePageData> {
     restaurantsForAboutData,
   ] = await Promise.allSettled([
     // Popular cities (full list of top 5)
-    axios.get(`${finalBaseUrl}/restaurants/popular-cities/`, { timeout: 60000 }).then(res => {
+    axios.get(`${API_URL}/restaurants/popular-cities/`, { timeout: 60000 }).then(res => {
       console.log('[HomePage] Popular cities fetched:', res.data?.length || 0);
       return res.data;
     }),
     // Top cities with restaurants (top 2 cities with their restaurants)
-    axios.get(`${finalBaseUrl}/restaurants/top-cities-with-restaurants/`, {
+    axios.get(`${API_URL}/restaurants/top-cities-with-restaurants/`, {
       params: { limit: 2, restaurants_per_city: 6 },
       timeout: 60000,
     }).then(res => {
@@ -47,7 +40,7 @@ export async function fetchHomePageData(): Promise<HomePageData> {
     }),
             // Recent restaurants (with listings to sort by most recent listing)
             // Set include_video_details=false to reduce payload size and speed up request
-            axios.get(`${finalBaseUrl}/restaurants/`, {
+            axios.get(`${API_URL}/restaurants/`, {
       params: {
         sort_by: 'updated',
         limit: 6,
@@ -63,7 +56,7 @@ export async function fetchHomePageData(): Promise<HomePageData> {
     }),
             // Mark Weins restaurants
             // Set include_video_details=false to reduce payload size and speed up request
-            axios.get(`${finalBaseUrl}/restaurants/`, {
+            axios.get(`${API_URL}/restaurants/`, {
       params: {
         influencer_id: 'mark-wiens',
         limit: 6,
@@ -78,7 +71,7 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       return res.data;
     }),
             // Restaurants for About section (5 restaurants with photos)
-            axios.get(`${finalBaseUrl}/restaurants/`, {
+            axios.get(`${API_URL}/restaurants/`, {
       params: {
         limit: 10,
       },
