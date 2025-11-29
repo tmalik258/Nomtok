@@ -13,14 +13,28 @@ interface HomePageData {
 export async function fetchHomePageData(): Promise<HomePageData> {
   // Use direct axios calls for server-side rendering
   // The /api proxy doesn't work in server components
-  const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8030';
-  const apiClient = axios.create({
-    baseURL: base,
-    timeout: 60000, // Increased timeout to 60 seconds for heavy queries
-  });
+  // In Docker production, use internal service name from environment
+  const base = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:8030';
+  
+  // Fallback for Docker production - use internal service name
+  const apiBaseUrl = base && base !== 'undefined' 
+    ? base 
+    : (process.env.NODE_ENV === 'production' 
+        ? 'http://backend:8000' 
+        : 'http://localhost:8030');
+  
+  // Remove trailing slash if present
+  const baseUrl = apiBaseUrl.replace(/\/$/, '');
 
-  // Fetch all data in parallel
-  console.log('[HomePage] Fetching data from:', base);
+  // Fetch all data in parallel using axios directly
+  console.log('[HomePage] Fetching data from:', baseUrl);
+  console.log('[HomePage] Environment check:', {
+    NODE_ENV: process.env.NODE_ENV,
+    hasNextPublicApiUrl: !!process.env.NEXT_PUBLIC_API_URL,
+    hasApiUrl: !!process.env.API_URL,
+    usingBase: baseUrl,
+  });
+  
   const [
     popularCitiesData,
     topCitiesData,
@@ -29,25 +43,28 @@ export async function fetchHomePageData(): Promise<HomePageData> {
     restaurantsForAboutData,
   ] = await Promise.allSettled([
     // Popular cities (full list of top 5)
-    apiClient.get('/restaurants/popular-cities/').then(res => {
+    axios.get(`${baseUrl}/restaurants/popular-cities/`, { timeout: 60000 }).then(res => {
       console.log('[HomePage] Popular cities fetched:', res.data?.length || 0);
       return res.data;
     }),
     // Top cities with restaurants (top 2 cities with their restaurants)
-    apiClient.get('/restaurants/top-cities-with-restaurants/', {
+    axios.get(`${baseUrl}/restaurants/top-cities-with-restaurants/`, {
       params: { limit: 2, restaurants_per_city: 6 },
+      timeout: 60000,
     }).then(res => {
       console.log('[HomePage] Top cities fetched:', res.data?.cities?.length || 0);
       return res.data;
     }),
     // Recent restaurants (with listings to sort by most recent listing)
-    // Reduced limit to 20 to avoid timeout - we only need 6 anyway
-    apiClient.get('/restaurants/', {
+    // Set include_video_details=false to reduce payload size and speed up request
+    axios.get(`${baseUrl}/restaurants/`, {
       params: {
         sort_by: 'updated',
         limit: 6,
         include_listings: true,
+        include_video_details: false, // Don't need full video details, just basic listing info
       },
+      timeout: 60000,
     }).then(res => {
       const data = res.data;
       const restaurants = Array.isArray(data) ? data : (data?.restaurants || []);
@@ -55,13 +72,15 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       return res.data;
     }),
     // Mark Weins restaurants
-    // Reduced limit to 20 to avoid timeout - we only need 6 anyway
-    apiClient.get('/restaurants/', {
+    // Set include_video_details=false to reduce payload size and speed up request
+    axios.get(`${baseUrl}/restaurants/`, {
       params: {
         influencer_id: 'mark-wiens',
         limit: 6,
         include_listings: true,
+        include_video_details: false, // Don't need full video details, just basic listing info
       },
+      timeout: 60000,
     }).then(res => {
       const data = res.data;
       const restaurants = Array.isArray(data) ? data : (data?.restaurants || []);
@@ -69,10 +88,11 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       return res.data;
     }),
     // Restaurants for About section (5 restaurants with photos)
-    apiClient.get('/restaurants/', {
+    axios.get(`${baseUrl}/restaurants/`, {
       params: {
         limit: 10,
       },
+      timeout: 60000,
     }).then(res => {
       const data = res.data;
       const restaurants = Array.isArray(data) ? data : (data?.restaurants || []);
@@ -110,8 +130,15 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       ? data
       : data?.restaurants || [];
     recentRestaurants = processRecentRestaurants(restaurants);
+    console.log('[HomePage] Recent restaurants processed:', recentRestaurants.length);
   } else {
-    console.error('Failed to fetch recent restaurants:', recentRestaurantsData.reason);
+    const error = recentRestaurantsData.reason;
+    console.error('[HomePage] Failed to fetch recent restaurants:', {
+      message: error?.message || error,
+      code: error?.code,
+      response: error?.response?.status,
+      url: error?.config?.url,
+    });
   }
 
   // Process Mark Weins restaurants: filter for approved listings
@@ -122,8 +149,15 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       ? data
       : data?.restaurants || [];
     markWeinsRestaurants = processInfluencerRestaurants(restaurants);
+    console.log('[HomePage] Mark Weins restaurants processed:', markWeinsRestaurants.length);
   } else {
-    console.error('Failed to fetch Mark Weins restaurants:', markWeinsRestaurantsData.reason);
+    const error = markWeinsRestaurantsData.reason;
+    console.error('[HomePage] Failed to fetch Mark Weins restaurants:', {
+      message: error?.message || error,
+      code: error?.code,
+      response: error?.response?.status,
+      url: error?.config?.url,
+    });
   }
 
   // Get restaurants for About section (with photos)

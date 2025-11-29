@@ -8,15 +8,7 @@ import type { Restaurant } from "@/lib/types";
 export const revalidate = 3600;
 
 export default async function Home() {
-  const getCachedData = unstable_cache(
-    async () => {
-      console.log('[HomePage] Cache miss - fetching fresh data');
-      return await fetchHomePageData();
-    },
-    ["home-page-data"],
-    { revalidate: 3600 }
-  );
-
+  // Don't cache errors - only cache successful responses
   let recentRestaurants: Restaurant[] = [];
   let city1Restaurants: Restaurant[] = [];
   let city2Restaurants: Restaurant[] = [];
@@ -25,23 +17,56 @@ export default async function Home() {
   let popularCities: string[] = [];
 
   try {
+    const getCachedData = unstable_cache(
+      async () => {
+        console.log('[HomePage] Cache miss - fetching fresh data');
+        try {
+          const data = await fetchHomePageData();
+          console.log('[HomePage] Data fetched successfully:', {
+            recent: data.recentRestaurants?.length || 0,
+            city1: data.city1Restaurants?.length || 0,
+            city2: data.city2Restaurants?.length || 0,
+            markWeins: data.markWeinsRestaurants?.length || 0,
+            about: data.aboutRestaurants?.length || 0,
+            cities: data.popularCities?.length || 0,
+          });
+          return data;
+        } catch (fetchError) {
+          console.error('[HomePage] Error in fetchHomePageData:', fetchError);
+          // Return empty data structure instead of throwing
+          // This prevents caching errors
+          return {
+            recentRestaurants: [],
+            city1Restaurants: [],
+            city2Restaurants: [],
+            markWeinsRestaurants: [],
+            aboutRestaurants: [],
+            popularCities: [],
+          };
+        }
+      },
+      ["home-page-data"],
+      { revalidate: 3600 }
+    );
+
     const data = await getCachedData();
-    console.log('[HomePage] Data received:', {
-      recent: data.recentRestaurants?.length || 0,
-      city1: data.city1Restaurants?.length || 0,
-      city2: data.city2Restaurants?.length || 0,
-      markWeins: data.markWeinsRestaurants?.length || 0,
-      about: data.aboutRestaurants?.length || 0,
-      cities: data.popularCities?.length || 0,
-    });
     recentRestaurants = data.recentRestaurants || [];
     city1Restaurants = data.city1Restaurants || [];
     city2Restaurants = data.city2Restaurants || [];
     markWeinsRestaurants = data.markWeinsRestaurants || [];
     aboutRestaurants = data.aboutRestaurants || [];
     popularCities = data.popularCities || [];
+    
+    console.log('[HomePage] Final data to render:', {
+      recent: recentRestaurants.length,
+      city1: city1Restaurants.length,
+      city2: city2Restaurants.length,
+      markWeins: markWeinsRestaurants.length,
+      about: aboutRestaurants.length,
+      cities: popularCities.length,
+    });
   } catch (error) {
-    console.error("Error fetching home page data:", error);
+    console.error("[HomePage] Critical error fetching home page data:", error);
     // Use empty arrays as fallback - page will still render
   }
 
