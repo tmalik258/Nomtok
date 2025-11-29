@@ -13,28 +13,12 @@ interface HomePageData {
 export async function fetchHomePageData(): Promise<HomePageData> {
   // Use direct axios calls for server-side rendering
   // The /api proxy doesn't work in server components
-  // In Docker production, use internal service name from environment
-  const base = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:8030';
+  // Match the pattern used in restaurant/influencer detail pages
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
+  const baseUrl = base.replace(/\/$/, '');
   
-  // Fallback for Docker production - use internal service name
-  const apiBaseUrl = base && base !== 'undefined' 
-    ? base 
-    : (process.env.NODE_ENV === 'production' 
-        ? 'http://backend:8000' 
-        : 'http://localhost:8030');
-  
-  // Remove trailing slash if present
-  const baseUrl = apiBaseUrl.replace(/\/$/, '');
-
   // Fetch all data in parallel using axios directly
-  console.log('[HomePage] Fetching data from:', baseUrl);
-  console.log('[HomePage] Environment check:', {
-    NODE_ENV: process.env.NODE_ENV,
-    hasNextPublicApiUrl: !!process.env.NEXT_PUBLIC_API_URL,
-    hasApiUrl: !!process.env.API_URL,
-    usingBase: baseUrl,
-  });
-  
+  // Match the pattern used in restaurant/influencer detail pages
   const [
     popularCitiesData,
     topCitiesData,
@@ -130,15 +114,6 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       ? data
       : data?.restaurants || [];
     recentRestaurants = processRecentRestaurants(restaurants);
-    console.log('[HomePage] Recent restaurants processed:', recentRestaurants.length);
-  } else {
-    const error = recentRestaurantsData.reason;
-    console.error('[HomePage] Failed to fetch recent restaurants:', {
-      message: error?.message || error,
-      code: error?.code,
-      response: error?.response?.status,
-      url: error?.config?.url,
-    });
   }
 
   // Process Mark Weins restaurants: filter for approved listings
@@ -149,15 +124,6 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       ? data
       : data?.restaurants || [];
     markWeinsRestaurants = processInfluencerRestaurants(restaurants);
-    console.log('[HomePage] Mark Weins restaurants processed:', markWeinsRestaurants.length);
-  } else {
-    const error = markWeinsRestaurantsData.reason;
-    console.error('[HomePage] Failed to fetch Mark Weins restaurants:', {
-      message: error?.message || error,
-      code: error?.code,
-      response: error?.response?.status,
-      url: error?.config?.url,
-    });
   }
 
   // Get restaurants for About section (with photos)
