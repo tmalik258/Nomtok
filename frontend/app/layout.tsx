@@ -51,10 +51,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
-      { url: "/favicon-64x64.png", sizes: "64x64", type: "image/png" },
+      { url: "/favicon-light-16x16.png", sizes: "16x16", type: "image/png", media: "(prefers-color-scheme: light)" },
+      { url: "/favicon-light-32x32.png", sizes: "32x32", type: "image/png", media: "(prefers-color-scheme: light)" },
+      { url: "/favicon-light-48x48.png", sizes: "48x48", type: "image/png", media: "(prefers-color-scheme: light)" },
+      { url: "/favicon-light-64x64.png", sizes: "64x64", type: "image/png", media: "(prefers-color-scheme: light)" },
+      { url: "/favicon-dark-16x16.png", sizes: "16x16", type: "image/png", media: "(prefers-color-scheme: dark)" },
+      { url: "/favicon-dark-32x32.png", sizes: "32x32", type: "image/png", media: "(prefers-color-scheme: dark)" },
+      { url: "/favicon-dark-48x48.png", sizes: "48x48", type: "image/png", media: "(prefers-color-scheme: dark)" },
+      { url: "/favicon-dark-64x64.png", sizes: "64x64", type: "image/png", media: "(prefers-color-scheme: dark)" },
     ],
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
@@ -79,10 +83,14 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
         <link rel="shortcut icon" href="/favicon.ico" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
-        <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-light-16x16.png" media="(prefers-color-scheme: light)" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-light-32x32.png" media="(prefers-color-scheme: light)" />
+        <link rel="icon" type="image/png" sizes="48x48" href="/favicon-light-48x48.png" media="(prefers-color-scheme: light)" />
+        <link rel="icon" type="image/png" sizes="64x64" href="/favicon-light-64x64.png" media="(prefers-color-scheme: light)" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-dark-16x16.png" media="(prefers-color-scheme: dark)" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-dark-32x32.png" media="(prefers-color-scheme: dark)" />
+        <link rel="icon" type="image/png" sizes="48x48" href="/favicon-dark-48x48.png" media="(prefers-color-scheme: dark)" />
+        <link rel="icon" type="image/png" sizes="64x64" href="/favicon-dark-64x64.png" media="(prefers-color-scheme: dark)" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       </head>
       <body
