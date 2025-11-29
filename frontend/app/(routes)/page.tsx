@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { unstable_cache } from "next/cache";
 import HomeContent from "./_components/home-content";
-import HomeLoadingSkeleton from "./_components/home-loading-skeleton";
 import { buildPageMetadata } from "@/lib/seo/utils";
 import { fetchHomePageData } from "@/lib/actions";
 import type { Restaurant } from "@/lib/types";
 
 export const revalidate = 3600;
 
-async function HomeContentWrapper() {
+export default async function Home() {
   const getCachedData = unstable_cache(
     async () => fetchHomePageData(),
     ["home-page-data"],
@@ -45,14 +43,6 @@ async function HomeContentWrapper() {
       initialAboutRestaurants={aboutRestaurants}
       initialPopularCities={popularCities}
     />
-  );
-}
-
-export default async function Home() {
-  return (
-    <Suspense fallback={<HomeLoadingSkeleton />}>
-      <HomeContentWrapper />
-    </Suspense>
   );
 }
 
