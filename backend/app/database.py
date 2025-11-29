@@ -2,7 +2,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import (sessionmaker, declarative_base)
 from sqlalchemy.ext.asyncio import (create_async_engine, AsyncSession, async_sessionmaker)
 
-from app.config import DATABASE_URL, ASYNC_DATABASE_URL
+from app.config import (
+    DATABASE_URL,
+    ASYNC_DATABASE_URL,
+    DB_POOL_SIZE,
+    DB_MAX_OVERFLOW,
+    DB_POOL_TIMEOUT,
+    DB_POOL_RECYCLE,
+)
 from app.utils.logging import setup_logger
 
 logger = setup_logger(__name__)
@@ -43,12 +50,23 @@ def get_db():
 try:
     async_engine = create_async_engine(
         ASYNC_DATABASE_URL,
-        pool_size=20,
-        max_overflow=20,
-        pool_timeout=60,
-        pool_recycle=1800,
+        pool_size=DB_POOL_SIZE,
+        max_overflow=DB_MAX_OVERFLOW,
+        pool_timeout=DB_POOL_TIMEOUT,
+        pool_recycle=DB_POOL_RECYCLE,
         echo=False,
         pool_pre_ping=True,
+        # Set connection args for asyncpg to prevent connection leaks
+        connect_args={
+            "server_settings": {
+                "application_name": "nomtok_backend",
+            },
+            "command_timeout": 60,
+        },
+    )
+    logger.info(
+        f"Database connection pool configured: pool_size={DB_POOL_SIZE}, "
+        f"max_overflow={DB_MAX_OVERFLOW}, max_connections={DB_POOL_SIZE + DB_MAX_OVERFLOW}"
     )
 except Exception as e:
     logger.error(f"Failed to create database engine: {str(e)}")
@@ -61,5 +79,7 @@ async def get_async_db():
     async with AsyncSessionLocal() as session:
         try:
             yield session
-        finally:
-            await session.close()
+        except Exception:
+            # Rollback on exception to ensure connection is released
+            await session.rollback()
+            raise
