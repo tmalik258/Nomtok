@@ -36,23 +36,23 @@ async function generatePngVariants() {
   
   const outputs = []
   
-  // Generate light mode favicons
+  // Generate light mode favicons (use black logo for light backgrounds)
   for (const s of sizes) {
     const out = path.join(publicDir, `favicon-light-${s}x${s}.png`)
-    outputs.push(out)
-    await createPng(s, logoLightPath, { r: 0, g: 0, b: 0, alpha: 0 }, out)
-  }
-  
-  // Generate dark mode favicons
-  for (const s of sizes) {
-    const out = path.join(publicDir, `favicon-dark-${s}x${s}.png`)
     outputs.push(out)
     await createPng(s, logoDarkPath, { r: 0, g: 0, b: 0, alpha: 0 }, out)
   }
   
-  // Apple touch icon prefers opaque background (using light mode)
+  // Generate dark mode favicons (use white logo for dark backgrounds)
+  for (const s of sizes) {
+    const out = path.join(publicDir, `favicon-dark-${s}x${s}.png`)
+    outputs.push(out)
+    await createPng(s, logoLightPath, { r: 0, g: 0, b: 0, alpha: 0 }, out)
+  }
+  
+  // Apple touch icon prefers opaque background (using black logo)
   const appleOut = path.join(publicDir, 'apple-touch-icon.png')
-  await createPng(180, logoLightPath, { r: 255, g: 255, b: 255, alpha: 1 }, appleOut)
+  await createPng(180, logoDarkPath, { r: 255, g: 255, b: 255, alpha: 1 }, appleOut)
   
   return outputs
 }
