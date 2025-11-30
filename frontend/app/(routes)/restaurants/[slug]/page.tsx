@@ -153,7 +153,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // Build SEO title - format: {name} | {tag} | {city} Influencer Review or {name} | {cuisine} | {city} Influencer Review
   const category = tagString || cuisine;
-  const title = `${name} | ${category} | ${city} Influencer Review`;
+  const title = `${name} | ${category} | ${city} | Influencer Review`;
 
   // Build meta description
   let description = `${name} in ${city}`;
