@@ -49,13 +49,7 @@ export function ReviewsSlider({
   }
 
   if (!restaurants || restaurants.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">
-          No restaurants available at the moment.
-        </p>
-      </div>
-    );
+    return null;
   }
 
   return (

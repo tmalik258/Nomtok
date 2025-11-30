@@ -166,25 +166,16 @@ export default function RestaurantDetailClient({
       </div>
 
       {/* Recent Reviews in City Section */}
-      {restaurantCity && (
+      {restaurantCity && !cityError && filteredCityRestaurants.length > 0 && (
         <div className="py-12 px-4 bg-cream mt-8">
           <div className="max-w-7xl mx-auto">
-            {cityError ? (
-              <ErrorCard
-                title={`Unable to Load Recent Reviews in ${restaurantCity}`}
-                message={cityError}
-                onRefresh={refetchCity}
-                showRefreshButton={true}
-              />
-            ) : (
-              <ReviewsSlider
-                restaurants={filteredCityRestaurants}
-                title={`Recent Reviews in ${restaurantCity}`}
-                description={`Discover more restaurant recommendations in ${restaurantCity}`}
-                maxItems={6}
-                loading={cityLoading && filteredCityRestaurants.length === 0}
-              />
-            )}
+            <ReviewsSlider
+              restaurants={filteredCityRestaurants}
+              title={`Recent Reviews in ${restaurantCity}`}
+              description={`Discover more restaurant recommendations in ${restaurantCity}`}
+              maxItems={6}
+              loading={cityLoading && filteredCityRestaurants.length === 0}
+            />
           </div>
         </div>
       )}

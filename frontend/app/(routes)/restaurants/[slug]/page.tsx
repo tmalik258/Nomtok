@@ -138,31 +138,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const cuisines = restaurant.cuisines?.map((c) => c.name) ?? [];
   const cuisine = cuisines[0] || "Restaurant";
 
-  // Filter tags to exclude generic words
+  // Filter tags to exclude generic words - use only first tag
   const excluded = ["restaurant", "food", "place", "classic", "general"];
   const tags = restaurant.tags
     ?.map((t) => t.name?.toLowerCase())
     .filter((t) => t && !excluded.includes(t))
-    .slice(0, 3) || [];
+    .slice(0, 1) || [];
 
-  const tagString = tags.length ? `(${tags.join(", ")})` : "";
+  const tagString = tags.length ? tags[0] : "";
 
   // Get influencer from first listing
   const listing = restaurant.listings?.[0];
   const influencer = listing?.influencer?.name;
 
-  // Build SEO title
-  const titleBase = tagString
-    ? `${name} ${city} | ${cuisine} Restaurant ${tagString}`
-    : `${name} ${city} | ${cuisine} Restaurant`;
-  const title = influencer
-    ? `${titleBase} Review by ${influencer}`
-    : titleBase;
+  // Build SEO title - format: {name} | {tag} Influencer Review or {name} | {cuisine} Influencer Review
+  const category = tagString || cuisine;
+  const title = `${name} | ${category} Influencer Review`;
 
   // Build meta description
-  let description = `${name} in ${city} is a popular ${cuisine.toLowerCase()} restaurant`;
-  if (tags.length) {
-    description += ` offering ${tags.join(", ")}`;
+  let description = `${name} in ${city}`;
+  if (tagString) {
+    description += ` - ${tagString}`;
   }
   description += ". Explore reviews, photos and influencer insights on Nomtok.";
   if (influencer) {
