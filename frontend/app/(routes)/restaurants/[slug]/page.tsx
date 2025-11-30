@@ -151,9 +151,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const listing = restaurant.listings?.[0];
   const influencer = listing?.influencer?.name;
 
-  // Build SEO title - format: {name} | {tag} Influencer Review or {name} | {cuisine} Influencer Review
+  // Build SEO title - format: {name} | {tag} | {city} Influencer Review or {name} | {cuisine} | {city} Influencer Review
   const category = tagString || cuisine;
-  const title = `${name} | ${category} Influencer Review`;
+  const title = `${name} | ${category} | ${city} Influencer Review`;
 
   // Build meta description
   let description = `${name} in ${city}`;
