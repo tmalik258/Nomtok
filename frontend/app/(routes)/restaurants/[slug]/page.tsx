@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { toTitleFromSlug } from "@/lib/seo/site";
 import { buildPageMetadata } from "@/lib/seo/utils";
 import RestaurantDetailClient from "./_components/restaurant-detail-client";
 import RestaurantHero from "./_components/restaurant-hero";

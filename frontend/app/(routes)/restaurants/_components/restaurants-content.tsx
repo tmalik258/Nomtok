@@ -57,6 +57,7 @@ export function RestaurantsContent() {
         .split(",")
         .map((cuisineName) => ({ id: "", name: cuisineName, created_at: "" }))
     : [];
+  
   const [selectedCuisines, setSelectedCuisines] = useState<Cuisine[]>(
     initialSelectedCuisines
   );

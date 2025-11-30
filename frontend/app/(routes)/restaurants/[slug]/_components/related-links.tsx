@@ -55,10 +55,10 @@ export default function RelatedLinks({
   if (mainCuisine) {
     links.push({
       href: countryParam && cityParam
-        ? `/restaurants?country=${countryParam}&city=${cityParam}&cuisine=${slugify(mainCuisine.name)}`
+        ? `/restaurants?country=${countryParam}&city=${cityParam}&cuisines=${slugify(mainCuisine.name)}`
         : cityParam
-        ? `/restaurants?city=${cityParam}&cuisine=${slugify(mainCuisine.name)}`
-        : `/restaurants?cuisine=${slugify(mainCuisine.name)}`,
+        ? `/restaurants?city=${cityParam}&cuisines=${slugify(mainCuisine.name)}`
+        : `/restaurants?cuisines=${slugify(mainCuisine.name)}`,
       label: `More ${mainCuisine.name} spots in ${city}`,
       icon: UtensilsCrossed,
     });
