@@ -9,7 +9,7 @@ interface ProfileDetailsProps {
 export const ProfileDetails: React.FC<ProfileDetailsProps> = ({
   influencer,
 }) => (
-  <div className="bg-white rounded-lg shadow-xl p-8 mb-8">
+  <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
     <h2 className="text-2xl font-bold text-gray-900 mb-6">About</h2>
     <p className="text-gray-600 leading-relaxed mb-6">
       {influencer.bio || "No bio available."}

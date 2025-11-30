@@ -30,7 +30,7 @@ export function VideoListingsTab({
     return (
       <div className="space-y-4">
         {[1, 2].map((i) => (
-          <Card key={i} className="bg-white shadow-sm">
+          <Card key={i} className="bg-cream shadow-sm">
             <CardHeader>
               <Skeleton className="h-6 w-3/4" />
             </CardHeader>
@@ -49,7 +49,7 @@ export function VideoListingsTab({
 
   if (error) {
     return (
-      <Card className="bg-white shadow-sm">
+      <Card className="bg-cream shadow-sm">
         <CardContent className="pt-6">
           <div className="text-center text-red-600">
             <p>Error loading listings: {error}</p>
@@ -61,7 +61,7 @@ export function VideoListingsTab({
 
   if (!listings || listings.length === 0) {
     return (
-      <Card className="bg-white shadow-sm">
+      <Card className="bg-cream shadow-sm">
         <CardContent className="pt-6">
           <div className="text-center text-gray-500">
             <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />

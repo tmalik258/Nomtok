@@ -97,9 +97,9 @@ export function VideoCreateFormModal({
 
   return (
     <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-      <DialogContent className="sm:max-w-[600px] glass-effect backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 border border-white/20 dark:border-gray-700/30">
+      <DialogContent className="sm:max-w-[600px] glass-effect backdrop-blur-xl bg-cream/95 dark:bg-gray-900/95 border border-white/20 dark:border-gray-700/30">
         <DialogHeader>
-          <DialogTitle className="text-gray-900 dark:text-white">
+          <DialogTitle className="text-gray-900 dark:text-cream">
             Create New Video
           </DialogTitle>
         </DialogHeader>
@@ -116,7 +116,7 @@ export function VideoCreateFormModal({
                     <Input
                       placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                       {...field}
-                      className="glass-effect backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-orange-200 dark:border-orange-800 focus:border-orange-500 focus:ring-orange-500/20 text-gray-900 dark:text-white"
+                      className="glass-effect backdrop-blur-sm bg-cream/50 dark:bg-gray-800/50 border-orange-200 dark:border-orange-800 focus:border-orange-500 focus:ring-orange-500/20 text-gray-900 dark:text-cream"
                     />
                   </FormControl>
                   <FormMessage />
@@ -126,7 +126,7 @@ export function VideoCreateFormModal({
             <Button
               type="submit"
               disabled={isCreating}
-              className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 hover:border-orange-700 transition-all duration-200 disabled:cursor-not-allowed cursor-pointer"
+              className="bg-orange-600 hover:bg-orange-700 text-cream border-orange-600 hover:border-orange-700 transition-all duration-200 disabled:cursor-not-allowed cursor-pointer"
             >
               {isCreating ? "Creating..." : "Create Video"}
             </Button>

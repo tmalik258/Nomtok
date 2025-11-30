@@ -16,7 +16,7 @@ export const TrendingQuoteCard: React.FC<TrendingQuoteProps> = ({
   error, 
   onRefetch 
 }) => (
-  <Card className="bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-xl border-0">
+  <Card className="bg-gradient-to-br from-orange-500 to-red-600 text-cream shadow-xl border-0">
     <CardContent className="p-6">
       <div className="flex items-center gap-3 mb-4">
         <Quote className="w-6 h-6" />
@@ -25,12 +25,12 @@ export const TrendingQuoteCard: React.FC<TrendingQuoteProps> = ({
       
       {loading ? (
         <div className="space-y-3">
-          <Skeleton className="h-4 w-full bg-white/20" />
-          <Skeleton className="h-4 w-3/4 bg-white/20" />
-          <Skeleton className="h-3 w-1/2 bg-white/20" />
+          <Skeleton className="h-4 w-full bg-cream/20" />
+          <Skeleton className="h-4 w-3/4 bg-cream/20" />
+          <Skeleton className="h-3 w-1/2 bg-cream/20" />
         </div>
       ) : error ? (
-        <div className="text-white/80">
+        <div className="text-cream/80">
           <p className="text-sm">Unable to load latest review</p>
           {onRefetch && (
             <button 
@@ -61,12 +61,12 @@ export const TrendingQuoteCard: React.FC<TrendingQuoteProps> = ({
               return `"Latest review from ${listing.restaurant?.name}"`;
             })()}
           </blockquote>
-          <p className="text-sm text-white/80 mt-3">
+          <p className="text-sm text-cream/80 mt-3">
             — {listing.influencer?.name} at {listing.restaurant?.name}
           </p>
         </div>
       ) : (
-        <div className="text-white/80">
+        <div className="text-cream/80">
           <p className="text-sm">No recent reviews available</p>
         </div>
       )}

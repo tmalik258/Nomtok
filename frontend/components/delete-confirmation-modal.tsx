@@ -72,7 +72,7 @@ export function DeleteConfirmationModal({
             variant="destructive"
             onClick={onConfirm}
             disabled={isLoading}
-            className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 hover:border-orange-700 transition-all duration-200"
+            className="bg-orange-600 hover:bg-orange-700 text-cream border-orange-600 hover:border-orange-700 transition-all duration-200"
           >
             {isLoading ? "Deleting..." : confirmText}
           </Button>

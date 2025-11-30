@@ -19,7 +19,7 @@ export default function InfluencersSearch({
   loading 
 }: InfluencersSearchProps) {
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-8 mb-12 border border-gray-100">
+    <div className="bg-cream rounded-2xl shadow-xl p-8 mb-12 border border-gray-100">
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Meet Our Food Experts</h2>
         <p className="text-gray-600">Search through our curated collection of culinary influencers</p>
@@ -36,7 +36,7 @@ export default function InfluencersSearch({
               placeholder="Search by name, region, or specialty..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-12 py-4 text-lg border-2 border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 rounded-xl bg-gray-50 hover:bg-white transition-all duration-200"
+              className="pl-12 pr-12 py-4 text-lg border-2 border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 rounded-xl bg-gray-50 hover:bg-cream transition-all duration-200"
             />
             {searchQuery && (
               <Button

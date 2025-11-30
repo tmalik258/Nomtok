@@ -15,7 +15,7 @@ export default function DashboardLoadingSkeleton({
   className = "",
 }: DashboardLoadingSkeletonProps) {
   const renderTableSkeleton = () => (
-    <Card className={`glass-effect backdrop-blur-xl bg-white/80 border-orange-200/50 shadow-xl ${className}`}>
+    <Card className={`glass-effect backdrop-blur-xl bg-cream/80 border-orange-200/50 shadow-xl ${className}`}>
       <CardHeader>
         <div className="flex justify-between items-center">
           <Skeleton className="h-6 w-32" />
@@ -55,7 +55,7 @@ export default function DashboardLoadingSkeleton({
   );
 
   const renderFormSkeleton = () => (
-    <Card className={`glass-effect backdrop-blur-xl bg-white/80 border-orange-200/50 shadow-xl ${className}`}>
+    <Card className={`glass-effect backdrop-blur-xl bg-cream/80 border-orange-200/50 shadow-xl ${className}`}>
       <CardHeader>
         <Skeleton className="h-6 w-48" />
         <Skeleton className="h-4 w-64" />
@@ -76,7 +76,7 @@ export default function DashboardLoadingSkeleton({
   );
 
   const renderCardSkeleton = () => (
-    <Card className={`glass-effect backdrop-blur-xl bg-white/80 border-orange-200/50 shadow-xl ${className}`}>
+    <Card className={`glass-effect backdrop-blur-xl bg-cream/80 border-orange-200/50 shadow-xl ${className}`}>
       <CardHeader>
         <div className="flex items-center gap-3">
           <Skeleton className="h-10 w-10 rounded" />
@@ -113,7 +113,7 @@ export default function DashboardLoadingSkeleton({
       {/* Content Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {Array.from({ length: count }).map((_, index) => (
-          <Card key={index} className="glass-effect backdrop-blur-xl bg-white/80 border-orange-200/50 shadow-xl">
+          <Card key={index} className="glass-effect backdrop-blur-xl bg-cream/80 border-orange-200/50 shadow-xl">
             <CardHeader>
               <Skeleton className="h-5 w-24" />
             </CardHeader>
@@ -156,7 +156,7 @@ export default function DashboardLoadingSkeleton({
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="glass-effect backdrop-blur-xl bg-white/80 border-orange-200/50 shadow-xl">
+          <Card key={index} className="glass-effect backdrop-blur-xl bg-cream/80 border-orange-200/50 shadow-xl">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
@@ -173,7 +173,7 @@ export default function DashboardLoadingSkeleton({
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {Array.from({ length: 2 }).map((_, index) => (
-          <Card key={index} className="glass-effect backdrop-blur-xl bg-white/80 border-orange-200/50 shadow-xl">
+          <Card key={index} className="glass-effect backdrop-blur-xl bg-cream/80 border-orange-200/50 shadow-xl">
             <CardHeader>
               <Skeleton className="h-5 w-32" />
             </CardHeader>

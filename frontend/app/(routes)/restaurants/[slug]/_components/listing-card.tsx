@@ -13,7 +13,7 @@ const ListingCard = ({
   restaurant_name?: string;
 }) => {
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+    <Card className="overflow-hidden hover:shadow-md transition-shadow border-none">
       <CardContent className="p-6">
         <div className="flex flex-col gap-6">
           {/* Header Section with Influencer Info and View Profile Button */}
@@ -29,7 +29,7 @@ const ListingCard = ({
                   className="rounded-full object-cover"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-bold text-lg">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-cream font-bold text-lg">
                   {listing?.influencer?.name?.charAt(0) || "?"}
                 </div>
               )}
@@ -59,7 +59,7 @@ const ListingCard = ({
                 </div>
 
                 {/* View Profile Button - Right Aligned */}
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="default" size="sm" asChild className="bg-orange-500 text-cream hover:bg-orange-600 transition-colors duration-200 cursor-pointer">
                   <Link
                     href={`/influencers/${listing?.influencer?.slug}`}
                     className="flex items-center gap-2"

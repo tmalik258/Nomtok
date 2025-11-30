@@ -119,7 +119,7 @@ export const RestaurantFilters = memo(function RestaurantFilters({
           </div>
         </div>
         
-        <Button onClick={onAddNew} className="w-full sm:w-auto cursor-pointer bg-orange-500 hover:bg-orange-600 text-white border-orange-500 shadow-lg hover:shadow-xl transition-all duration-200" aria-label="Add new restaurant">
+        <Button onClick={onAddNew} className="w-full sm:w-auto cursor-pointer bg-orange-500 hover:bg-orange-600 text-cream border-orange-500 shadow-lg hover:shadow-xl transition-all duration-200" aria-label="Add new restaurant">
           <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
           Add Restaurant
         </Button>

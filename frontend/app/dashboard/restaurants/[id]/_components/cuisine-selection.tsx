@@ -64,7 +64,7 @@ export function CuisineSelection({ selectedCuisineIds, onCuisinesChange }: Cuisi
                     variant={isSelected ? "secondary" : "outline"}
                     className={`cursor-pointer transition-colors ${
                       isSelected
-                        ? "bg-orange-500 text-white hover:bg-orange-600"
+                        ? "bg-orange-500 text-cream hover:bg-orange-600"
                         : "hover:bg-gray-100"
                     }`}
                     onClick={() => handleCuisineToggle(cuisine)}

@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const SkeletonLoading = () => {
   return (
-    <div className="min-h-screen bg-white p-2 mb-5">
+    <div className="min-h-screen bg-cream p-2 mb-5">
       {/* Full Width Hero Section Skeleton */}
       <div className="relative h-[calc(65vh)] rounded-xl overflow-hidden">
         <Skeleton className="w-full h-full" />
@@ -13,19 +13,19 @@ const SkeletonLoading = () => {
         {/* Title Overlay Skeleton */}
         <div className="absolute bottom-20 left-0 right-0 text-center p-6 md:p-8 z-50">
           {/* Restaurant name */}
-          <Skeleton className="h-12 md:h-16 w-80 max-w-[90%] mx-auto mb-4 bg-white/20" />
+          <Skeleton className="h-12 md:h-16 w-80 max-w-[90%] mx-auto mb-4 bg-cream/20" />
           {/* Address */}
-          <Skeleton className="h-5 w-64 max-w-[80%] mx-auto mb-4 bg-white/20" />
+          <Skeleton className="h-5 w-64 max-w-[80%] mx-auto mb-4 bg-cream/20" />
           {/* Badges */}
           <div className="flex items-center justify-center gap-5 mb-4">
             <div className="flex items-center gap-1">
-              <Skeleton className="h-8 w-24 rounded-full bg-white/30" />
+              <Skeleton className="h-8 w-24 rounded-full bg-cream/30" />
             </div>
-            <Skeleton className="h-8 w-20 rounded-full bg-white/30" />
+            <Skeleton className="h-8 w-20 rounded-full bg-cream/30" />
           </div>
           {/* Social Share Buttons */}
           <div className="flex justify-center">
-            <Skeleton className="h-10 w-48 rounded-lg bg-white/30" />
+            <Skeleton className="h-10 w-48 rounded-lg bg-cream/30" />
           </div>
         </div>
       </div>

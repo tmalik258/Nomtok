@@ -39,6 +39,7 @@ export interface TriggerNLPResponse {
 // Search and pagination types
 export interface SearchParams {
   city?: string;
+  country?: string;
   name?: string;
   video_id?: string;
   restaurant_id?: string;

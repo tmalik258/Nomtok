@@ -50,7 +50,7 @@ export function RestaurantCard({
   return (
     <Card
       key={restaurant.slug}
-      className="h-full flex flex-col overflow-hidden border-gray-100 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 group p-4"
+      className="h-full flex flex-col overflow-hidden border-0 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 group p-4"
       onClick={() => router.push(`/restaurants/${restaurant.slug}`)}
     >
       <div className="relative h-48 rounded-lg overflow-hidden">
@@ -63,7 +63,7 @@ export function RestaurantCard({
         />
         {restaurant.google_rating && (
           <div className="absolute top-4 right-4">
-            <Badge className="bg-black/70 text-white px-2 py-1 flex items-center">
+            <Badge className="bg-black/70 text-cream px-2 py-1 flex items-center">
               <Star className="h-5 w-5 fill-current text-orange-400" />{" "}
               {restaurant.google_rating}
             </Badge>
@@ -149,7 +149,7 @@ export function RestaurantCard({
           {showButton !== false && (
             <Button
               asChild
-              className="w-full mt-auto bg-orange-500 text-white hover:bg-orange-600 transition-colors duration-200 cursor-pointer"
+              className="w-full mt-auto bg-orange-500 text-cream hover:bg-orange-600 transition-colors duration-200 cursor-pointer"
             >
               <Link href={`/restaurants/${restaurant.slug}`}>View Details</Link>
             </Button>

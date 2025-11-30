@@ -1,5 +1,3 @@
-// Server component to allow page-level metadata
-
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import InfluencerCardSkeleton from "./_components/influencer-card-skeleton";
@@ -11,7 +9,7 @@ export const revalidate = 3600;
 
 function InfluencersLoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 p-2">
+    <div className="min-h-screen bg-cream p-2">
       {/* Hero Section Skeleton */}
       <div className="relative min-h-[60vh] flex items-center justify-center overflow-hidden pt-20 rounded-lg bg-gray-200">
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
@@ -27,7 +25,7 @@ function InfluencersLoadingSkeleton() {
       
       {/* Content Skeleton */}
       <div className="max-w-7xl mx-auto px-4 py-16 -mt-8 relative z-10">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-cream rounded-2xl shadow-xl p-8">
           <Skeleton className="h-12 w-64 mb-8" />
           <Skeleton className="h-12 w-full mb-8" />
           
@@ -45,7 +43,7 @@ function InfluencersLoadingSkeleton() {
 export default function InfluencersPage() {
   return (
     <Suspense fallback={<InfluencersLoadingSkeleton />}>
-      <h1 className="sr-only">Discover Food Influencers</h1>
+      {/* <h1 className="sr-only">Discover Food Influencers</h1> */}
       <InfluencersContent />
     </Suspense>
   );

@@ -203,9 +203,9 @@ export function ListingManagement() {
       <Card className="border-none shadow-none p-0">
         <CardContent className="p-0">
           {error && (
-            <Alert className="mb-4 glass-effect backdrop-blur-xl bg-white/10 dark:bg-gray-900/10 border border-orange-500/50">
+            <Alert className="mb-4 glass-effect backdrop-blur-xl bg-cream/10 dark:bg-gray-900/10 border border-orange-500/50">
               <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-              <AlertDescription className="text-gray-900 dark:text-white">
+              <AlertDescription className="text-gray-900 dark:text-cream">
                 {error}
               </AlertDescription>
             </Alert>
@@ -239,9 +239,9 @@ export function ListingManagement() {
       </Card>
 
       <Dialog open={isCreateFormOpen} onOpenChange={setIsCreateFormOpen}>
-        <DialogContent className="sm:max-w-[600px] glass-effect backdrop-blur-xl bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30">
+        <DialogContent className="sm:max-w-[600px] glass-effect backdrop-blur-xl bg-cream/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30">
           <DialogHeader>
-            <DialogTitle className="text-gray-900 dark:text-white">
+            <DialogTitle className="text-gray-900 dark:text-cream">
               Create New Listing
             </DialogTitle>
           </DialogHeader>
@@ -257,9 +257,9 @@ export function ListingManagement() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-[600px] glass-effect backdrop-blur-xl bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30">
+        <DialogContent className="sm:max-w-[600px] glass-effect backdrop-blur-xl bg-cream/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30">
           <DialogHeader>
-            <DialogTitle className="text-gray-900 dark:text-white">
+            <DialogTitle className="text-gray-900 dark:text-cream">
               Edit Listing
             </DialogTitle>
           </DialogHeader>

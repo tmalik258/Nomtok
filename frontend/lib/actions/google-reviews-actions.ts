@@ -12,8 +12,9 @@ export const googleReviewsActions = {
           place_id: placeId,
         },
       });
-      console.log('Google Reviews Response:', response.data.result);
-      return response.data.result;
+      const result = response.data.result;
+      console.log(`Google Reviews: Received ${result.reviews?.length || 0} reviews`, result);
+      return result;
     } catch (error) {
       console.error(`Error fetching Google reviews for place ${placeId}:`, error);
       throw error;

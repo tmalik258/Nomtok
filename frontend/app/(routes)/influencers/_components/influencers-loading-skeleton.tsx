@@ -38,15 +38,15 @@ export default function InfluencersLoadingSkeleton() {
         <div className="absolute inset-0 bg-black/20" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
-            <Skeleton className="h-16 w-96 mx-auto mb-6 bg-white/20" />
-            <Skeleton className="h-6 w-128 mx-auto mb-12 bg-white/20" />
+            <Skeleton className="h-16 w-96 mx-auto mb-6 bg-cream/20" />
+            <Skeleton className="h-6 w-128 mx-auto mb-12 bg-cream/20" />
             
             {/* Stats Skeleton */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
               {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                  <Skeleton className="h-12 w-16 mx-auto mb-3 bg-white/30" />
-                  <Skeleton className="h-4 w-24 mx-auto bg-white/20" />
+                <div key={index} className="bg-cream/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                  <Skeleton className="h-12 w-16 mx-auto mb-3 bg-cream/30" />
+                  <Skeleton className="h-4 w-24 mx-auto bg-cream/20" />
                 </div>
               ))}
             </div>
@@ -57,7 +57,7 @@ export default function InfluencersLoadingSkeleton() {
       {/* Content Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Search Section Skeleton */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-12 border border-gray-100">
+        <div className="bg-cream rounded-2xl shadow-xl p-8 mb-12 border border-gray-100">
           <div className="text-center mb-6">
             <Skeleton className="h-8 w-64 mx-auto mb-2" />
             <Skeleton className="h-5 w-96 mx-auto" />

@@ -20,7 +20,7 @@ export default function ErrorCard({
 }: ErrorCardProps) {
   return (
     <div className="text-center py-16">
-      <div className="not-dark:bg-white rounded-2xl shadow-xl p-12 max-w-md mx-auto border border-red-100 dark:border-red-600">
+      <div className="not-dark:bg-cream rounded-2xl shadow-xl p-12 max-w-md mx-auto border border-red-100 dark:border-red-600">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <TrendingUp className="w-8 h-8 text-red-600" />
         </div>
@@ -33,7 +33,7 @@ export default function ErrorCard({
           <Button 
             onClick={onRefresh}
             variant="outline"
-            className="cursor-pointer dark:hover:text-white dark:bg-orange-500 dark:hover:bg-orange-600"
+            className="cursor-pointer dark:hover:text-cream dark:bg-orange-500 dark:hover:bg-orange-600"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Try Again

@@ -204,7 +204,7 @@ export default function CreateRestaurantModal({
               <Button
                 type="submit"
                 disabled={isSubmitting || !form.formState.isValid}
-                className="bg-orange-500 hover:bg-orange-600 text-white transition-colors duration-200"
+                className="bg-orange-500 hover:bg-orange-600 text-cream transition-colors duration-200"
               >
                 {isSubmitting ? (
                   <>

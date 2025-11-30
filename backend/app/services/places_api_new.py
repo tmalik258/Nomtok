@@ -280,10 +280,14 @@ async def get_reviews(
     """
     Get reviews for a place using Place Details.
     
+    NOTE: Google Places API (New) has a hard limit of 5 reviews per request.
+    This is a Google API limitation that cannot be changed. Even if max_reviews
+    is set to 6, Google will only return a maximum of 5 reviews.
+    
     Args:
         place_id: The Google Place ID
         language: The language code for reviews
-        max_reviews: Maximum number of reviews to return
+        max_reviews: Maximum number of reviews to return (Google API limits to 5)
     
     Returns:
         Dictionary with reviews and rating information
@@ -306,29 +310,67 @@ async def get_reviews(
                 return {"status": "ERROR", "reviews": [], "rating": 0, "user_ratings_total": 0}
             
             data = response.json()
-            reviews = data.get("reviews", [])[:(max_reviews+1)]
+            # Get all available reviews from the API response
+            all_reviews = data.get("reviews", [])
             rating = data.get("rating", 0)
             user_ratings_count = data.get("userRatingCount", 0)
             
+            # Log raw review count from API for debugging
+            logger.info(
+                f"Raw API response: {len(all_reviews)} reviews returned for place: {place_id}"
+            )
+            if len(all_reviews) > 0:
+                logger.debug(f"Sample review structure: {all_reviews[0]}")
+            
             # Format reviews to match existing schema
+            # Process ALL reviews returned by Google API
             formatted_reviews = []
-            for review in reviews:
+            for idx, review in enumerate(all_reviews):
+                # Extract review data with safe defaults
+                author_attribution = review.get("authorAttribution", {})
+                review_text = review.get("text", {})
+                
+                # Handle both dict and string formats for review text
+                review_text_str = ""
+                if isinstance(review_text, dict):
+                    review_text_str = review_text.get("text", "")
+                elif isinstance(review_text, str):
+                    review_text_str = review_text
+                
                 formatted_review = {
-                    "author_name": review.get("authorAttribution", {}).get("displayName", "Anonymous"),
-                    "author_url": review.get("authorAttribution", {}).get("uri"),
+                    "author_name": author_attribution.get("displayName", "Anonymous"),
+                    "author_url": author_attribution.get("uri"),
                     "language": language,
-                    "profile_photo_url": review.get("authorAttribution", {}).get("photoUri", ""),
+                    "profile_photo_url": author_attribution.get("photoUri", ""),
                     "rating": review.get("rating", 0),
                     "relative_time_description": review.get("relativePublishTimeDescription", ""),
-                    "text": review.get("text", {}).get("text", ""),
+                    "text": review_text_str,
                     "time": review.get("publishTime", "")
                 }
                 formatted_reviews.append(formatted_review)
+                logger.debug(f"Processed review {idx + 1}/{len(all_reviews)}: {formatted_review['author_name']}")
             
             # Sort by publish time (most recent first)
-            formatted_reviews.sort(key=lambda x: x.get("time", ""), reverse=True)
+            # Use a fallback for reviews without time (sort them last)
+            formatted_reviews.sort(
+                key=lambda x: (x.get("time") or "", x.get("rating", 0)), 
+                reverse=True
+            )
             
-            logger.info(f"Got {len(formatted_reviews)} reviews for place: {place_id}")
+            # Limit to max_reviews after sorting
+            formatted_reviews = formatted_reviews[:max_reviews]
+            
+            # Google Places API (New) has a hard limit of 5 reviews
+            if len(all_reviews) < max_reviews:
+                logger.warning(
+                    f"Google API returned only {len(all_reviews)} reviews (requested {max_reviews}). "
+                    f"This is a Google API limitation - maximum 5 reviews per request."
+                )
+            
+            logger.info(
+                f"Processed {len(all_reviews)} reviews from Google API, "
+                f"returning {len(formatted_reviews)} reviews (requested max: {max_reviews}) for place: {place_id}"
+            )
             
             return {
                 "status": "OK",

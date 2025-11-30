@@ -111,7 +111,7 @@ export default function InfluencersPagination({
                   isActive={page === currentPage}
                   className={`${
                     page === currentPage
-                      ? 'bg-orange-600 text-white hover:bg-orange-700'
+                      ? 'bg-orange-600 text-cream hover:bg-orange-700'
                       : 'hover:bg-orange-50 hover:text-orange-600 cursor-pointer'
                   }`}
                 >

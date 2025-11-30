@@ -34,38 +34,38 @@ export default function InfluencersHero({ loading, influencers }: InfluencersHer
       <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
         {loading ? (
           <>
-            <Skeleton className="h-16 w-96 mx-auto mb-6 bg-white/10" />
-            <Skeleton className="h-8 w-[600px] mx-auto mb-8 bg-white/10" />
+            <Skeleton className="h-16 w-96 mx-auto mb-6 bg-cream/10" />
+            <Skeleton className="h-8 w-[600px] mx-auto mb-8 bg-cream/10" />
             <div className="flex justify-center items-center gap-8 mb-8">
-              <Skeleton className="h-6 w-40 bg-white/10" />
-              <Skeleton className="h-6 w-32 bg-white/10" />
-              <Skeleton className="h-6 w-36 bg-white/10" />
+              <Skeleton className="h-6 w-40 bg-cream/10" />
+              <Skeleton className="h-6 w-32 bg-cream/10" />
+              <Skeleton className="h-6 w-36 bg-cream/10" />
             </div>
           </>
         ) : (
           <>
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
+            <h1 className="text-5xl md:text-6xl font-bold text-cream mb-6 leading-tight">
               Food Influencers
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl text-cream/90 mb-8 max-w-3xl mx-auto leading-relaxed">
               Discover the culinary experts who are shaping food trends and inspiring millions of food lovers worldwide
             </p>
             
             {/* Enhanced Stats */}
             <div className="flex flex-wrap justify-center items-center gap-8 mb-8">
-              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20">
+              <div className="flex items-center gap-3 bg-cream/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20">
                 <Users className="w-5 h-5 text-orange-400" />
-                <span className="text-white font-semibold">{influencers?.length} Influencers</span>
+                <span className="text-cream font-semibold">{influencers?.length} Influencers</span>
               </div>
-              {/* <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20">
+              {/* <div className="flex items-center gap-3 bg-cream/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20">
                 <Globe className="w-5 h-5 text-orange-400" />
-                <span className="text-white font-semibold">
+                <span className="text-cream font-semibold">
                   {new Set(influencers?.map(i => i.region).filter(Boolean)).size} Regions
                 </span>
               </div> */}
-              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20">
+              <div className="flex items-center gap-3 bg-cream/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20">
                 <Award className="w-5 h-5 text-orange-400" />
-                <span className="text-white font-semibold">
+                <span className="text-cream font-semibold">
                   {reviews} Reviews
                 </span>
               </div>

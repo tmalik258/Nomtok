@@ -9,8 +9,8 @@ const __dirname = path.dirname(__filename)
 const root = path.resolve(__dirname, '..')
 const publicDir = path.join(root, 'public')
 const appDir = path.join(root, 'app')
-const logoLightPath = path.join(publicDir, 'logo-transparent-white.png')
-const logoDarkPath = path.join(publicDir, 'logo-transparent-black.png')
+const logoLightPath = path.join(publicDir, 'logo-2.2-without-name-transparent-dark.png')
+const logoDarkPath = path.join(publicDir, 'logo-2.2-without-name-transparent-light.png')
 
 const sizes = [16, 32, 48, 64]
 
@@ -99,7 +99,7 @@ async function generatePngVariants() {
   
   // Apple touch icon prefers opaque background (using black logo)
   const appleOut = path.join(publicDir, 'apple-touch-icon.png')
-  await createPng(180, logoDarkPath, { r: 255, g: 255, b: 255, alpha: 1 }, appleOut)
+  await createPng(180, logoDarkPath, { r: 0, g: 0, b: 0, alpha: 0 }, appleOut)
   
   return outputs
 }

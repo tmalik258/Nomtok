@@ -69,7 +69,7 @@ const RestaurantMapClient: React.FC<RestaurantMapProps> = ({
                   } rounded-full border-3 border-white shadow-lg flex items-center justify-center transform ${
                 isHighlighted ? "scale-125" : "hover:scale-110"
               } transition-transform duration-200">
-                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <svg class="w-4 h-4 text-cream" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
                     </svg>
                   </div>
@@ -223,7 +223,7 @@ const RestaurantMapClient: React.FC<RestaurantMapProps> = ({
       <div className="absolute top-4 left-4 right-4 z-[1000] pointer-events-none">
         <div className="flex items-center justify-between">
           {showRestaurantCount ? (
-            <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-lg px-4 py-2 shadow-lg border border-white/20">
+            <div className="flex items-center gap-2 bg-white backdrop-blur-md rounded-lg px-4 py-2 shadow-lg">
               <div className="w-3 h-3 bg-gradient-to-br from-orange-400 to-red-500 rounded-full"></div>
               <span className="text-sm font-semibold text-slate-700">
                 {mappableRestaurants.length} Restaurant
@@ -231,7 +231,7 @@ const RestaurantMapClient: React.FC<RestaurantMapProps> = ({
               </span>
             </div>
           ) : <div />}
-          <div className="text-xs text-slate-500 bg-white/90 backdrop-blur-md rounded-lg px-4 py-2 shadow-lg border border-white/20">
+          <div className="text-xs bg-white backdrop-blur-md rounded-lg px-4 py-2 shadow-lg">
             Click markers for details
           </div>
         </div>
@@ -332,13 +332,13 @@ const RestaurantMapClient: React.FC<RestaurantMapProps> = ({
       <div className="absolute bottom-4 right-4 z-[1000] flex flex-col gap-1">
         <button
           onClick={() => mapRef.current?.zoomIn()}
-          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-lg shadow-lg border border-white/20 flex items-center justify-center hover:bg-white transition-colors"
+          className="w-10 h-10 bg-cream/90 backdrop-blur-md rounded-lg shadow-lg border border-white/20 flex items-center justify-center hover:bg-cream transition-colors"
         >
           <span className="text-slate-700 font-bold text-lg">+</span>
         </button>
         <button
           onClick={() => mapRef.current?.zoomOut()}
-          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-lg shadow-lg border border-white/20 flex items-center justify-center hover:bg-white transition-colors"
+          className="w-10 h-10 bg-cream/90 backdrop-blur-md rounded-lg shadow-lg border border-white/20 flex items-center justify-center hover:bg-cream transition-colors"
         >
           <span className="text-slate-700 font-bold text-lg">-</span>
         </button>

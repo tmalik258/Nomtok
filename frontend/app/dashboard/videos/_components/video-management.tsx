@@ -200,10 +200,10 @@ export default function VideoManagement() {
 
   if (error) {
     return (
-      <div className="text-center py-12 glass-effect backdrop-blur-xl bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 rounded-xl">
+      <div className="text-center py-12 glass-effect backdrop-blur-xl bg-cream/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 rounded-xl">
         <div className="text-orange-600 mb-4">
           <Play className="w-12 h-12 mx-auto mb-2" />
-          <p className="text-lg font-semibold text-gray-900 dark:text-white">
+          <p className="text-lg font-semibold text-gray-900 dark:text-cream">
             Error loading videos
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-300">{error}</p>

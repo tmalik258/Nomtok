@@ -54,7 +54,7 @@ export function RestaurantSearchFilter({
   });
 
   return (
-    <div className="mb-8 flex flex-col gap-4 z-[10000] bg-white shadow-lg p-6 rounded-xl border border-gray-100">
+    <div className="mb-8 flex flex-col gap-4 z-[10000] bg-white shadow-lg p-6 rounded-xl">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
@@ -70,7 +70,7 @@ export function RestaurantSearchFilter({
             <SelectTrigger className="w-full sm:w-48 h-11 border-gray-200 focus:border-orange-500 focus:ring-orange-500">
               <SelectValue placeholder="Search by" />
             </SelectTrigger>
-            <SelectContent className="z-[2000]">
+            <SelectContent className="z-[1500]">
               <SelectItem value="restaurant">Restaurant Name</SelectItem>
               <SelectItem value="influencer">Influencer Name</SelectItem>
               {/* <SelectItem value="video">Video Name</SelectItem> */}
@@ -86,7 +86,7 @@ export function RestaurantSearchFilter({
               <SelectTrigger className="w-full h-11 border-gray-200 focus:border-orange-500 focus:ring-orange-500">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
-              <SelectContent className="z-[1000]">
+              <SelectContent className="z-[1500]">
                 <SelectItem value="name">Name</SelectItem>
                 <SelectItem value="rating">Rating</SelectItem>
                 <SelectItem value="city">City</SelectItem>
@@ -132,7 +132,7 @@ export function RestaurantSearchFilter({
               <SelectTrigger className="w-full h-11 border-gray-200 focus:border-orange-500 focus:ring-orange-500">
                 <SelectValue placeholder="Price Level" />
               </SelectTrigger>
-              <SelectContent className="z-[1000]">
+              <SelectContent className="z-[1500]">
                 <SelectItem value="all">All Prices</SelectItem>
                 <SelectItem value="1">$ (Inexpensive)</SelectItem>
                 <SelectItem value="2">$$ (Moderate)</SelectItem>

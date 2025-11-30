@@ -1,6 +1,6 @@
 "use client";
 
-import { Share2, Facebook, Twitter } from "lucide-react";
+import { Share2, Facebook, Twitter, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { WhatsAppIcon } from "./whatsapp-icon";
+import { copyToClipboard } from "@/lib/utils/copy-to-clipboard";
 
 interface SocialShareButtonsProps {
   url: string;
@@ -29,19 +30,19 @@ export function SocialShareButtons({
       url: `https://wa.me/?text=${encodeURIComponent(`${title} - ${url}`)}`,
       label: "WhatsApp",
       icon: WhatsAppIcon,
-      color: "bg-green-500 hover:bg-green-600"
+      hoverColor: "hover:bg-green-50 hover:text-green-600"
     },
     facebook: {
       url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(title)}`,
       label: "Facebook",
       icon: Facebook,
-      color: "bg-blue-600 hover:bg-blue-700"
+      hoverColor: "hover:bg-blue-50 hover:text-blue-600"
     },
     twitter: {
       url: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
       label: "Twitter",
       icon: Twitter,
-      color: "bg-black hover:bg-gray-800"
+      hoverColor: "hover:bg-sky-50 hover:text-sky-600"
     },
   };
 
@@ -51,6 +52,10 @@ export function SocialShareButtons({
       "_blank",
       "width=600,height=400,scrollbars=yes,resizable=yes"
     );
+  };
+
+  const handleCopyLink = () => {
+    copyToClipboard(url, "Link copied to clipboard!");
   };
 
   if (variant === "compact") {
@@ -80,6 +85,13 @@ export function SocialShareButtons({
               </DropdownMenuItem>
             );
           })}
+          <DropdownMenuItem
+            onClick={handleCopyLink}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <LinkIcon className="w-4 h-4" />
+            Copy Link
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -87,23 +99,42 @@ export function SocialShareButtons({
 
   if (variant === "inline") {
     return (
-      <div className={cn("flex items-center gap-2", className)}>
-        <span className="text-sm font-medium text-gray-600 mr-2">Share:</span>
-        {Object.entries(shareData).map(([platform, data]) => {
-          const Icon = data.icon;
-          return (
-            <Button
-              key={platform}
-              variant="ghost"
-              size="sm"
-              onClick={() => handleShare(platform as keyof typeof shareData)}
-              className="p-2 h-8 w-8 rounded-full hover:scale-110 transition-transform cursor-pointer"
-              title={`Share on ${data.label}`}
+      <div className={cn("bg-white rounded-lg px-4 py-3 shadow-sm", className)}>
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            {Object.entries(shareData).map(([platform, data]) => {
+              const Icon = data.icon;
+              return (
+                <button
+                  key={platform}
+                  onClick={() => handleShare(platform as keyof typeof shareData)}
+                  className={cn(
+                    "p-2 rounded-lg transition-all duration-200 cursor-pointer",
+                    "bg-white border border-gray-200 text-gray-600",
+                    data.hoverColor,
+                    "hover:border-gray-300 hover:shadow-sm"
+                  )}
+                  title={`Share on ${data.label}`}
+                  aria-label={`Share on ${data.label}`}
+                >
+                  <Icon className="w-4 h-4" />
+                </button>
+              );
+            })}
+            <button
+              onClick={handleCopyLink}
+              className={cn(
+                "p-2 rounded-lg transition-all duration-200 cursor-pointer",
+                "bg-white border border-gray-200 text-gray-600",
+                "hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 hover:shadow-sm"
+              )}
+              title="Copy link"
+              aria-label="Copy link"
             >
-              <Icon className="w-4 h-4" />
-            </Button>
-          );
-        })}
+              <LinkIcon className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -117,17 +148,33 @@ export function SocialShareButtons({
           <Button
             key={platform}
             onClick={() => handleShare(platform as keyof typeof shareData)}
-            className={cn(
-              "flex items-center gap-2 text-white transition-all duration-200 hover:scale-105",
-              data.color
-            )}
+            variant="outline"
             size="sm"
+            className={cn(
+              "flex items-center gap-2 transition-all duration-200",
+              "bg-white border-gray-200 text-gray-700",
+              data.hoverColor,
+              "hover:border-gray-300 hover:shadow-sm"
+            )}
           >
             <Icon className="w-4 h-4" />
             {data.label}
           </Button>
         );
       })}
+      <Button
+        onClick={handleCopyLink}
+        variant="outline"
+        size="sm"
+        className={cn(
+          "flex items-center gap-2 transition-all duration-200",
+          "bg-white border-gray-200 text-gray-700",
+          "hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 hover:shadow-sm"
+        )}
+      >
+        <LinkIcon className="w-4 h-4" />
+        Copy Link
+      </Button>
     </div>
   );
 }

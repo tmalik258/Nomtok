@@ -157,7 +157,7 @@ export function ListingForm({ mode, listingData, onSuccess, onDeleted, className
                         date={field.value}
                         onDateChange={field.onChange}
                         placeholder="Select published date"
-                        className="w-full bg-white shadow-lg border-none"
+                        className="w-full bg-cream shadow-lg border-none"
                       />
                     </FormControl>
                     <FormMessage />
@@ -186,7 +186,7 @@ export function ListingForm({ mode, listingData, onSuccess, onDeleted, className
                     step={0.01}
                     {...field}
                     onChange={(e) => field.onChange(Number(e.target.value))}
-                    className="w-full bg-white shadow-lg border-none"
+                    className="w-full bg-cream shadow-lg border-none"
                   />
                 </FormControl>
                 <FormMessage />
@@ -208,7 +208,7 @@ export function ListingForm({ mode, listingData, onSuccess, onDeleted, className
                     {...field}
                     value={field.value || ""}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                    className="w-full bg-white shadow-lg border-none"
+                    className="w-full bg-cream shadow-lg border-none"
                   />
                 </FormControl>
                 <FormMessage />
@@ -220,7 +220,7 @@ export function ListingForm({ mode, listingData, onSuccess, onDeleted, className
             control={form.control}
             name="approved"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-white shadow-lg">
+              <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-cream shadow-lg">
                 <div className="space-y-0.5">
                   <FormLabel className="text-base">Approved</FormLabel>
                   <div className="text-sm text-muted-foreground">

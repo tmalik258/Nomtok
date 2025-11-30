@@ -25,7 +25,7 @@ export default function JobDetailsDialog({
 }: JobDetailsDialogProps) {
   return (
     <Dialog open={!!selectedJob} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="glass-effect backdrop-blur-xl bg-white/95 border border-orange-200/50 shadow-2xl max-w-2xl max-h-[80vh]">
+      <DialogContent className="glass-effect backdrop-blur-xl bg-cream/95 border border-orange-200/50 shadow-2xl max-w-2xl max-h-[80vh]">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-gray-900">Job Details</DialogTitle>

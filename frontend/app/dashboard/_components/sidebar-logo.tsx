@@ -25,7 +25,7 @@ export const SidebarLogo = memo(
           )}
         >
           <Image
-            src={"/logo-transparent-black-without-name.png"}
+            src={"/logo-2.2-without-name-transparent-dark.png"}
             alt="Logo"
             width={150}
             height={150}
@@ -46,7 +46,7 @@ export const SidebarLogo = memo(
           )}
         >
           <Image
-            src={"/logo-transparent-black.png"}
+            src={"/logo-2.2-without-name-transparent-dark.png"}
             alt="Logo"
             width={150}
             height={150}

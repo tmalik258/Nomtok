@@ -48,7 +48,7 @@ export default function InfluencersGrid({
   if (influencers.length === 0) {
     return (
       <div className="text-center py-16">
-        <div className="bg-white rounded-2xl shadow-xl p-12 max-w-md mx-auto">
+        <div className="bg-cream rounded-2xl shadow-xl p-12 max-w-md mx-auto">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <Search className="w-8 h-8 text-gray-400" />
           </div>
@@ -63,7 +63,7 @@ export default function InfluencersGrid({
           {searchQuery && (
             <Button
               onClick={clearSearch}
-              className="bg-orange-600 hover:bg-orange-500 text-white px-6 py-2 rounded-lg transition-all duration-200 hover:scale-105"
+              className="bg-orange-600 hover:bg-orange-500 text-cream px-6 py-2 rounded-lg transition-all duration-200 hover:scale-105"
             >
               Clear search
             </Button>

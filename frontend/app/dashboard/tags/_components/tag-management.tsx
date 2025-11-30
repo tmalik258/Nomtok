@@ -271,7 +271,7 @@ export function TagManagement() {
       {/* Create Tag Dialog */}
       <Dialog open={isCreateFormOpen} onOpenChange={setIsCreateFormOpen}>
         <DialogContent
-          className="sm:max-w-[425px] backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border border-white/20"
+          className="sm:max-w-[425px] backdrop-blur-sm bg-cream/95 dark:bg-gray-900/95 border border-white/20"
           aria-describedby="create-tag-description"
         >
           <DialogHeader>
@@ -298,7 +298,7 @@ export function TagManagement() {
         onOpenChange={(open) => !open && setEditingTag(null)}
       >
         <DialogContent
-          className="sm:max-w-[425px] backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border border-white/20"
+          className="sm:max-w-[425px] backdrop-blur-sm bg-cream/95 dark:bg-gray-900/95 border border-white/20"
           aria-describedby="edit-tag-description"
         >
           <DialogHeader>
@@ -331,7 +331,7 @@ export function TagManagement() {
         onOpenChange={(open) => !open && setDeletingTag(null)}
       >
         <DialogContent
-          className="sm:max-w-[425px] backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border border-white/20"
+          className="sm:max-w-[425px] backdrop-blur-sm bg-cream/95 dark:bg-gray-900/95 border border-white/20"
           aria-describedby="delete-tag-description"
         >
           <DialogHeader>
@@ -362,7 +362,7 @@ export function TagManagement() {
               variant="destructive"
               onClick={handleDeleteSuccess}
               aria-label={`Delete tag ${deletingTag?.name}`}
-              className="cursor-pointer bg-red-600 hover:bg-red-700 text-white"
+              className="cursor-pointer bg-red-600 hover:bg-red-700 text-cream"
             >
               Delete
             </Button>

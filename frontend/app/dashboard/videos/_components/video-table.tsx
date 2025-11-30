@@ -37,7 +37,7 @@ export function VideoTable({
   const isSelectionActive = selectedVideos.length > 0;
   // Loading skeleton for table content
   const renderLoadingSkeleton = () => (
-    <Card className="glass-effect backdrop-blur-xl bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 p-0">
+    <Card className="glass-effect backdrop-blur-xl bg-cream/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 p-0">
       <CardContent className="p-0">
         <Table>
           <TableHeader>
@@ -123,7 +123,7 @@ export function VideoTable({
   // Show empty state
   if (videos.length === 0) {
     return (
-      <Card className="glass-effect backdrop-blur-xl bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30">
+      <Card className="glass-effect backdrop-blur-xl bg-cream/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30">
         <CardContent className="text-center py-12">
           <Play className="w-12 h-12 text-orange-400 mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-300 mb-4">
@@ -148,7 +148,7 @@ export function VideoTable({
   // Show videos table
   return (
     <>
-      <Card className="glass-effect backdrop-blur-xl bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 p-0">
+      <Card className="glass-effect backdrop-blur-xl bg-cream/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 p-0">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -206,7 +206,7 @@ export function VideoTable({
                   </TableCell>
                   <TableCell className="max-w-[300px]">
                     <div>
-                      <div className="font-semibold line-clamp-2 mb-1 text-gray-900 dark:text-white">{video.title}</div>
+                      <div className="font-semibold line-clamp-2 mb-1 text-gray-900 dark:text-cream">{video.title}</div>
                       {video.description && (
                         <div className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
                           {video.description}
@@ -225,14 +225,14 @@ export function VideoTable({
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <User className="h-4 w-4 text-orange-500" />
-                      <span className="text-sm text-gray-900 dark:text-white">{video.influencer?.name || 'Unknown'}</span>
+                      <span className="text-sm text-gray-900 dark:text-cream">{video.influencer?.name || 'Unknown'}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     {video.published_at ? (
                       <div className="flex items-center gap-1 text-sm">
                         <Calendar className="h-4 w-4 text-orange-500" />
-                        <span className="text-gray-900 dark:text-white">{new Date(video.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })}</span>
+                        <span className="text-gray-900 dark:text-cream">{new Date(video.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })}</span>
                       </div>
                     ) : (
                       <span className="text-gray-500 dark:text-gray-400 text-sm">N/A</span>
@@ -274,7 +274,7 @@ export function VideoTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1 text-sm">
-                      <span className="text-gray-900 dark:text-white font-medium">
+                      <span className="text-gray-900 dark:text-cream font-medium">
                         {video.listings_count || 0}
                       </span>
                     </div>

@@ -8,9 +8,9 @@ export function LoadingSkeleton() {
       <div className="relative h-[70vh] w-full overflow-hidden rounded-lg">
         <Skeleton className="absolute inset-0 w-full h-full" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-        <div className="absolute bottom-8 left-8 right-8 text-white">
-          <Skeleton className="h-12 md:h-16 w-80 mb-4 bg-white/20" />
-          <Skeleton className="h-6 w-64 mb-2 bg-white/20" />
+        <div className="absolute bottom-8 left-8 right-8 text-cream">
+          <Skeleton className="h-12 md:h-16 w-80 mb-4 bg-cream/20" />
+          <Skeleton className="h-6 w-64 mb-2 bg-cream/20" />
         </div>
       </div>
 
@@ -18,7 +18,7 @@ export function LoadingSkeleton() {
       <div className="relative z-20 -mt-20 mb-8 max-w-6xl mx-auto px-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white rounded-lg shadow-md p-6 text-center">
+            <div key={i} className="bg-cream rounded-lg shadow-md p-6 text-center">
               <Skeleton className="h-8 w-16 mx-auto mb-2" />
               <Skeleton className="h-4 w-24 mx-auto" />
             </div>
@@ -28,7 +28,7 @@ export function LoadingSkeleton() {
 
       <div className="max-w-6xl mx-auto px-4 pt-8">
         {/* Profile Details Skeleton */}
-        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+        <div className="bg-cream rounded-lg shadow-md p-8 mb-8">
           <Skeleton className="h-8 w-32 mb-6" />
           <Skeleton className="h-4 w-full mb-2" />
           <Skeleton className="h-4 w-3/4 mb-6" />
@@ -41,7 +41,7 @@ export function LoadingSkeleton() {
         {/* Content Cards Skeleton */}
         <div className="grid grid-cols-1 gap-6 mb-12">
           {/* Popular Videos Card Skeleton */}
-          <Card className="bg-white shadow-xl border-0">
+          <Card className="bg-cream shadow-xl border-0">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <Skeleton className="h-6 w-6 rounded" />
@@ -52,7 +52,7 @@ export function LoadingSkeleton() {
           </Card>
 
           {/* Signature Picks Card Skeleton */}
-          <Card className="bg-white shadow-xl border-0">
+          <Card className="bg-cream shadow-xl border-0">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <Skeleton className="h-6 w-6 rounded" />
@@ -73,14 +73,14 @@ export function LoadingSkeleton() {
           </Card>
 
           {/* Trending Quote Card Skeleton */}
-          <Card className="bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-xl border-0">
+          <Card className="bg-gradient-to-br from-orange-500 to-red-600 text-cream shadow-xl border-0">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
-                <Skeleton className="h-6 w-6 bg-white/20" />
-                <Skeleton className="h-6 w-40 bg-white/20" />
+                <Skeleton className="h-6 w-6 bg-cream/20" />
+                <Skeleton className="h-6 w-40 bg-cream/20" />
               </div>
-              <Skeleton className="h-6 w-64 mb-3 bg-white/20" />
-              <Skeleton className="h-4 w-32 bg-white/20" />
+              <Skeleton className="h-6 w-64 mb-3 bg-cream/20" />
+              <Skeleton className="h-4 w-32 bg-cream/20" />
             </CardContent>
           </Card>
         </div>
@@ -102,13 +102,13 @@ export function LoadingSkeleton() {
           {/* Restaurant Review Cards Skeleton */}
           <div className="space-y-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div key={i} className="bg-cream rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 {/* Restaurant Image Skeleton */}
                 <div className="h-64 relative p-2">
                   <Skeleton className="w-full h-full rounded-md" />
                   {/* Rating Badge Skeleton */}
                   <div className="absolute top-3 right-3">
-                    <div className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+                    <div className="bg-cream/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
                       <Skeleton className="w-3 h-3 rounded-full" />
                       <Skeleton className="h-3 w-6" />
                     </div>

@@ -198,7 +198,7 @@ export default function InfluencerManagement() {
               <SelectTrigger className="w-full sm:w-48 glass-input border-orange-500/30 focus:border-orange-500 focus:ring-orange-500/20">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
-              <SelectContent className="glass-effect backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 border-orange-500/20">
+              <SelectContent className="glass-effect backdrop-blur-xl bg-cream/95 dark:bg-gray-900/95 border-orange-500/20">
                 <SelectItem
                   value="name"
                   className="focus:bg-orange-500/10 focus:text-orange-600 dark:focus:text-orange-400"

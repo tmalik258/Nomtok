@@ -59,7 +59,7 @@ function formatJobDuration(startedAt?: string, completedAt?: string) {
 export function RealTimeJobsCard({ jobs, isLoading }: RealTimeJobsCardProps) {
   if (isLoading && jobs.length === 0) {
     return (
-      <Card className="glass-effect backdrop-blur-xl bg-white/80 border-orange-200/50 shadow-xl">
+      <Card className="glass-effect backdrop-blur-xl bg-cream/80 border-orange-200/50 shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
             <Play className="h-5 w-5 text-orange-600 dark:text-orange-400" />
@@ -89,7 +89,7 @@ export function RealTimeJobsCard({ jobs, isLoading }: RealTimeJobsCardProps) {
   ).length;
 
   return (
-    <Card className="glass-effect backdrop-blur-xl bg-white/80 border-orange-200/50 shadow-xl">
+    <Card className="glass-effect backdrop-blur-xl bg-cream/80 border-orange-200/50 shadow-xl">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-gray-800 dark:text-gray-200">
           <div className="flex items-center gap-2">
@@ -115,7 +115,7 @@ export function RealTimeJobsCard({ jobs, isLoading }: RealTimeJobsCardProps) {
               {recentJobs.map((job) => (
                 <div 
                   key={job.id} 
-                  className="flex items-center justify-between p-3 glass-effect backdrop-blur-sm bg-white/60 border border-orange-200/50 rounded-lg hover:bg-orange-50/80 hover:border-orange-300/60 transition-colors"
+                  className="flex items-center justify-between p-3 glass-effect backdrop-blur-sm bg-cream/60 border border-orange-200/50 rounded-lg hover:bg-orange-50/80 hover:border-orange-300/60 transition-colors"
                 >
                   <div className="flex items-start gap-3 flex-1 min-w-0">
                     {getJobStatusIcon(job.status || 'unknown')}

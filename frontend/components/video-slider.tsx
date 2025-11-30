@@ -42,7 +42,7 @@ export function VideoSlider({ videos, timestamps }: VideoSliderProps) {
         {videos.map((video, index) => (
           <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
             <div className="p-1">
-              <Card className="bg-white border-0 p-0 rounded-lg shadow-none">
+              <Card className="bg-transparent border-none p-0 rounded-lg shadow-none">
                 <CardContent className="flex aspect-video items-center justify-center p-0 rounded-lg mb-0">
                   <iframe
                     width="100%"
@@ -94,8 +94,8 @@ export function VideoSlider({ videos, timestamps }: VideoSliderProps) {
           </CarouselItem>
         ))}
       </CarouselContent>
-      <CarouselPrevious />
-      <CarouselNext />
+      <CarouselPrevious className="bg-orange-500 hover:bg-orange-600 text-cream border-0 transition-all transform hover:scale-105 duration-300" />
+      <CarouselNext className="bg-orange-500 hover:bg-orange-600 text-cream border-0 transition-all transform hover:scale-105 duration-300" />
     </Carousel>
   );
 }

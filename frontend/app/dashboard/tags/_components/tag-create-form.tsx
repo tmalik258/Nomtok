@@ -74,7 +74,7 @@ export default function TagCreateForm({ mode, tag, onSuccess }: TagFormProps) {
                 <Input 
                   placeholder="Enter tag name" 
                   {...field} 
-                  className="backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-white/30 dark:border-gray-700/30 focus:border-orange-500 focus:ring-orange-500/20 transition-all duration-200"
+                  className="backdrop-blur-sm bg-cream/50 dark:bg-gray-800/50 border-white/30 dark:border-gray-700/30 focus:border-orange-500 focus:ring-orange-500/20 transition-all duration-200"
                 />
               </FormControl>
               <FormMessage />
@@ -85,7 +85,7 @@ export default function TagCreateForm({ mode, tag, onSuccess }: TagFormProps) {
           <Button
             type="submit"
             disabled={isLoading}
-            className="cursor-pointer bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            className="cursor-pointer bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-cream border-0 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
             {isLoading ? (mode === 'create' ? 'Creating...' : 'Updating...') : (mode === 'create' ? 'Create Tag' : 'Update Tag')}
           </Button>

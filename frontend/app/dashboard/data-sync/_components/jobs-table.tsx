@@ -167,7 +167,7 @@ function JobsTable({ jobs, onRefresh }: JobsTableProps) {
   };
 
   return (
-    <Card className="glass-effect backdrop-blur-xl bg-white/80 border border-orange-200/50 shadow-xl">
+    <Card className="glass-effect backdrop-blur-xl bg-cream/80 border border-orange-200/50 shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-gray-900 dark:text-gray-100">
@@ -377,7 +377,7 @@ function JobsTable({ jobs, onRefresh }: JobsTableProps) {
                         size="sm"
                         onClick={() => setCurrentPage(page)}
                         className={currentPage === page ? 
-                          "bg-orange-600 hover:bg-orange-700 text-white" : 
+                          "bg-orange-600 hover:bg-orange-700 text-cream" : 
                           "border-orange-200 hover:bg-orange-50"
                         }
                       >

@@ -14,7 +14,7 @@ export function VideoHeader({
   return (
     <div className="flex justify-between items-center">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-cream">
           Video Management
         </h1>
         <p className="text-gray-600 dark:text-gray-300">
@@ -28,9 +28,9 @@ export function VideoHeader({
             onClick={onProcessSelectedVideos}
             variant="outline"
             className={cn(
-              "shadow-none rounded-md focus-visible:z-10 border-orange-500 text-orange-600 hover:text-white hover:bg-orange-600 dark:hover:bg-orange-900/20 transition-all duration-200",
+              "shadow-none rounded-md focus-visible:z-10 border-orange-500 text-orange-600 hover:text-cream hover:bg-orange-600 dark:hover:bg-orange-900/20 transition-all duration-200",
               isProcessModalOpen &&
-                "bg-orange-600 hover:bg-orange-700 text-white hover:text-white"
+                "bg-orange-600 hover:bg-orange-700 text-cream hover:text-cream"
             )}
             disabled={selectedVideos?.length === 0}
           >
@@ -39,7 +39,7 @@ export function VideoHeader({
 
           <Button
             onClick={onCreateClick}
-            className="bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
+            className="bg-orange-600 hover:bg-orange-700 text-cream border-0 shadow-lg hover:shadow-xl transition-all duration-200"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create New Video

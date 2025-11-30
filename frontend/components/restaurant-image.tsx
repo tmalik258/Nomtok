@@ -90,7 +90,7 @@ export default function RestaurantImage({
           className
         )}
       >
-        <span className="text-white font-bold text-4xl">{initial}</span>
+        <span className="text-cream font-bold text-4xl">{initial}</span>
       </div>
     );
   }

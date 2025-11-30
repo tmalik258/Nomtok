@@ -29,19 +29,19 @@ export function TagHeader({
             placeholder="Search tags..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10 glass-effect backdrop-blur-sm bg-white/10 dark:bg-gray-900/10 border-white/20 dark:border-gray-700/30 focus:border-orange-500 focus:ring-orange-500"
+            className="pl-10 glass-effect backdrop-blur-sm bg-cream/10 dark:bg-gray-900/10 border-white/20 dark:border-gray-700/30 focus:border-orange-500 focus:ring-orange-500"
             aria-label="Search tags by name"
           />
         </div>
 
         <Select value={sortBy} onValueChange={onSortChange}>
           <SelectTrigger 
-            className="w-40 glass-effect backdrop-blur-sm bg-white/10 dark:bg-gray-900/10 border-white/20 dark:border-gray-700/30 focus:border-orange-500 focus:ring-orange-500"
+            className="w-40 glass-effect backdrop-blur-sm bg-cream/10 dark:bg-gray-900/10 border-white/20 dark:border-gray-700/30 focus:border-orange-500 focus:ring-orange-500"
             aria-label="Sort tags by"
           >
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
-          <SelectContent className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border-white/20">
+          <SelectContent className="backdrop-blur-sm bg-cream/95 dark:bg-gray-900/95 border-white/20">
             <SelectItem value="name">Name</SelectItem>
             <SelectItem value="created_at">Created Date</SelectItem>
           </SelectContent>
@@ -50,7 +50,7 @@ export function TagHeader({
 
       <Button 
         onClick={onCreateClick} 
-        className="cursor-pointer bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+        className="cursor-pointer bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-cream border-0 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
         aria-label="Create new tag"
       >
         <PlusCircle className="h-4 w-4 mr-2" />

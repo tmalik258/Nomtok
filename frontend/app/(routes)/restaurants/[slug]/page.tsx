@@ -104,14 +104,92 @@ export default async function RestaurantDetailPage({ params }: Props) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const title = `${toTitleFromSlug(slug)} — Restaurant Review`;
-  const description = `Discover ${toTitleFromSlug(slug)} — reviews, location, and influencer recommendations.`;
+  
+  // Fetch restaurant data for metadata
+  let restaurant: Restaurant | undefined;
+  try {
+    const getRestaurantCached = unstable_cache(
+      async () => {
+        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
+        const { data } = await axios.get(`${base}/restaurants/${slug}/`, {
+          params: { include_listings: true, include_video_details: true },
+        });
+        return data as Restaurant;
+      },
+      ["restaurant-metadata", slug],
+      { revalidate: 3600 }
+    );
+    restaurant = await getRestaurantCached();
+  } catch {}
+
+  // Handle restaurant not found
+  if (!restaurant) {
+    return buildPageMetadata({
+      title: "Restaurant Not Found | Nomtok",
+      description: "This restaurant could not be found on Nomtok.",
+      path: `/restaurants/${slug}`,
+      type: "article",
+      keywords: ["restaurant", slug],
+      imageUrl: "/hero-main.jpg",
+    });
+  }
+
+  const name = restaurant.name || "";
+  const city = restaurant.city || "";
+  const cuisines = restaurant.cuisines?.map((c) => c.name) ?? [];
+  const cuisine = cuisines[0] || "Restaurant";
+
+  // Filter tags to exclude generic words
+  const excluded = ["restaurant", "food", "place", "classic", "general"];
+  const tags = restaurant.tags
+    ?.map((t) => t.name?.toLowerCase())
+    .filter((t) => t && !excluded.includes(t))
+    .slice(0, 3) || [];
+
+  const tagString = tags.length ? `(${tags.join(", ")})` : "";
+
+  // Get influencer from first listing
+  const listing = restaurant.listings?.[0];
+  const influencer = listing?.influencer?.name;
+
+  // Build SEO title
+  const titleBase = tagString
+    ? `${name} ${city} | ${cuisine} Restaurant ${tagString}`
+    : `${name} ${city} | ${cuisine} Restaurant`;
+  const title = influencer
+    ? `${titleBase} Review by ${influencer}`
+    : titleBase;
+
+  // Build meta description
+  let description = `${name} in ${city} is a popular ${cuisine.toLowerCase()} restaurant`;
+  if (tags.length) {
+    description += ` offering ${tags.join(", ")}`;
+  }
+  description += ". Explore reviews, photos and influencer insights on Nomtok.";
+  if (influencer) {
+    description += ` Reviewed by ${influencer}.`;
+  }
+
+  // Get image URL
+  const imageUrl =
+    restaurant.photo_url || "/hero-main.jpg";
+
+  // Build keywords
+  const keywords = [
+    name,
+    city,
+    cuisine,
+    ...tags,
+    "review",
+    influencer,
+  ].filter(Boolean) as string[];
+
   return buildPageMetadata({
     title,
     description,
     path: `/restaurants/${slug}`,
     type: "article",
-    keywords: ["restaurant", slug, "city", "reviews"],
-    imageUrl: "/hero-main.jpg",
+    keywords,
+    imageUrl,
   });
 }

@@ -67,7 +67,7 @@ export default function LoadingSkeleton({
   );
 
   const renderInfluencerSkeleton = () => (
-    <Card className={`bg-white shadow-xl ${className}`}>
+    <Card className={`bg-cream shadow-xl ${className}`}>
       <CardContent className="p-6 text-center">
         <Skeleton className="h-12 w-12 mx-auto mb-4 rounded-full" />
         <Skeleton className="h-8 w-16 mx-auto mb-2" />
@@ -97,9 +97,9 @@ export default function LoadingSkeleton({
       <div className="relative h-[70vh] w-full overflow-hidden">
         <Skeleton className="absolute inset-0 w-full h-full" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-        <div className="absolute bottom-8 left-8 right-8 text-white">
-          <Skeleton className="h-12 md:h-16 w-80 mb-4 bg-white/20" />
-          <Skeleton className="h-6 w-64 mb-2 bg-white/20" />
+        <div className="absolute bottom-8 left-8 right-8 text-cream">
+          <Skeleton className="h-12 md:h-16 w-80 mb-4 bg-cream/20" />
+          <Skeleton className="h-6 w-64 mb-2 bg-cream/20" />
         </div>
       </div>
 

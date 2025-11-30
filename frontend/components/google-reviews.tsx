@@ -85,7 +85,7 @@ export default function GoogleReviews({ placeId, className = "" }: GoogleReviews
       {/* Reviews Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {reviews.map((review, index) => (
-          <Card key={index} className="h-full">
+          <Card key={index} className="h-full border-none">
             <CardContent className="p-4">
               {/* Reviewer Info */}
               <div className="flex items-start gap-3 mb-3">

@@ -171,14 +171,14 @@ export function CuisinesManagementTab({
                   <Badge
                     key={cuisine.id}
                     variant="default"
-                    className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 text-sm flex items-center gap-2"
+                    className="bg-orange-600 hover:bg-orange-700 text-cream px-3 py-1 text-sm flex items-center gap-2"
                   >
                     {cuisine.name}
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveCuisine(cuisine.id)}
-                      className="h-4 w-4 p-0 hover:bg-orange-800 text-white"
+                      className="h-4 w-4 p-0 hover:bg-orange-800 text-cream"
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -271,7 +271,7 @@ export function CuisinesManagementTab({
                 />
                 <Button
                   type="submit"
-                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                  className="bg-orange-500 hover:bg-orange-600 text-cream"
                   disabled={!form.formState.isValid}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -296,7 +296,7 @@ export function CuisinesManagementTab({
         <Button
           onClick={handleSave}
           disabled={isSaving}
-          className="bg-orange-500 hover:bg-orange-600 text-white"
+          className="bg-orange-500 hover:bg-orange-600 text-cream"
         >
           {isSaving ? (
             <>

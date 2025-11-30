@@ -5,7 +5,7 @@ import { MapPin, User, Video, TrendingUp, Calendar, Hash } from "lucide-react";
 
 // Loading skeleton for table content
 const ListingTableSkeleton = ({itemsPerPage = 10}: {itemsPerPage: number}) => (
-  <Card className="glass-effect backdrop-blur-xl bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 p-0">
+  <Card className="glass-effect backdrop-blur-xl bg-cream/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 p-0">
     <CardContent className="p-0">
       <Table>
         <TableHeader>

@@ -8,19 +8,19 @@ export default function HomeLoadingSkeleton() {
         <Skeleton className="absolute inset-0 w-full h-full" />
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <Skeleton className="h-16 w-96 mx-auto mb-6 bg-white/20" />
-          <Skeleton className="h-8 w-80 mx-auto mb-12 bg-white/20" />
+          <Skeleton className="h-16 w-96 mx-auto mb-6 bg-cream/20" />
+          <Skeleton className="h-8 w-80 mx-auto mb-12 bg-cream/20" />
           <div className="max-w-2xl mx-auto mb-12">
-            <Skeleton className="h-14 w-full rounded-lg mb-4 bg-white/20" />
-            <Skeleton className="h-14 w-32 mx-auto rounded-lg bg-white/20" />
+            <Skeleton className="h-14 w-full rounded-lg mb-4 bg-cream/20" />
+            <Skeleton className="h-14 w-32 mx-auto rounded-lg bg-cream/20" />
           </div>
           <div className="mb-16">
-            <Skeleton className="h-5 w-40 mx-auto mb-4 bg-white/20" />
+            <Skeleton className="h-5 w-40 mx-auto mb-4 bg-cream/20" />
             <div className="flex flex-wrap justify-center gap-3">
               {Array.from({ length: 6 }).map((_, index) => (
                 <Skeleton
                   key={index}
-                  className="h-10 w-24 rounded-full bg-white/20"
+                  className="h-10 w-24 rounded-full bg-cream/20"
                 />
               ))}
             </div>
@@ -29,7 +29,7 @@ export default function HomeLoadingSkeleton() {
       </div>
 
       {/* Recent Reviews Section Skeleton */}
-      <div className="py-12 px-4 bg-white">
+      <div className="py-12 px-4 bg-cream">
         <div className="max-w-7xl mx-auto">
           <div className="space-y-8">
             <div className="text-center">
@@ -69,7 +69,7 @@ export default function HomeLoadingSkeleton() {
       </div>
 
       {/* Top Reviews Section Skeleton */}
-      <div className="py-12 px-4 bg-white">
+      <div className="py-12 px-4 bg-cream">
         <div className="max-w-7xl mx-auto">
           <div className="space-y-8">
             <div className="text-center">
@@ -88,7 +88,7 @@ export default function HomeLoadingSkeleton() {
       </div>
 
       {/* Mark Weins Section Skeleton */}
-      <div className="py-12 px-4 bg-white">
+      <div className="py-12 px-4 bg-cream">
         <div className="max-w-7xl mx-auto">
           <div className="space-y-8">
             <div className="text-center">
@@ -107,7 +107,7 @@ export default function HomeLoadingSkeleton() {
       </div>
 
       {/* Second City Section Skeleton */}
-      <div className="py-12 px-4 bg-white">
+      <div className="py-12 px-4 bg-cream">
         <div className="max-w-7xl mx-auto">
           <div className="space-y-8">
             <div className="text-center">

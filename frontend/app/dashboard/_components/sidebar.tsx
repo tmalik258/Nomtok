@@ -373,7 +373,7 @@ export function Sidebar({
             "will-change-transform",
             !forMobile && isCollapsed ? "justify-center" : "justify-start",
             isActive
-              ? "bg-orange-500 text-primary-foreground hover:text-white hover:bg-orange-400 shadow-md"
+              ? "bg-orange-500 text-primary-foreground hover:text-cream hover:bg-orange-400 shadow-md"
               : "text-muted-foreground hover:text-foreground hover:bg-accent"
           )}
           style={{

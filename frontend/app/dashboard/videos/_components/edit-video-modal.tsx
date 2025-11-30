@@ -130,9 +130,9 @@ export default function EditVideoModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col glass-effect backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 border border-white/20 dark:border-gray-700/30 overflow-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col glass-effect backdrop-blur-xl bg-cream/95 dark:bg-gray-900/95 border border-white/20 dark:border-gray-700/30 overflow-auto">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="text-gray-900 dark:text-white">
+          <DialogTitle className="text-gray-900 dark:text-cream">
             Edit Video
           </DialogTitle>
         </DialogHeader>
@@ -170,7 +170,7 @@ export default function EditVideoModal({
               </TabsList>
 
               <TabsContent value="edit" className="flex-1 flex flex-col">
-                <Card className="bg-white flex-1 flex flex-col">
+                <Card className="bg-cream flex-1 flex flex-col">
                   <CardContent className="pt-6 flex-1 flex flex-col">
                     <Form {...form}>
                       <form
@@ -191,7 +191,7 @@ export default function EditVideoModal({
                                   </FormLabel>
                                   <FormControl>
                                     <Input
-                                      className="w-full bg-white"
+                                      className="w-full bg-cream"
                                       placeholder="Enter video title"
                                       {...field}
                                       disabled={loading}
@@ -215,7 +215,7 @@ export default function EditVideoModal({
                                   <FormControl>
                                     <Textarea
                                       placeholder="Enter video description (optional)"
-                                      className="max-h-56 resize-none w-full bg-white"
+                                      className="max-h-56 resize-none w-full bg-cream"
                                       {...field}
                                       rows={4}
                                       disabled={loading}
@@ -240,7 +240,7 @@ export default function EditVideoModal({
                                     <Input
                                       placeholder="https://www.youtube.com/watch?v=..."
                                       {...field}
-                                      className="w-full bg-white"
+                                      className="w-full bg-cream"
                                       disabled={loading}
                                     />
                                   </FormControl>
@@ -285,7 +285,7 @@ export default function EditVideoModal({
                                   <FormControl>
                                     <Textarea
                                       placeholder="Enter video transcription (optional)"
-                                      className="max-h-56 resize-none w-full bg-white"
+                                      className="max-h-56 resize-none w-full bg-cream"
                                       {...field}
                                       rows={5}
                                       disabled={loading}

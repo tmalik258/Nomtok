@@ -18,6 +18,8 @@ import ListingCard from "../_components/listing-card";
 import RestaurantKeyDetails from "../_components/restaurant-key-details";
 import RestaurantHero from "./restaurant-hero";
 import { ReviewsSlider } from "@/app/(routes)/_components/reviews-slider";
+import RestaurantMetaSection from "./restaurant-meta-section";
+import RelatedLinks from "./related-links";
 
 interface RestaurantDetailClientProps {
   slug: string;
@@ -73,7 +75,7 @@ export default function RestaurantDetailClient({
 
   if (error || !hydratedRestaurant) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-cream">
         <ErrorCard
           title={error ? "Something went wrong" : "Restaurant not found"}
           message={
@@ -92,7 +94,7 @@ export default function RestaurantDetailClient({
   
 
   return (
-    <div className="min-h-screen bg-white p-2 mb-5">
+    <div className="min-h-screen bg-cream p-2 mb-5">
       {renderHero && hydratedRestaurant && (
         <RestaurantHero restaurant={hydratedRestaurant} />
       )}
@@ -122,6 +124,7 @@ export default function RestaurantDetailClient({
 
       <div className="max-w-6xl mx-auto px-4">
         {hydratedRestaurant && <RestaurantKeyDetails restaurant={hydratedRestaurant} />}
+        {hydratedRestaurant && <RestaurantMetaSection restaurant={hydratedRestaurant} />}
 
         {listings.length > 0 && (
           <div className="mb-8">
@@ -152,12 +155,19 @@ export default function RestaurantDetailClient({
           </Card>
         )}
 
+        {hydratedRestaurant && (
+          <RelatedLinks
+            restaurant={hydratedRestaurant}
+            influencer={listings[0]?.influencer}
+          />
+        )}
+
         {hydratedRestaurant?.google_place_id && <GoogleReviews placeId={hydratedRestaurant.google_place_id} />}
       </div>
 
       {/* Recent Reviews in City Section */}
       {restaurantCity && (
-        <div className="py-12 px-4 bg-white mt-8">
+        <div className="py-12 px-4 bg-cream mt-8">
           <div className="max-w-7xl mx-auto">
             {cityError ? (
               <ErrorCard

@@ -58,9 +58,9 @@ export function VideoProcessModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] glass-effect backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 border border-white/20 dark:border-gray-700/30">
+      <DialogContent className="sm:max-w-[600px] glass-effect backdrop-blur-xl bg-cream/95 dark:bg-gray-900/95 border border-white/20 dark:border-gray-700/30">
         <DialogHeader>
-          <DialogTitle className="text-gray-900 dark:text-white flex items-center gap-2">
+          <DialogTitle className="text-gray-900 dark:text-cream flex items-center gap-2">
             <Play className="w-5 h-5 text-orange-600" />
             Process Selected Videos
           </DialogTitle>
@@ -82,7 +82,7 @@ export function VideoProcessModal({
                 {selectedVideos.length !== 1 ? "s" : ""} for processing.
               </div>
 
-              <ScrollArea className="h-64 w-full bg-white rounded-md p-4">
+              <ScrollArea className="h-64 w-full bg-cream rounded-md p-4">
                 <div className="space-y-2">
                   {selectedVideos.map((video) => (
                     <div
@@ -90,7 +90,7 @@ export function VideoProcessModal({
                       className="flex items-center justify-between p-3 bg-orange-200/25 dark:bg-gray-900/95 rounded-lg"
                     >
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white pr-5">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-cream pr-5">
                           {video.title}
                         </h4>
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -144,7 +144,7 @@ export function VideoProcessModal({
           <Button
             onClick={handleProcess}
             disabled={selectedVideos.length === 0 || processing}
-            className="bg-orange-500 hover:bg-orange-600 text-white"
+            className="bg-orange-500 hover:bg-orange-600 text-cream"
           >
             {processing ? (
               <>

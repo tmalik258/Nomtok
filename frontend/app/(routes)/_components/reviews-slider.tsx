@@ -80,7 +80,7 @@ export function ReviewsSlider({
               key={restaurant.slug}
               className="border-0 pl-2 md:basis-1/2 lg:basis-1/3 self-center"
             >
-              <Card className="border-0 p-0 shadow-none">
+              <Card className="border-0 p-0 shadow-none bg-transparent">
                 <CardContent className="p-4">
                   <RestaurantCard
                     restaurant={restaurant}
@@ -92,8 +92,8 @@ export function ReviewsSlider({
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="-left-4 md:left-4 shadow-md cursor-pointer bg-orange-500 hover:bg-orange-600 text-white border-0 transition-all transform hover:scale-105 duration-300" />
-        <CarouselNext className="-right-4 md:right-4 shadow-md cursor-pointer bg-orange-500 hover:bg-orange-600 text-white border-0 transition-all transform hover:scale-105 duration-300" />
+        <CarouselPrevious className="-left-4 md:left-4 shadow-md cursor-pointer bg-orange-500 hover:bg-orange-600 text-cream border-0 transition-all transform hover:scale-105 duration-300" />
+        <CarouselNext className="-right-4 md:right-4 shadow-md cursor-pointer bg-orange-500 hover:bg-orange-600 text-cream border-0 transition-all transform hover:scale-105 duration-300" />
       </Carousel>
     </div>
   );

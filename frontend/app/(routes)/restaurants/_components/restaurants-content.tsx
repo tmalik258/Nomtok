@@ -21,6 +21,8 @@ export function RestaurantsContent() {
   const router = useRouter();
   const pathname = usePathname();
   const city = searchParams.get("city") || "";
+  const countryParam = searchParams.get("country") || "";
+  const tagParam = searchParams.get("tag") || "";
   const viewParam = searchParams.get("view");
 
   // Default to grid if no parameter, otherwise use the specified view
@@ -208,12 +210,15 @@ export function RestaurantsContent() {
     setSearchQuery: setBackendSearchQuery,
     setCuisineFilter,
     setPriceLevelFilter,
+    setTagFilter,
   } = useRestaurantsPaginated({
     city: city || undefined,
+    country: countryParam || undefined,
     name: searchQuery || undefined,
     influencer_id: influencerSlugParam,
     sort_by: sortByParam || undefined,
     cuisine: initialSelectedCuisines[0]?.name,
+    tag: tagParam || undefined,
     price_level: selectedPriceLevel,
     page: pageParam,
     limit: limitParam,
@@ -323,7 +328,7 @@ export function RestaurantsContent() {
   }, [searchType, searchQuery, restaurants]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-cream">
       <div className="p-2">
         <RestaurantHeroSection city={city} />
       </div>
@@ -372,7 +377,7 @@ export function RestaurantsContent() {
                 variant="secondary"
                 size="sm"
                 onClick={() => updateViewMode("grid")}
-                className={`relative z-10 h-8 px-3 bg-transparent hover:bg-transparent ${
+                className={`relative z-10 h-8 px-3 shadow-none bg-transparent hover:bg-transparent ${
                   viewMode === "grid"
                     ? "text-gray-900"
                     : "text-gray-700 hover:text-gray-800"
@@ -385,7 +390,7 @@ export function RestaurantsContent() {
                 variant={viewMode === "map" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => updateViewMode("map")}
-                className={`relative z-10 h-8 px-3 bg-transparent hover:bg-transparent ${
+                className={`relative z-10 h-8 px-3 shadow-none bg-transparent hover:bg-transparent ${
                   viewMode === "map"
                     ? "text-gray-900"
                     : "text-gray-700 hover:text-gray-800"
@@ -426,8 +431,8 @@ export function RestaurantsContent() {
         />
 
         {filteredRestaurants.length === 0 && !loading ? (
-          <Card className="text-center py-12">
-            <CardContent className="py-8">
+          <Card className="text-center py-12 border-0">
+            <CardContent className="py-8 border-0">
               <p className="text-slate-600 mb-4">
                 No restaurants found in {city}.
               </p>

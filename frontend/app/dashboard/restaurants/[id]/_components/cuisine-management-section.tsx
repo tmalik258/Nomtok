@@ -81,7 +81,7 @@ export function CuisineManagementSection({
               <Button
                 onClick={handleSave}
                 disabled={isLoading}
-                className="bg-orange-500 hover:bg-orange-600 text-white"
+                className="bg-orange-500 hover:bg-orange-600 text-cream"
               >
                 <Save className="h-4 w-4 mr-2" />
                 {isLoading ? "Saving..." : "Save Changes"}

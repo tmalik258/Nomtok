@@ -3,8 +3,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const InfluencerCardSkeleton = () => {
   return (
-    <Card className="overflow-hidden hover:shadow-2xl transition-all duration-500 group border-0 shadow-lg hover:-translate-y-2 py-0">
-      <CardContent className="p-4">
+    <Card className="overflow-hidden hover:shadow-2xl transition-all duration-500 group border-none shadow-lg hover:-translate-y-2 py-0">
+      <CardContent className="p-4 border-none">
         {/* Card Header with Banner */}
         <div className="h-32 bg-gradient-to-r from-orange-400 to-red-500 relative rounded-xl mb-2">
           <Skeleton className="absolute -bottom-8 left-4 w-16 h-16 rounded-full border-4 border-white" />

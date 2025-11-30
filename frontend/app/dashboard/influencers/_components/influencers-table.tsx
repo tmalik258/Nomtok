@@ -75,7 +75,7 @@ export const InfluencersTable = ({
       </div>
 
       {/* Influencers Table */}
-      <Card className="glass-effect backdrop-blur-xl bg-white/10 dark:bg-gray-900/20 border-orange-500/20 shadow-2xl p-0">
+      <Card className="glass-effect backdrop-blur-xl bg-cream/10 dark:bg-gray-900/20 border-orange-500/20 shadow-2xl p-0">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -122,7 +122,7 @@ export const InfluencersTable = ({
                   className="cursor-pointer hover:bg-orange-500/5 transition-all duration-200 border-orange-500/10"
                 >
                   <TableCell>
-                    <div className="relative w-10 h-10 rounded-full overflow-hidden bg-white border shadow-sm">
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden bg-cream border shadow-sm">
                       {influencer.avatar_url ? (
                         <Image
                           src={influencer.avatar_url}
@@ -132,7 +132,7 @@ export const InfluencersTable = ({
                           sizes="40px"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-400 to-red-500 text-white font-bold text-sm">
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-400 to-red-500 text-cream font-bold text-sm">
                           {influencer?.name?.charAt(0) || "?"}
                         </div>
                       )}

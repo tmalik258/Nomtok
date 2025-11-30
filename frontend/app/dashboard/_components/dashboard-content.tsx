@@ -56,7 +56,7 @@ const DashboardContent = () => {
   return (
     <div className="space-y-6">
       {/* Dashboard Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 glass-effect backdrop-blur-sm bg-white/70 border border-orange-200/50 rounded-lg p-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 glass-effect backdrop-blur-sm bg-cream/70 border border-orange-200/50 rounded-lg p-4">
         <div className="flex items-center gap-2">
           {data.lastUpdated && (
             <span className="text-sm text-gray-600 dark:text-gray-400">
@@ -71,10 +71,10 @@ const DashboardContent = () => {
             size="sm"
             onClick={refresh}
             disabled={isLoading}
-            className="cursor-pointer bg-orange-600 dark:bg-orange-600 hover:bg-orange-700 dark:hover:border-orange-500 hover:text-white focus:ring-orange-500 text-white border-orange-600"
+            className="cursor-pointer bg-orange-600 dark:bg-orange-600 hover:bg-orange-700 dark:hover:border-orange-500 hover:text-cream focus:ring-orange-500 text-cream border-orange-600"
           >
             <RefreshCw
-              className={`h-4 w-4 mr-2 text-white ${isLoading ? "animate-spin" : ""}`}
+              className={`h-4 w-4 mr-2 text-cream ${isLoading ? "animate-spin" : ""}`}
             />
             Refresh
           </Button>

@@ -188,7 +188,7 @@ export function AsyncSearchableSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between glass-effect backdrop-blur-sm bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 hover:bg-white/20 dark:hover:bg-gray-800/20 focus:border-orange-500 focus:ring-orange-500 cursor-pointer",
+            "w-full justify-between glass-effect backdrop-blur-sm bg-cream/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 hover:bg-cream/20 dark:hover:bg-gray-800/20 focus:border-orange-500 focus:ring-orange-500 cursor-pointer",
             !selectedOption && "text-muted-foreground",
             className
           )}

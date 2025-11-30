@@ -155,7 +155,7 @@ export default function InfluencersContent() {
   }, [influencers, searchQuery, sortBy, country]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 p-2">
+    <div className="min-h-screen bg-cream p-2">
       <InfluencersHero 
         loading={loading}
         influencers={filteredInfluencers}

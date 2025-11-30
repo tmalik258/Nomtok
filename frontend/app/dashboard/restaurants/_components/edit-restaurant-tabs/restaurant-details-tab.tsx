@@ -410,7 +410,7 @@ export function RestaurantDetailsTab({
             <Button
               type="submit"
               disabled={isUpdating || !isDirty}
-              className="bg-orange-500 hover:bg-orange-600 text-white"
+              className="bg-orange-500 hover:bg-orange-600 text-cream"
             >
               {isUpdating ? (
                 <>

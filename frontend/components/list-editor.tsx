@@ -115,7 +115,7 @@ export function ListEditor({
           onChange={(e) => setNewItem(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder={placeholder}
-          className="glass-effect backdrop-blur-sm bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 focus:border-orange-500 focus:ring-orange-500"
+          className="glass-effect backdrop-blur-sm bg-cream/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 focus:border-orange-500 focus:ring-orange-500"
           disabled={items.length >= maxItems}
         />
         <Button
@@ -147,8 +147,8 @@ export function ListEditor({
               onDrop={(e) => handleDrop(e, index)}
               className={cn(
                 "group flex items-center gap-2 p-3 rounded-lg transition-all duration-200",
-                "glass-effect backdrop-blur-sm bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30",
-                "hover:bg-white/20 dark:hover:bg-gray-800/20",
+                "glass-effect backdrop-blur-sm bg-cream/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30",
+                "hover:bg-cream/20 dark:hover:bg-gray-800/20",
                 draggedIndex === index && "opacity-50 scale-95",
                 dragOverIndex === index && draggedIndex !== index && "border-orange-500 bg-orange-500/10",
                 "cursor-move"

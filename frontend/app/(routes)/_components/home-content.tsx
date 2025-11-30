@@ -72,10 +72,10 @@ export default function HomeContent({
         </div>
 
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
+          <h1 className="text-5xl md:text-6xl font-bold text-cream mb-6 leading-tight">
             Where are you eating next?
           </h1>
-          <p className="text-xl md:text-2xl text-white/90 mb-12">
+          <p className="text-xl md:text-2xl text-cream/90 mb-12">
             See what the experts recommend in your city.
           </p>
 
@@ -91,14 +91,14 @@ export default function HomeContent({
                   placeholder="Enter your city or suburb"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 pr-4 py-5 text-lg bg-white border-0 rounded-l-lg sm:rounded-r-none focus:ring-2 focus:ring-blue-500"
+                  className="pl-12 pr-4 py-5 text-lg bg-cream border-0 rounded-l-lg sm:rounded-r-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
               <Button
                 type="submit"
                 size="lg"
-                className="px-8 py-4 text-lg font-semibold bg-orange-600 hover:bg-orange-500 text-white rounded-r-lg sm:rounded-l-none transition-all duration-200 hover:scale-105 cursor-pointer"
+                className="px-8 py-4 text-lg font-semibold bg-orange-600 hover:bg-orange-500 text-cream rounded-r-lg sm:rounded-l-none transition-all duration-200 hover:scale-105 cursor-pointer"
                 disabled={!searchQuery.trim()}
               >
                 Find Restaurants
@@ -107,9 +107,9 @@ export default function HomeContent({
           </div>
 
           <div className="mb-16">
-            <p className="text-white/80 text-center mb-4">Popular destinations:</p>
+            <p className="text-cream/80 text-center mb-4">Popular destinations:</p>
             {popularCities?.length === 0 ? (
-              <p className="text-white/80 text-center">No popular cities found</p>
+              <p className="text-cream/80 text-center">No popular cities found</p>
             ) : (
               <div className="flex flex-wrap justify-center gap-3">
                 {popularCities.map((city) => (
@@ -117,7 +117,7 @@ export default function HomeContent({
                     key={city}
                     variant="outline"
                     onClick={() => handleCityClick(city)}
-                    className="px-4 py-2 bg-white/10 backdrop-blur-sm text-white hover:text-white rounded-full hover:bg-white/20 transition-all duration-200 border border-white/20 hover:border-orange-500/50 hover:scale-105 cursor-pointer"
+                    className="px-4 py-2 bg-cream/10 backdrop-blur-sm text-cream hover:text-cream rounded-full hover:bg-cream/20 transition-all duration-200 border border-orange-500/50 hover:border-orange-500/50 hover:scale-105 cursor-pointer"
                   >
                     {city}
                   </Button>
@@ -130,7 +130,7 @@ export default function HomeContent({
 
       {/* Recent Reviews Section */}
       {displayRecentRestaurants.length > 0 && (
-        <div className="py-12 px-4 bg-white">
+        <div className="py-12 px-4 bg-cream">
           <div className="max-w-7xl mx-auto">
             <ReviewsSlider
               restaurants={displayRecentRestaurants}
@@ -177,7 +177,7 @@ export default function HomeContent({
 
       {/* Top Reviews Section - First City */}
       {displayCity1Restaurants.length > 0 && (
-        <div className="py-12 px-4 bg-white">
+        <div className="py-12 px-4 bg-cream">
           <div className="max-w-7xl mx-auto">
             <ReviewsSlider
               restaurants={displayCity1Restaurants}
@@ -191,7 +191,7 @@ export default function HomeContent({
 
       {/* Latest Reviews by Mark Weins */}
       {displayMarkWeinsRestaurants.length > 0 && (
-        <div className="py-12 px-4 bg-white">
+        <div className="py-12 px-4 bg-cream">
           <div className="max-w-7xl mx-auto">
             <ReviewsSlider
               restaurants={displayMarkWeinsRestaurants}
@@ -205,7 +205,7 @@ export default function HomeContent({
 
       {/* Top Reviews Section - Second City */}
       {displayCity2Restaurants.length > 0 && (
-        <div className="py-12 px-4 bg-white">
+        <div className="py-12 px-4 bg-cream">
           <div className="max-w-7xl mx-auto">
             <ReviewsSlider
               restaurants={displayCity2Restaurants}

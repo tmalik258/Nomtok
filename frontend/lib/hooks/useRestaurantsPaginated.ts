@@ -83,6 +83,10 @@ export const useRestaurantsPaginated = (initialParams?: PaginatedRestaurantsPara
     updateParams({ city, page: 1 }); // Reset to first page when filtering by city
   }, [updateParams]);
 
+  const setCountryFilter = useCallback((country: string) => {
+    updateParams({ country, page: 1 }); // Reset to first page when filtering by country
+  }, [updateParams]);
+
   const setTagFilter = useCallback((tag: string) => {
     updateParams({ tag, page: 1 }); // Reset to first page when filtering by tag
   }, [updateParams]);
@@ -117,6 +121,7 @@ export const useRestaurantsPaginated = (initialParams?: PaginatedRestaurantsPara
     goToPage,
     setSearchQuery,
     setCityFilter,
+    setCountryFilter,
     setTagFilter,
     setCuisineFilter,
     setPriceLevelFilter,

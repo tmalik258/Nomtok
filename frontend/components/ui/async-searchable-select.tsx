@@ -144,9 +144,9 @@ export function AsyncSearchableSelect({
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-white/20 dark:border-gray-700/30">
+      <PopoverContent className="w-full p-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-white/20 dark:border-gray-700/30 z-[1500]">
         <Command>
-          <div className="flex items-center border-b border-white/20 dark:border-gray-700/30 px-3">
+          <div className="flex items-center border-b py-5 border-white/20 dark:border-gray-700/30 px-3">
             <Input
               placeholder={searchPlaceholder}
               value={searchQuery}
@@ -183,7 +183,7 @@ export function AsyncSearchableSelect({
                       )}
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 dark:text-white truncate">
+                      <div className="font-medium text-gray-900 dark:text-cream truncate">
                         {option.name}
                       </div>
                       {option.description && (

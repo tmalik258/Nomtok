@@ -29,7 +29,7 @@ const InfluencerCard = ({ influencer }: InfluencerCardProps) => {
         >
           {/* Avatar positioned to overlap */}
           <div className="absolute -bottom-8 left-4">
-            <div className="relative w-16 h-16 rounded-full overflow-hidden bg-white border-4 border-white shadow-lg">
+            <div className="relative w-16 h-16 rounded-full overflow-hidden bg-cream border-4 border-white shadow-lg">
               {influencer.avatar_url ? (
                 <Image
                   src={influencer.avatar_url}
@@ -39,7 +39,7 @@ const InfluencerCard = ({ influencer }: InfluencerCardProps) => {
                   sizes="64px"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-400 to-red-500 text-white font-bold text-xl">
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-400 to-red-500 text-cream font-bold text-xl">
                   {influencer?.name?.charAt(0) || '?'}
                 </div>
               )}
@@ -49,7 +49,7 @@ const InfluencerCard = ({ influencer }: InfluencerCardProps) => {
           {/* Top right badge for featured influencers */}
           {(influencer?.listings?.length ?? 0) > 10 && (
             <div className="absolute top-4 right-4">
-              <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 px-3 py-1">
+              <Badge className="bg-cream/20 backdrop-blur-sm text-cream border-white/30 px-3 py-1">
                 <Star className="w-3 h-3 mr-1" />
                 Featured
               </Badge>
@@ -101,7 +101,7 @@ const InfluencerCard = ({ influencer }: InfluencerCardProps) => {
 
           {/* Actions */}
           <div className="flex gap-3 mt-auto">
-            <Button className="w-full bg-orange-600 hover:bg-orange-500 text-white font-semibold py-2.5 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl cursor-pointer" asChild>
+            <Button className="w-full bg-orange-600 hover:bg-orange-500 text-cream font-semibold py-2.5 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl cursor-pointer" asChild>
               <Link href={`/influencers/${influencer.slug}`} className="flex-1">
                 View Profile
               </Link>
@@ -109,7 +109,7 @@ const InfluencerCard = ({ influencer }: InfluencerCardProps) => {
             {influencer.youtube_channel_url && (
               <Button
                 asChild
-                className="bg-red-600 hover:bg-red-500 text-white p-2.5 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
+                className="bg-red-600 hover:bg-red-500 text-cream p-2.5 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
               >
                 <a
                   href={influencer.youtube_channel_url}

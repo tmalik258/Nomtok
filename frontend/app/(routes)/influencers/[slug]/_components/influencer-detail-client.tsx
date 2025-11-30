@@ -9,7 +9,6 @@ import {
   useListings,
 } from "@/lib/hooks";
 import { Play } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { formatNumberAbbreviated } from "@/lib/utils/number-formatter";
 import { Listing, Influencer } from "@/lib/types";
 import ErrorCard from "@/components/error-card";
@@ -32,7 +31,17 @@ import { buildBreadcrumbJsonLd } from "@/lib/seo/utils";
 import Script from "next/script";
 import { InfluencerSearchFilter } from "../../_components/influencer-search-filter";
 
-export default function InfluencerDetailClient({ slug, initialInfluencer, initialListings, renderHero = true }: { slug: string; initialInfluencer?: Influencer; initialListings?: Listing[]; renderHero?: boolean }) {
+export default function InfluencerDetailClient({
+  slug,
+  initialInfluencer,
+  initialListings,
+  renderHero = true,
+}: {
+  slug: string;
+  initialInfluencer?: Influencer;
+  initialListings?: Listing[];
+  renderHero?: boolean;
+}) {
   const influencerSlug = slug;
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -66,7 +75,12 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
     updateParams,
     params,
     refetch,
-  } = useListings({ influencer_slug: influencerSlug, approved_status: 'Approved', page: 1, limit: 10 });
+  } = useListings({
+    influencer_slug: influencerSlug,
+    approved_status: "Approved",
+    page: 1,
+    limit: 10,
+  });
 
   const {
     videos,
@@ -99,9 +113,12 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
   }, [countryParam]);
 
   useEffect(() => {
-    const baseListings = paginatedListings.length > 0
-      ? paginatedListings
-      : ((params?.page || 1) === 1 ? (initialListings || []) : []);
+    const baseListings =
+      paginatedListings.length > 0
+        ? paginatedListings
+        : (params?.page || 1) === 1
+        ? initialListings || []
+        : [];
     if (baseListings.length > 0) {
       let filtered = [...baseListings];
 
@@ -157,7 +174,15 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
 
       setFilteredListings(filtered);
     }
-  }, [paginatedListings, initialListings, searchQuery, searchType, sortBy, country, params?.page]);
+  }, [
+    paginatedListings,
+    initialListings,
+    searchQuery,
+    searchType,
+    sortBy,
+    country,
+    params?.page,
+  ]);
 
   useEffect(() => {
     updateParams({ search: searchQuery });
@@ -240,7 +265,9 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
   const reviewsSectionRef = useRef<HTMLDivElement>(null);
 
   const hydratedInfluencer = influencer || initialInfluencer;
-  const loading = (influencerLoading || listingsLoading || videosLoading) && !hydratedInfluencer;
+  const loading =
+    (influencerLoading || listingsLoading || videosLoading) &&
+    !hydratedInfluencer;
   const error = influencerError || listingsError || videosError;
 
   if (loading) {
@@ -249,7 +276,7 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
 
   if (error || !hydratedInfluencer) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
+      <div className="min-h-screen bg-cream">
         <ErrorCard
           title={error ? "Something went wrong" : "Influencer not found"}
           message={
@@ -269,20 +296,23 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
   const uniqueCities = getUniqueCitiesCount(filteredListings || []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-cream">
       <Script id="breadcrumb-jsonld" type="application/ld+json">
         {JSON.stringify(
           buildBreadcrumbJsonLd([
             { name: "Home", url: "https://www.nomtok.com" },
             { name: "Influencers", url: "https://www.nomtok.com/influencers" },
-            { name: toTitleFromSlug(influencerSlug), url: `https://www.nomtok.com/influencers/${influencerSlug}` },
+            {
+              name: toTitleFromSlug(influencerSlug),
+              url: `https://www.nomtok.com/influencers/${influencerSlug}`,
+            },
           ])
         )}
       </Script>
       {renderHero && <HeroSection influencer={hydratedInfluencer} />}
 
-      <div className="relative z-20 -mt-20 mb-8 max-w-6xl mx-auto px-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="relative z-20 -mt-16 mb-8 max-w-6xl mx-auto px-4">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-4">
           <StatsCard value={uniqueRestaurants} label="Restaurants" />
           <StatsCard value={uniqueCities} label="Cities" />
           <StatsCard
@@ -327,16 +357,14 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
           className="h-80 w-full mb-6"
         />
 
-        <div className="grid grid-cols-1 gap-6 mb-12">
-          <Card className="bg-white shadow-xl border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Play className="w-6 h-6 text-red-500" />
-                <h2 className="text-xl font-bold text-gray-900">Popular Videos</h2>
-              </div>
-              <VideoSlider videos={videos} />
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 gap-6 my-12">
+          <div className="flex items-center gap-3">
+            <Play className="w-6 h-6 text-red-500" />
+            <h2 className="text-xl font-bold text-gray-900">Popular Videos</h2>
+          </div>
+          <div className="px-12">
+            <VideoSlider videos={videos} />
+          </div>
 
           <SignaturePicksCard listings={filteredListings || []} />
 
@@ -352,11 +380,17 @@ export default function InfluencerDetailClient({ slug, initialInfluencer, initia
           <AllReviews
             listings={filteredListings || []}
             loading={listingsLoading}
-            currentPage={(params?.page) || 1}
-            totalPages={paginatedTotalPages || Math.ceil((paginatedTotal || 0) / ((params?.limit) || 10))}
+            currentPage={params?.page || 1}
+            totalPages={
+              paginatedTotalPages ||
+              Math.ceil((paginatedTotal || 0) / (params?.limit || 10))
+            }
             onPageChange={(page) => {
               setPage(page);
-              reviewsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              reviewsSectionRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
             }}
             error={listingsError || null}
             onRefetch={refetch}

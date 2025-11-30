@@ -79,7 +79,7 @@ export function ListingTable({
       <>
         <div className="text-center py-8">
           <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-cream mb-2">
             No listings found
           </h3>
           <p className="text-gray-500 dark:text-gray-400 mb-4">
@@ -102,7 +102,7 @@ export function ListingTable({
 
   return (
     <>
-      <div className="glass-effect backdrop-blur-xl bg-white/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 rounded-lg">
+      <div className="glass-effect backdrop-blur-xl bg-cream/10 dark:bg-gray-900/10 border border-white/20 dark:border-gray-700/30 rounded-lg">
         <Table className=" overflow-hidden">
           <TableHeader>
             <TableRow>
@@ -156,9 +156,9 @@ export function ListingTable({
             {listings.map((listing) => (
               <TableRow
                 key={listing.id}
-                className="hover:bg-white/20 dark:hover:bg-gray-800/50 border-b border-white/10 dark:border-gray-700/30"
+                className="hover:bg-cream/20 dark:hover:bg-gray-800/50 border-b border-white/10 dark:border-gray-700/30"
               >
-                <TableCell className="font-medium text-gray-900 dark:text-white">
+                <TableCell className="font-medium text-gray-900 dark:text-cream">
                   <span
                     className="cursor-pointer"
                     onClick={() => {
@@ -171,7 +171,7 @@ export function ListingTable({
                     {listing.id ? `${listing.id.substring(0, 10)}${listing.id.length > 10 ? "..." : ""}` : "N/A"}
                   </span>
                 </TableCell>
-                <TableCell className="font-medium text-gray-900 dark:text-white">
+                <TableCell className="font-medium text-gray-900 dark:text-cream">
                   {listing.restaurant?.name || "Unknown Restaurant"}
                 </TableCell>
                 <TableCell className="text-gray-600 dark:text-gray-300">

@@ -85,7 +85,7 @@ export function ApprovalStatusToggle({
           className={cn(
             "flex items-center gap-2 transition-all duration-200 cursor-pointer",
             value
-              ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
+              ? "bg-green-600 hover:bg-green-700 text-cream border-green-600"
               : "border-green-300 text-green-700 hover:bg-green-50 dark:border-green-600 dark:text-green-400 dark:hover:bg-green-900/20"
           )}
           aria-label={value ? "Currently approved" : "Click to approve"}
@@ -105,7 +105,7 @@ export function ApprovalStatusToggle({
           className={cn(
             "flex items-center gap-2 transition-all duration-200 cursor-pointer",
             !value
-              ? "bg-red-600 hover:bg-red-700 text-white border-red-600"
+              ? "bg-red-600 hover:bg-red-700 text-cream border-red-600"
               : "border-red-300 text-red-700 hover:bg-red-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20"
           )}
           aria-label={!value ? "Currently rejected" : "Click to reject"}

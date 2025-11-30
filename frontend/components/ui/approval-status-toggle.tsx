@@ -170,7 +170,7 @@ export function ApprovalStatusToggle({
 
       {/* Confirmation Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-white/20 dark:border-gray-700/30">
+        <DialogContent className="bg-cream/95 dark:bg-gray-900/95 backdrop-blur-xl border-white/20 dark:border-gray-700/30">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-orange-600" />
@@ -200,13 +200,13 @@ export function ApprovalStatusToggle({
             <Button
               variant="outline"
               onClick={cancelStatusChange}
-              className="bg-white/50 dark:bg-gray-800/50 border-white/30 dark:border-gray-700/30 hover:bg-white/60 dark:hover:bg-gray-800/60"
+              className="bg-cream/50 dark:bg-gray-800/50 border-white/30 dark:border-gray-700/30 hover:bg-cream/60 dark:hover:bg-gray-800/60"
             >
               Cancel
             </Button>
             <Button
               onClick={confirmStatusChange}
-              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-cream shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
             >
               Confirm Change
             </Button>

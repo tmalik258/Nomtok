@@ -290,7 +290,7 @@ export function EditInfluencerModal({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="cursor-pointer bg-orange-500 hover:bg-orange-600 text-white"
+                className="cursor-pointer bg-orange-500 hover:bg-orange-600 text-cream"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isSubmitting ? 'Updating...' : 'Update Influencer'}

@@ -146,7 +146,7 @@ export const metadata = {
   "short_name": "Nomtok",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#FBFAF2",
   "theme_color": "#111827",
   "icons": [
     { "src": "/favicon-64x64.png", "sizes": "64x64", "type": "image/png" },

@@ -70,7 +70,7 @@ export function JobCard({ job, onTrigger, cancelJob }: JobCardProps & { cancelJo
   };
 
   return (
-    <Card className="glass-effect backdrop-blur-xl bg-white/80 border border-orange-200/50 shadow-xl">
+    <Card className="glass-effect backdrop-blur-xl bg-cream/80 border border-orange-200/50 shadow-xl">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -213,9 +213,9 @@ export function JobCard({ job, onTrigger, cancelJob }: JobCardProps & { cancelJo
             {( ["failed", "cancelled"].includes(job.status) ) && (
               <Button 
                 onClick={() => onTrigger(job.job_type)}
-                className="flex-1 bg-orange-600 hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-white cursor-pointer"
+                className="flex-1 bg-orange-600 hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-cream cursor-pointer"
               >
-                <Play className="h-4 w-4 mr-2 text-white" />
+                <Play className="h-4 w-4 mr-2 text-cream" />
                 Restart Job
               </Button>
             )}

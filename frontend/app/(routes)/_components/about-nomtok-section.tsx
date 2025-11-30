@@ -49,7 +49,7 @@ export function AboutNomtokSection({
   const displayRestaurants = restaurants.slice(0, 5);
 
   return (
-    <div className="py-12 px-4 bg-gray-50">
+    <div className="py-12 px-4 bg-cream">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left Column: Description */}
@@ -108,11 +108,11 @@ export function AboutNomtokSection({
                         className="object-cover"
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
-                        <h3 className="text-white font-semibold text-xl">
+                        <h3 className="text-cream font-semibold text-xl">
                           {restaurant.name}
                         </h3>
                         {restaurant.city && (
-                          <p className="text-white/90 text-sm">{restaurant.city}</p>
+                          <p className="text-cream/90 text-sm">{restaurant.city}</p>
                         )}
                       </div>
                     </div>

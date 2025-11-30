@@ -20,7 +20,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ influencer }) => {
 
       <div className="relative h-full flex flex-col justify-center items-center text-center px-4">
         {/* Avatar */}
-        <div className="w-32 h-32 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-4xl font-bold border-4 border-white/30 shadow-xl mb-6">
+        <div className="w-32 h-32 rounded-full bg-cream/20 backdrop-blur-sm flex items-center justify-center text-cream text-4xl font-bold border-4 border-white/30 shadow-xl mb-6">
           {influencer.avatar_url ? (
             <Image
               src={influencer.avatar_url}
@@ -35,14 +35,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ influencer }) => {
         </div>
 
         {/* Profile Info */}
-        <div className="text-white max-w-4xl">
+        <div className="text-cream max-w-4xl">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
             {influencer.name}
           </h1>
-          <p className="text-lg md:text-xl text-white/90 mb-2">
+          <p className="text-lg md:text-xl text-cream/90 mb-2">
             Food and travel vlogger exploring
           </p>
-          <p className="text-lg md:text-xl text-white/90">
+          <p className="text-lg md:text-xl text-cream/90">
             local favorites & hidden gems
           </p>
         </div>
@@ -57,7 +57,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ influencer }) => {
               influencer.subscriber_count
             )} subscribers`}`}
             variant="inline"
-            className="bg-white backdrop-blur-sm border-white/20 px-4 py-1 rounded-lg"
           />
         </div>
       </div>

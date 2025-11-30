@@ -17,7 +17,13 @@ async def get_google_reviews(
 ) -> Dict[str, Any]:
     """
     Fetch Google Maps reviews for a restaurant using Places API.
-    Returns the 6 most recent reviews with proper error handling.
+    
+    IMPORTANT: Google Places API (New) has a hard limit of 5 reviews per request.
+    This is a Google API limitation that cannot be bypassed. Even though we request
+    up to 6 reviews, Google will only return a maximum of 5 reviews per API call.
+    
+    Returns:
+        Up to 5 most recent reviews (Google API limit)
     """
     
     if not GOOGLE_MAPS_API_KEY:

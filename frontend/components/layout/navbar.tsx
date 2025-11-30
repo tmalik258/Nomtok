@@ -39,9 +39,9 @@ export function Navbar() {
             <Image
               height={150}
               width={150}
-              src="/logo-transparent-white.png"
+              src="/logo-2.2-transparent-dark.png"
               alt="Logo"
-              className="w-auto h-10 object-contain"
+              className="w-auto h-7 object-contain"
             />
           </Link>
 
@@ -51,8 +51,8 @@ export function Navbar() {
               asChild
               variant="ghost"
               className={cn(
-                'flex items-center gap-2 cursor-pointer',
-                isActive('/') && 'bg-accent text-accent-foreground'
+                'flex items-center gap-2 cursor-pointer hover:bg-cream/30 hover:text-cream',
+                isActive('/') && 'bg-cream/30 text-cream'
               )}
             >
               <Link href="/" aria-current={isActive('/') ? 'page' : undefined}>
@@ -64,8 +64,8 @@ export function Navbar() {
               asChild
               variant="ghost"
               className={cn(
-                'flex items-center gap-2 cursor-pointer',
-                isActive('/restaurants') && 'bg-accent text-accent-foreground'
+                'flex items-center gap-2 cursor-pointer hover:bg-cream/30 hover:text-cream',
+                isActive('/restaurants') && 'bg-cream/30 text-cream'
               )}
             >
               <Link
@@ -80,8 +80,8 @@ export function Navbar() {
               asChild
               variant="ghost"
               className={cn(
-                'flex items-center gap-2 cursor-pointer',
-                isActive('/influencers') && 'bg-accent text-accent-foreground'
+                'flex items-center gap-2 cursor-pointer hover:bg-cream/30 hover:text-cream',
+                isActive('/influencers') && 'bg-cream/30 text-cream'
               )}
             >
               <Link
@@ -118,8 +118,8 @@ export function Navbar() {
                 asChild
                 variant="ghost"
                 className={cn(
-                  'flex items-center gap-3 justify-start text-slate-300 hover:text-slate-200 hover:bg-slate-700/30 p-3 rounded-lg cursor-pointer',
-                  isActive('/') && 'bg-slate-700/30 text-slate-200'
+                  'flex items-center gap-3 justify-start text-slate-300 hover:text-slate-200 hover:bg-orange-500/30 p-3 rounded-lg cursor-pointer',
+                  isActive('/') && 'bg-cream text-slate-200'
                 )}
                 onClick={closeMobileMenu}
               >
@@ -132,7 +132,7 @@ export function Navbar() {
                 asChild
                 variant="ghost"
                 className={cn(
-                  'flex items-center gap-3 justify-start text-slate-300 hover:text-slate-200 hover:bg-slate-700/30 p-3 rounded-lg cursor-pointer',
+                  'flex items-center gap-3 justify-start text-slate-300 hover:text-slate-200 hover:bg-orange-500/30 p-3 rounded-lg cursor-pointer',
                   isActive('/restaurants') && 'bg-slate-700/30 text-slate-200'
                 )}
                 onClick={closeMobileMenu}
@@ -149,8 +149,8 @@ export function Navbar() {
                 asChild
                 variant="ghost"
                 className={cn(
-                  'flex items-center gap-3 justify-start text-slate-300 hover:text-slate-200 hover:bg-slate-700/30 p-3 rounded-lg cursor-pointer',
-                  isActive('/influencers') && 'bg-slate-700/30 text-slate-200'
+                  'flex items-center gap-3 justify-start text-slate-300 hover:text-slate-200 hover:bg-cream/30 p-3 rounded-lg cursor-pointer',
+                  isActive('/influencers') && 'bg-cream text-slate-200'
                 )}
                 onClick={closeMobileMenu}
               >

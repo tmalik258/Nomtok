@@ -26,7 +26,7 @@ export function RestaurantDetailCard({
 }: RestaurantDetailCardProps) {
   return (
     <Card
-      className={cn("border-gray-100 shadow-xl bg-white h-full", className)}
+      className={cn("border-none shadow-xl bg-white h-full", className)}
     >
       <CardContent className="p-6 h-full">
         <div className="flex flex-col md:flex-row items-stretch gap-4">
@@ -52,7 +52,7 @@ export function RestaurantDetailCard({
               {cuisines?.map((cuisine) => (
                 <span
                   key={cuisine.id}
-                  className="bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+                  className="bg-orange-500/15 text-orange-500 text-xs font-medium px-2.5 py-0.5 rounded-full"
                 >
                   {cuisine.name}
                 </span>
@@ -84,7 +84,7 @@ export function RestaurantDetailCard({
                 url={typeof window !== 'undefined' ? `${window.location.origin}/restaurants/${restaurant.slug}` : ''}
                 title={`Check out ${restaurant.name} - Amazing restaurant in ${restaurant.city || 'the city'}`}
                 variant="inline"
-                className="pt-2 border-t border-gray-100"
+                className="pt-2 self-start border-none shadow-none"
               />
             </div>
           </div>
@@ -94,7 +94,7 @@ export function RestaurantDetailCard({
           {listings?.map((listing, index) => {
             const influencer = listing?.influencer;
             return (
-              <div key={index} className="mt-4 p-3 bg-white/50 rounded-lg">
+              <div key={index} className="mt-4 p-3">
                 <div className="mb-4 last:mb-0">
                   {influencer && showInfluencer && (
                     <div className="flex items-center gap-2 mb-2">

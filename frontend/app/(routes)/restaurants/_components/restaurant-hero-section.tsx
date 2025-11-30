@@ -35,13 +35,13 @@ export function RestaurantHeroSection({ city }: RestaurantHeroSectionProps) {
 
       {/* Title Overlay */}
       <div className="absolute bottom-20 left-0 right-0 text-center p-6 md:p-8 z-50">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 drop-shadow-xl">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-cream mb-4 drop-shadow-xl">
           {city ? city.toUpperCase() + "'S" : "Nomtok'S"}
         </h1>
-        <p className="text-3xl md:text-4xl font-bold leading-tight mb-4 text-white">
+        <p className="text-3xl md:text-4xl font-bold leading-tight mb-4 text-cream">
           Critics&apos; Picks
         </p>
-        <p className="text-lg md:text-xl text-white/90">
+        <p className="text-lg md:text-xl text-cream/90">
           HANDPICKED BY CELEBRITY CHEFS & TOP FOOD CREATORS.
         </p>
       </div>

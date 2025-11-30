@@ -89,7 +89,7 @@ export function InfluencerSearchFilter({
     (!disableCountryFilter && country && country !== "all");
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 mb-8">
+    <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Search Input */}
         <div className="flex-1 relative">

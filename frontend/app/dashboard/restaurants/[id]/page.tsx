@@ -197,8 +197,8 @@ export default function RestaurantDetailsPage() {
                   <Badge
                     variant={restaurant.is_active ? "default" : "secondary"}
                     className={cn("", {
-                      "bg-orange-500 text-white": restaurant.is_active,
-                      "bg-red-500 text-white": !restaurant.is_active,
+                      "bg-orange-500 text-cream": restaurant.is_active,
+                      "bg-red-500 text-cream": !restaurant.is_active,
                     })}
                   >
                     {restaurant.is_active ? "Active" : "Inactive"}

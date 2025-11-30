@@ -29,14 +29,14 @@ export function CuisineHeader({
             placeholder="Search cuisines..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10 glass-effect backdrop-blur-sm bg-white/10 dark:bg-gray-900/10 border-white/20 dark:border-gray-700/30 focus:border-orange-500 focus:ring-orange-500"
+            className="pl-10 glass-effect backdrop-blur-sm bg-cream/10 dark:bg-gray-900/10 border-white/20 dark:border-gray-700/30 focus:border-orange-500 focus:ring-orange-500"
             aria-label="Search cuisines by name"
           />
         </div>
 
         <Select value={sortBy} onValueChange={onSortChange}>
           <SelectTrigger 
-            className="w-40 glass-effect backdrop-blur-sm bg-white/10 dark:bg-gray-900/10 border-white/20 dark:border-gray-700/30 focus:border-orange-500 focus:ring-orange-500"
+            className="w-40 glass-effect backdrop-blur-sm bg-cream/10 dark:bg-gray-900/10 border-white/20 dark:border-gray-700/30 focus:border-orange-500 focus:ring-orange-500"
             aria-label="Sort cuisines by"
           >
             <SelectValue placeholder="Sort by" />

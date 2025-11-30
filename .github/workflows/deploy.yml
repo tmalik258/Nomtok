@@ -42,15 +42,16 @@ jobs:
       env:
         SSH_HOST: ${{ secrets.SSH_HOST }}
         SSH_USER: ${{ secrets.SSH_USER }}
+        PROJECT_DIR: ${{ secrets.PROJECT_DIR }}
       run: |
         echo "🚀 Starting deployment to production server..."
         
         # Connect to server and execute deployment commands
-        ssh production << 'ENDSSH'
+        ssh production "export PROJECT_DIR='$PROJECT_DIR'; bash -s" << 'ENDSSH'
           set -e
           
           echo "📁 Navigating to project directory..."
-          cd ~/Nomtok || exit 1
+          cd "$PROJECT_DIR" || exit 1
           
           echo "📥 Pulling latest code from GitHub..."
           git pull origin prod

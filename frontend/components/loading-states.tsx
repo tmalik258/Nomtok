@@ -13,8 +13,8 @@ export function HeroSectionSkeleton() {
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative z-10 flex items-center justify-center h-full">
         <div className="text-center space-y-4">
-          <Skeleton className="h-12 w-96 mx-auto bg-white/20" />
-          <Skeleton className="h-6 w-64 mx-auto bg-white/20" />
+          <Skeleton className="h-12 w-96 mx-auto bg-cream/20" />
+          <Skeleton className="h-6 w-64 mx-auto bg-cream/20" />
         </div>
       </div>
     </div>

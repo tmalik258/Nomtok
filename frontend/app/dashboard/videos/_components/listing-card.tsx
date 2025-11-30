@@ -63,7 +63,7 @@ export function ListingCard({ listing, onDeleted, onUpdate }: ListingCardProps) 
 
   if (isEditMode) {
     return (
-      <Card className="bg-white shadow-sm border border-gray-200">
+      <Card className="bg-cream shadow-sm border border-gray-200">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -97,7 +97,7 @@ export function ListingCard({ listing, onDeleted, onUpdate }: ListingCardProps) 
   }
 
   return (
-    <Card className="bg-white shadow-sm border border-gray-200">
+    <Card className="bg-cream shadow-sm border border-gray-200">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">

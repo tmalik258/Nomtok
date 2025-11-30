@@ -27,7 +27,7 @@ export function MetricCard({
 }: MetricCardProps) {
   if (isLoading) {
     return (
-      <Card className="glass-effect backdrop-blur-xl bg-white/80 border-orange-200/50 shadow-xl">
+      <Card className="glass-effect backdrop-blur-xl bg-cream/80 border-orange-200/50 shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <Skeleton className="h-4 w-24" />
           {Icon && <Skeleton className="h-4 w-4" />}
@@ -43,7 +43,7 @@ export function MetricCard({
   const formattedValue = typeof value === 'number' ? value.toLocaleString() : value;
 
   return (
-    <Card className="glass-effect backdrop-blur-xl bg-white/80 border-orange-200/50 shadow-xl transition-all duration-200 hover:shadow-2xl hover:border-orange-300/60">
+    <Card className="glass-effect backdrop-blur-xl bg-cream/80 border-orange-200/50 shadow-xl transition-all duration-200 hover:shadow-2xl hover:border-orange-300/60">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-gray-800 dark:text-gray-200">{title}</CardTitle>
         {Icon && <Icon className="h-4 w-4 text-orange-600 dark:text-orange-400" />}

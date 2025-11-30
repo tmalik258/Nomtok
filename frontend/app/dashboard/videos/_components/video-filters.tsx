@@ -79,7 +79,7 @@ export function VideoFilters({
               placeholder="Search videos..."
               value={localSearchTerm}
               onChange={(e) => setLocalSearchTerm(e.target.value)}
-              className="glass-effect backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-orange-200 dark:border-orange-800 focus:border-orange-500 focus:ring-orange-500/20 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+              className="glass-effect backdrop-blur-sm bg-cream/50 dark:bg-gray-800/50 border-orange-200 dark:border-orange-800 focus:border-orange-500 focus:ring-orange-500/20 text-gray-900 dark:text-cream placeholder:text-gray-500 dark:placeholder:text-gray-400"
             />
           </div>
 
@@ -108,7 +108,7 @@ export function VideoFilters({
 
           {/* Sort By */}
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full glass-effect backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-orange-200 dark:border-orange-800 focus:border-orange-500 focus:ring-orange-500/20 text-gray-900 dark:text-white">
+            <SelectTrigger className="w-full glass-effect backdrop-blur-sm bg-cream/50 dark:bg-gray-800/50 border-orange-200 dark:border-orange-800 focus:border-orange-500 focus:ring-orange-500/20 text-gray-900 dark:text-cream">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -123,7 +123,7 @@ export function VideoFilters({
             value={sortOrder}
             onValueChange={(value: "asc" | "desc") => setSortOrder(value)}
           >
-            <SelectTrigger className="w-full glass-effect backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-orange-200 dark:border-orange-800 focus:border-orange-500 focus:ring-orange-500/20 text-gray-900 dark:text-white">
+            <SelectTrigger className="w-full glass-effect backdrop-blur-sm bg-cream/50 dark:bg-gray-800/50 border-orange-200 dark:border-orange-800 focus:border-orange-500 focus:ring-orange-500/20 text-gray-900 dark:text-cream">
               <SelectValue placeholder="Sort order" />
             </SelectTrigger>
             <SelectContent>
@@ -143,7 +143,7 @@ export function VideoFilters({
               }
             }}
           >
-            <SelectTrigger className="w-full glass-effect backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-orange-200 dark:border-orange-800 focus:border-orange-500 focus:ring-orange-500/20 text-gray-900 dark:text-white">
+            <SelectTrigger className="w-full glass-effect backdrop-blur-sm bg-cream/50 dark:bg-gray-800/50 border-orange-200 dark:border-orange-800 focus:border-orange-500 focus:ring-orange-500/20 text-gray-900 dark:text-cream">
               <SelectValue placeholder="Filter by listings" />
             </SelectTrigger>
             <SelectContent>
@@ -160,7 +160,7 @@ export function VideoFilters({
               setProcessedFilter(value)
             }
           >
-            <SelectTrigger className="w-full glass-effect backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-orange-200 dark:border-orange-800 focus:border-orange-500 focus:ring-orange-500/20 text-gray-900 dark:text-white">
+            <SelectTrigger className="w-full glass-effect backdrop-blur-sm bg-cream/50 dark:bg-gray-800/50 border-orange-200 dark:border-orange-800 focus:border-orange-500 focus:ring-orange-500/20 text-gray-900 dark:text-cream">
               <SelectValue placeholder="Filter by processing status" />
             </SelectTrigger>
             <SelectContent>
