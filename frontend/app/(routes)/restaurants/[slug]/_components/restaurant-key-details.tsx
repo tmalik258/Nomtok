@@ -15,7 +15,7 @@ export default function RestaurantKeyDetails({ restaurant }: RestaurantKeyDetail
     <div className="mb-8">
       <div className="flex flex-wrap items-center gap-3">
         {restaurant.website && (
-          <Button asChild variant="outline" className="cursor-pointer">
+          <Button asChild className="cursor-pointer">
             <a
               href={restaurant.website}
               target="_blank"
@@ -27,7 +27,7 @@ export default function RestaurantKeyDetails({ restaurant }: RestaurantKeyDetail
           </Button>
         )}
         {restaurant.international_phone_number && (
-          <Button asChild variant="outline" className="cursor-pointer">
+          <Button asChild className="cursor-pointer">
             <a href={`tel:${restaurant.international_phone_number}`} aria-label="Call restaurant">
               <Phone className="w-4 h-4 mr-2" /> {restaurant.international_phone_number}
             </a>

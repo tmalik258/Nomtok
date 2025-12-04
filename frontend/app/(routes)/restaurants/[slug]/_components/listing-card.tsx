@@ -77,9 +77,9 @@ const ListingCard = ({
               {/* History Context */}
               {listing.review_sections.history_context && (
                 <div>
-                  <h4 className="font-semibold text-blue-900 mb-2">About</h4>
-                  <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                    <p className="text-blue-800 text-sm">
+                  <h4 className="font-semibold text-orange-900 mb-2">About</h4>
+                  <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
+                    <p className="text-orange-800 text-sm">
                       {listing.review_sections.history_context}
                     </p>
                   </div>
@@ -89,11 +89,11 @@ const ListingCard = ({
               {/* Overview */}
               {listing.review_sections.overview && (
                 <div>
-                  <h4 className="font-semibold text-green-900 mb-2">
+                  <h4 className="font-semibold text-orange-900 mb-2">
                     The Visit
                   </h4>
-                  <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
-                    <p className="text-green-800 text-sm">
+                  <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
+                    <p className="text-orange-800 text-sm">
                       {listing.review_sections.overview}
                     </p>
                   </div>
@@ -104,13 +104,13 @@ const ListingCard = ({
               {listing.review_sections.what_they_ate &&
                 listing.review_sections.what_they_ate.length > 0 && (
                   <div>
-                    <h4 className="font-semibold text-purple-900 mb-2">
+                    <h4 className="font-semibold text-orange-900 mb-2">
                       What They Ate
                     </h4>
-                    <div className="text-purple-800 flex flex-wrap gap-3 text-sm space-y-1">
+                    <div className="text-orange-800 flex flex-wrap gap-3 text-sm space-y-1">
                       {listing.review_sections.what_they_ate.map(
                         (item, index) => (
-                            <div key={index} className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
+                            <div key={index} className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
                               {item}
                             </div>
                         )
@@ -216,6 +216,19 @@ const ListingCard = ({
                 );
               }
             })()}
+          </div>
+
+          {/* Legal Footer Note */}
+          <div className="pt-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500 leading-relaxed">
+              This review includes brief, attributed excerpts of copyrighted
+              material used for the purposes of commentary, criticism, and
+              education. Such use is permitted under Section 107 of the U.S.
+              Copyright Act. All rights to the original works remain with their
+              respective creators and copyright holders. Our intent is to
+              highlight, celebrate, and help audiences discover these creators
+              by directing attention to their original content.
+            </p>
           </div>
         </div>
       </CardContent>
