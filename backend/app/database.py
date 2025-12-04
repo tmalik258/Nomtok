@@ -1,6 +1,9 @@
+import asyncio
 from sqlalchemy import create_engine
 from sqlalchemy.orm import (sessionmaker, declarative_base)
 from sqlalchemy.ext.asyncio import (create_async_engine, AsyncSession, async_sessionmaker)
+from sqlalchemy.exc import OperationalError, TimeoutError as SQLTimeoutError
+from asyncpg.exceptions import TooManyConnectionsError, ConnectionDoesNotExistError
 
 from app.config import (
     DATABASE_URL,
@@ -9,6 +12,7 @@ from app.config import (
     DB_MAX_OVERFLOW,
     DB_POOL_TIMEOUT,
     DB_POOL_RECYCLE,
+    DB_CONNECT_TIMEOUT,
 )
 from app.utils.logging import setup_logger
 
@@ -61,12 +65,14 @@ try:
             "server_settings": {
                 "application_name": "nomtok_backend",
             },
-            "command_timeout": 60,
+            "command_timeout": 120,  # Increased command timeout
+            "timeout": DB_CONNECT_TIMEOUT,  # Connection establishment timeout
         },
     )
     logger.info(
         f"Database connection pool configured: pool_size={DB_POOL_SIZE}, "
-        f"max_overflow={DB_MAX_OVERFLOW}, max_connections={DB_POOL_SIZE + DB_MAX_OVERFLOW}"
+        f"max_overflow={DB_MAX_OVERFLOW}, max_connections={DB_POOL_SIZE + DB_MAX_OVERFLOW}, "
+        f"pool_timeout={DB_POOL_TIMEOUT}s, connect_timeout={DB_CONNECT_TIMEOUT}s"
     )
 except Exception as e:
     logger.error(f"Failed to create database engine: {str(e)}")
@@ -74,12 +80,20 @@ except Exception as e:
 
 AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
 
-# Async session dependency
+# Async session dependency with improved error handling
 async def get_async_db():
     async with AsyncSessionLocal() as session:
         try:
             yield session
-        except Exception:
-            # Rollback on exception to ensure connection is released
+        except (OperationalError, SQLTimeoutError, TooManyConnectionsError, ConnectionDoesNotExistError) as e:
+            # Rollback on database connection errors to release the connection
+            await session.rollback()
+            logger.error(f"Database connection error in session: {str(e)}")
+            raise
+        except Exception as e:
+            # Rollback on any exception to ensure connection is released
             await session.rollback()
             raise
+        finally:
+            # Ensure session is properly closed
+            await session.close()

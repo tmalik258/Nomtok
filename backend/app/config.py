@@ -9,11 +9,14 @@ DATABASE_URL = os.getenv("DATABASE_URL", None)
 ASYNC_DATABASE_URL = os.getenv("ASYNC_DATABASE_URL", None)
 
 # Database connection pool configuration
-# Higher values for local development to handle hot reload and concurrent testing
-DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "50"))  # Default 50 for local dev
-DB_MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "50"))  # Default 50 for local dev
-DB_POOL_TIMEOUT = int(os.getenv("DB_POOL_TIMEOUT", "60"))
-DB_POOL_RECYCLE = int(os.getenv("DB_POOL_RECYCLE", "1800"))
+# Optimized for production: 2 cores, 5 workers (2*2+1)
+# Each worker gets ~6 connections max (3 base + 3 overflow)
+# Total: 5 workers * 6 = 30 connections max, leaving room for other operations
+DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "3"))  # Reduced for production stability
+DB_MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "3"))  # Reduced overflow for production
+DB_POOL_TIMEOUT = int(os.getenv("DB_POOL_TIMEOUT", "120"))  # Increased timeout for slow connections
+DB_POOL_RECYCLE = int(os.getenv("DB_POOL_RECYCLE", "3600"))  # Increased recycle time
+DB_CONNECT_TIMEOUT = int(os.getenv("DB_CONNECT_TIMEOUT", "30"))  # Connection establishment timeout
 
 # Redis lock keys
 SCRAPE_YOUTUBE_LOCK = "lock:scrape_youtube"

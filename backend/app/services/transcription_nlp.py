@@ -886,7 +886,9 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
     errors_list: list[dict] = []
     
     try:
-        semaphore = asyncio.Semaphore(max(1, int(os.getenv("TRANSCRIPTION_CONCURRENCY", "5"))))
+        # Reduced default concurrency from 5 to 2 for better resource management
+        # With 3 workers and 2 concurrent videos each = 6 total, matching pool size better
+        semaphore = asyncio.Semaphore(max(1, int(os.getenv("TRANSCRIPTION_CONCURRENCY", "2"))))
 
         # Select videos to process
         if video_ids:
