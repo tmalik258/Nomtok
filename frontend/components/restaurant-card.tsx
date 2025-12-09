@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Restaurant, Listing } from "@/lib/types";
 import { Star } from "lucide-react";
 import RestaurantImage from "@/components/restaurant-image";
-import { useRouter } from "next/navigation";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -19,7 +18,6 @@ export function RestaurantCard({
   listings,
   showButton = true,
 }: RestaurantCardProps) {
-  const router = useRouter();
   
   // Derived details from new fields
   const openNow =
@@ -48,11 +46,11 @@ export function RestaurantCard({
     return "";
   };
   return (
-    <Card
-      key={restaurant.slug}
-      className="h-full flex flex-col overflow-hidden border-0 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 group p-4"
-      onClick={() => router.push(`/restaurants/${restaurant.slug}`)}
-    >
+    <Link href={`/restaurants/${restaurant.slug}`} className="block h-full">
+      <Card
+        key={restaurant.slug}
+        className="h-full flex flex-col overflow-hidden border-0 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 group p-4"
+      >
       <div className="relative h-48 rounded-lg overflow-hidden">
         {/* Use fallback-aware image component */}
         <RestaurantImage
@@ -147,15 +145,15 @@ export function RestaurantCard({
           )}
 
           {showButton !== false && (
-            <Button
-              asChild
-              className="w-full mt-auto bg-orange-500 text-cream hover:bg-orange-600 transition-colors duration-200 cursor-pointer"
+            <div
+              className="w-full mt-auto bg-orange-500 text-cream hover:bg-orange-600 transition-colors duration-200 cursor-pointer rounded-md px-4 py-2 text-center font-medium"
             >
-              <Link href={`/restaurants/${restaurant.slug}`}>View Details</Link>
-            </Button>
+              View Details
+            </div>
           )}
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }

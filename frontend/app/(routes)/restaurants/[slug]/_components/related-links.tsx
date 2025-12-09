@@ -81,7 +81,7 @@ export default function RelatedLinks({
       <h2 className="text-xl font-bold text-gray-900 mb-6">
         Explore Related Content
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {links.map((link, index) => {
           const Icon = link.icon;
           return (
@@ -89,11 +89,11 @@ export default function RelatedLinks({
               key={index}
               asChild
               variant="outline"
-              className="w-full justify-start h-auto py-3 px-4 bg-cream hover:bg-orange-50 border-gray-300 hover:border-orange-500 hover:text-orange-600 transition-all duration-200 cursor-pointer group"
+              className="w-full justify-start h-auto py-2.5 px-3 sm:py-3 sm:px-4 bg-cream hover:bg-orange-50 border-gray-300 hover:border-orange-500 hover:text-orange-600 transition-all duration-200 cursor-pointer group"
             >
-              <Link href={link.href} className="flex items-center gap-3">
-                <Icon className="w-5 h-5 text-orange-600 group-hover:scale-110 transition-transform duration-200" />
-                <span className="text-sm font-medium text-left">{link.label}</span>
+              <Link href={link.href} className="flex items-center gap-2 sm:gap-3 min-w-0 w-full">
+                <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 group-hover:scale-110 transition-transform duration-200 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-medium text-left break-words leading-relaxed">{link.label}</span>
               </Link>
             </Button>
           );

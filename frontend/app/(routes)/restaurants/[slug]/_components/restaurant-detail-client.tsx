@@ -34,14 +34,18 @@ export default function RestaurantDetailClient({
   renderHero = true,
   initialCityRestaurants = [],
 }: RestaurantDetailClientProps) {
+  // Skip client-side fetching if we have initial data from server
+  const skipFetch = !!initialRestaurant;
+  
   const {
     restaurant,
     loading,
     error: restaurantError,
     refetch: refetchRestaurant,
-  } = useRestaurantWithListings(slug, true);
+  } = useRestaurantWithListings(slug, true, skipFetch);
 
-  const hydratedRestaurant = restaurant || initialRestaurant;
+  // Use initial data when available, otherwise use hook data
+  const hydratedRestaurant = initialRestaurant || restaurant;
   const listings = hydratedRestaurant?.listings || [];
   const restaurantCity = hydratedRestaurant?.city;
 
@@ -67,9 +71,11 @@ export default function RestaurantDetailClient({
     refetchRestaurant?.();
   };
 
-  const error = restaurantError;
+  // Only show error if we don't have initial data and there's an error
+  const error = !initialRestaurant ? restaurantError : null;
 
-  if (loading && !hydratedRestaurant) {
+  // Only show loading skeleton if we don't have initial data and are loading
+  if (loading && !hydratedRestaurant && !initialRestaurant) {
     return <SkeletonLoading />;
   }
 
