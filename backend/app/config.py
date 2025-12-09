@@ -160,3 +160,7 @@ TOR_PROXY = "socks5://tor:9150"
 
 # Base URL for Places API
 PLACES_BASE_URL = "https://places.googleapis.com/v1"
+
+# Frontend URL for sitemap regeneration
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+FRONTEND_SITEMAP_SECRET = os.getenv("FRONTEND_SITEMAP_SECRET")

@@ -96,7 +96,7 @@ async function writeXml(filename: string, body: string): Promise<void> {
   console.log(`[sitemaps] wrote ${filename} (${body.length} bytes)`) 
 }
 
-async function generateRestaurantsSitemap(): Promise<void> {
+export async function generateRestaurantsSitemap(): Promise<void> {
   try {
     const items = await fetchAll<BaseItem>('restaurants', 'restaurants')
     const urls = items
@@ -111,7 +111,7 @@ async function generateRestaurantsSitemap(): Promise<void> {
   }
 }
 
-async function generateInfluencersSitemap(): Promise<void> {
+export async function generateInfluencersSitemap(): Promise<void> {
   try {
     const items = await fetchAll<BaseItem>('influencers', 'influencers')
     const urls = items

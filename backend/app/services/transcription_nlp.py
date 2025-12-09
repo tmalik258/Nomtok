@@ -47,6 +47,7 @@ from app.utils.logging import setup_logger
 from app.api_schema.jobs import JobUpdateRequest
 from app.utils.youtube_cookies import get_cookies_age_hours, refresh_youtube_cookies
 from app.utils.ytdlp_error_classifier import classify_ytdlp_error
+from app.utils.ytdlp_updater import update_ytdlp
 from app.scripts.gpt_food_place_processor import GPTFoodPlaceProcessor
 from app.exceptions import PipelineError
 
@@ -552,7 +553,33 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                 await asyncio.sleep(delay)
                 continue
 
-            # Final failure
+            # Check if error might be due to outdated yt-dlp and trigger update
+            # Only check on second-to-last or last attempt to allow retry after update
+            err_l = err.lower()
+            should_update = (
+                "http error 403" in err_l
+                or "http error 429" in err_l
+                or "unable to extract" in err_l
+                or "unable to download" in err_l
+                or "sign in to confirm" in err_l
+                or ("version" in err_l and ("outdated" in err_l or "update" in err_l))
+            ) and attempt >= max_attempts - 2  # Update on second-to-last or last attempt
+
+            if should_update and attempt < max_attempts - 1:
+                logger.warning(f"yt-dlp error detected that might be due to outdated version. Attempting update...")
+                update_success, update_message = await update_ytdlp()
+                if update_success:
+                    logger.info(f"yt-dlp updated successfully: {update_message}")
+                    logger.info("Retrying download with updated yt-dlp version...")
+                    # Cleanup and retry with updated version
+                    if downloaded_file and os.path.exists(downloaded_file):
+                        os.remove(downloaded_file)
+                    if os.path.exists(final_output_path):
+                        os.remove(final_output_path)
+                    await asyncio.sleep(2)  # Brief delay before retry
+                    continue  # Retry with updated version
+
+            # Final failure (if update failed or on last attempt)
             cls = classify_ytdlp_error(err)
             details = {
                 "video_url": video_url,
@@ -573,6 +600,34 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
 
         except Exception as e:
             logger.error(f"Unexpected error for {video_url}: {e}")
+            
+            # Check if error might be due to outdated yt-dlp and trigger update
+            # Only check on second-to-last or last attempt to allow retry after update
+            err_str = str(e).lower()
+            should_update = (
+                "http error 403" in err_str
+                or "http error 429" in err_str
+                or "unable to extract" in err_str
+                or "unable to download" in err_str
+                or "sign in to confirm" in err_str
+                or ("version" in err_str and ("outdated" in err_str or "update" in err_str))
+                or ("yt-dlp" in err_str and ("error" in err_str or "failed" in err_str))
+            ) and attempt >= max_attempts - 2  # Update on second-to-last or last attempt
+
+            if should_update and attempt < max_attempts - 1:
+                logger.warning(f"Unexpected error detected that might be due to outdated yt-dlp. Attempting update...")
+                update_success, update_message = await update_ytdlp()
+                if update_success:
+                    logger.info(f"yt-dlp updated successfully: {update_message}")
+                    logger.info("Retrying download with updated yt-dlp version...")
+                    # Cleanup and retry with updated version
+                    if downloaded_file and os.path.exists(downloaded_file):
+                        os.remove(downloaded_file)
+                    if os.path.exists(final_output_path):
+                        os.remove(final_output_path)
+                    await asyncio.sleep(2)  # Brief delay before retry
+                    continue  # Retry with updated version
+
             cls = classify_ytdlp_error(str(e))
             details = {
                 "video_url": video_url,

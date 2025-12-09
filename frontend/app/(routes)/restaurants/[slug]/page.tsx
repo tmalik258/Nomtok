@@ -10,6 +10,78 @@ type Props = { params: Promise<{ slug: string }> };
 
 export const revalidate = 3600;
 
+// Fetch all restaurant slugs at build time for static generation
+async function fetchAllRestaurantSlugs(): Promise<string[]> {
+  const slugs: string[] = [];
+  let skip = 0;
+  const LIMIT = 100; // Same as sitemap generation
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
+
+  // Configure axios for build-time fetching
+  const client = axios.create({
+    baseURL: base,
+    timeout: 30_000,
+  });
+
+  try {
+    while (true) {
+      try {
+        const { data } = await client.get("/restaurants/", {
+          params: { skip, limit: LIMIT },
+        });
+
+        const restaurants = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.restaurants)
+          ? data.restaurants
+          : [];
+
+        if (!restaurants.length) break;
+
+        // Extract slugs from restaurants
+        const pageSlugs = restaurants
+          .map((r: { slug?: string }) => r.slug)
+          .filter((slug): slug is string => !!slug);
+
+        slugs.push(...pageSlugs);
+
+        const total = typeof data?.total === "number" ? data.total : undefined;
+        skip += LIMIT;
+
+        // Break if we've fetched all restaurants
+        if (total !== undefined && skip >= total) break;
+        if (restaurants.length < LIMIT) break;
+      } catch (err) {
+        console.error(
+          `[generateStaticParams] Restaurant fetch failed at skip=${skip}:`,
+          err
+        );
+        // Break to avoid infinite loop on repeated failures
+        break;
+      }
+    }
+  } catch (err) {
+    console.error("[generateStaticParams] Failed to fetch restaurant slugs:", err);
+    // Return empty array to allow build to continue
+    return [];
+  }
+
+  return slugs;
+}
+
+export async function generateStaticParams() {
+  try {
+    const slugs = await fetchAllRestaurantSlugs();
+    console.log(`[generateStaticParams] Pre-generating ${slugs.length} restaurant pages`);
+    return slugs.map((slug) => ({ slug }));
+  } catch (error) {
+    console.error("[generateStaticParams] Error generating static params:", error);
+    // Return empty array to allow build to continue
+    // Pages will still work via on-demand generation
+    return [];
+  }
+}
+
 export default async function RestaurantDetailPage({ params }: Props) {
   const { slug } = await params;
   let initialRestaurant: Restaurant | undefined;

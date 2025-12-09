@@ -27,6 +27,7 @@ ffmpeg \
 fonts-liberation \
 xvfb \
 xauth \
+cron \
 && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
@@ -50,8 +51,18 @@ RUN playwright install --with-deps chrome  # Installs deps + links to system Chr
 # Copy application code
 COPY . .
 
+# Copy ops scripts for daily updates
+COPY ops/auto-update-ytdlp.sh /usr/local/bin/auto-update-ytdlp
+RUN chmod +x /usr/local/bin/auto-update-ytdlp
+
 # Create update script for yt-dlp
 RUN echo '#!/bin/bash\nset -e\npip install --no-cache-dir --upgrade --pre "yt-dlp[default]"' > /usr/local/bin/update-ytdlp && \
     chmod +x /usr/local/bin/update-ytdlp
+
+# Create logs directory and register cron job for daily updates at 03:15
+RUN mkdir -p /code/logs && \
+    echo '15 3 * * * root /usr/local/bin/auto-update-ytdlp >> /code/logs/yt-dlp-updater.log 2>&1' > /etc/cron.d/yt-dlp-updater && \
+    chmod 0644 /etc/cron.d/yt-dlp-updater && \
+    touch /code/logs/yt-dlp-updater.log
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

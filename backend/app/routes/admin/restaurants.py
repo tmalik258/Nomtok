@@ -19,6 +19,8 @@ from app.api_schema.admin_restaurants import (
 )
 from app.services.google_places_service import fetch_restaurant_details_from_google
 from app.utils.logging import setup_logger
+from app.utils.sitemap_trigger import trigger_sitemap_regeneration
+import asyncio
 
 # Setup logging
 logger = setup_logger(__name__)
@@ -95,6 +97,9 @@ async def create_restaurant(
         
         logger.info(f"Successfully created restaurant: {new_restaurant.name} (ID: {new_restaurant.id})")
         
+        # Trigger sitemap regeneration in background
+        asyncio.create_task(trigger_sitemap_regeneration())
+        
         return AdminRestaurantResponse(
             message="Restaurant created successfully",
             restaurant_id=new_restaurant.id
@@ -167,6 +172,9 @@ async def update_restaurant(
         await db.commit()
         await db.refresh(db_restaurant)
         
+        # Trigger sitemap regeneration in background
+        asyncio.create_task(trigger_sitemap_regeneration())
+        
         return AdminRestaurantResponse(
             message="Restaurant updated successfully",
             restaurant_id=db_restaurant.id
@@ -227,6 +235,9 @@ async def delete_restaurant(
         # Commit changes
         await db.commit()
         
+        # Trigger sitemap regeneration in background
+        asyncio.create_task(trigger_sitemap_regeneration())
+        
         return AdminRestaurantResponse(
             message=message,
             restaurant_id=restaurant_id
@@ -283,6 +294,9 @@ async def update_restaurant_tags(
         
         # Commit changes
         await db.commit()
+        
+        # Trigger sitemap regeneration in background (tags affect restaurant pages)
+        asyncio.create_task(trigger_sitemap_regeneration())
         
         return AdminRestaurantResponse(
             message="Restaurant tags updated successfully",
@@ -341,6 +355,9 @@ async def update_restaurant_cuisines(
         # Commit changes
         await db.commit()
         
+        # Trigger sitemap regeneration in background (cuisines affect restaurant pages)
+        asyncio.create_task(trigger_sitemap_regeneration())
+        
         return AdminRestaurantResponse(
             message="Restaurant cuisines updated successfully",
             restaurant_id=restaurant_id
@@ -379,6 +396,9 @@ async def restore_restaurant(
         
         # Commit changes
         await db.commit()
+        
+        # Trigger sitemap regeneration in background
+        asyncio.create_task(trigger_sitemap_regeneration())
         
         return AdminRestaurantResponse(
             message="Restaurant restored successfully",

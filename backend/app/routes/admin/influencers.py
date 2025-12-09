@@ -8,9 +8,11 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.database import get_async_db
 from app.dependencies import get_current_admin
 from app.utils.logging import setup_logger
+from app.utils.sitemap_trigger import trigger_sitemap_regeneration
 from app.models.influencer import Influencer
 from app.api_schema.influencers import InfluencerCreateFromUrl, InfluencerUpdate, InfluencerResponse
 from app.services.youtube_scraper import get_channel
+import asyncio
 
 # Configure logger
 logger = setup_logger(__name__)
@@ -69,6 +71,9 @@ async def create_influencer(
             
             logger.info(f"Admin {current_admin.email} successfully updated influencer: {existing_influencer.name} (ID: {existing_influencer.id})")
             
+            # Trigger sitemap regeneration in background
+            asyncio.create_task(trigger_sitemap_regeneration())
+            
             # Return the updated influencer
             return InfluencerResponse(
                 id=existing_influencer.id,
@@ -102,6 +107,9 @@ async def create_influencer(
         await db.refresh(influencer)
         
         logger.info(f"Admin {current_admin.email} successfully created new influencer: {influencer.name} (ID: {influencer.id})")
+        
+        # Trigger sitemap regeneration in background
+        asyncio.create_task(trigger_sitemap_regeneration())
         
         # Return the created influencer
         return InfluencerResponse(
@@ -211,6 +219,9 @@ async def update_influencer(
         
         logger.info(f"Admin {current_admin.email} successfully updated influencer: {existing_influencer.name} (ID: {influencer_id})")
         
+        # Trigger sitemap regeneration in background
+        asyncio.create_task(trigger_sitemap_regeneration())
+        
         # Return response without listings to avoid circular dependencies
         return InfluencerResponse(
             id=existing_influencer.id,
@@ -305,6 +316,9 @@ async def delete_influencer(
         
         await db.commit()
         logger.info(f"Admin {current_admin.email} successfully deleted influencer: {existing_influencer.name} (ID: {influencer_id})")
+        
+        # Trigger sitemap regeneration in background
+        asyncio.create_task(trigger_sitemap_regeneration())
         
         return None  # 204 No Content
     except HTTPException:
