@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Restaurant, Listing } from "@/lib/types";
 import { Star } from "lucide-react";
 import RestaurantImage from "@/components/restaurant-image";

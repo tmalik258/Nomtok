@@ -211,7 +211,6 @@ export function RestaurantsContent() {
     setSearchQuery: setBackendSearchQuery,
     setCuisineFilter,
     setPriceLevelFilter,
-    setTagFilter,
   } = useRestaurantsPaginated({
     city: city || undefined,
     country: countryParam || undefined,

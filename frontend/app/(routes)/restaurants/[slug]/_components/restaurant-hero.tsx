@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { MapPin, Share2 } from "lucide-react";
 import RestaurantImage from "@/components/restaurant-image";
 import SocialShareButtons from "@/components/social-share-buttons";

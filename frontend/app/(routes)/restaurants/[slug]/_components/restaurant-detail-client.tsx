@@ -54,7 +54,6 @@ export default function RestaurantDetailClient({
     restaurants: cityRestaurants,
     loading: cityLoading,
     error: cityError,
-    refetch: refetchCity,
   } = useCityListings(restaurantCity || "");
 
   // Use initial data if available, otherwise use hook data

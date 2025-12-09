@@ -41,7 +41,7 @@ async function fetchAllRestaurantSlugs(): Promise<string[]> {
         // Extract slugs from restaurants
         const pageSlugs = restaurants
           .map((r: { slug?: string }) => r.slug)
-          .filter((slug): slug is string => !!slug);
+          .filter((slug: string | undefined): slug is string => !!slug);
 
         slugs.push(...pageSlugs);
 
