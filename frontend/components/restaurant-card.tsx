@@ -45,7 +45,7 @@ export function RestaurantCard({
     return "";
   };
   return (
-    <Link href={`/restaurants/${restaurant.slug}`} className="block h-full">
+    <Link href={`/restaurants/${restaurant.slug}`} prefetch={true} className="block h-full">
       <Card
         key={restaurant.slug}
         className="h-full flex flex-col overflow-hidden border-0 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 group p-4"
@@ -56,7 +56,7 @@ export function RestaurantCard({
           src={restaurant.photo_url || undefined}
           alt={restaurant.name}
           restaurantSlug={String(restaurant.slug)}
-          className="group-hover:scale-105 transition-transform duration-300"
+          className="group-hover:sc ale-105 transition-transform duration-300"
         />
         {restaurant.google_rating && (
           <div className="absolute top-4 right-4">
@@ -111,35 +111,38 @@ export function RestaurantCard({
         <div className="flex flex-col gap-3">
           {listings && listings.length > 0 && (
             <div>
-              {listings.map((listing) => (
-                <div key={listing.id} className="flex items-center mb-2">
-                  {listing.influencer && listing.influencer.avatar_url && (
-                    <Image
-                      width={32}
-                      height={32}
-                      src={listing.influencer?.avatar_url}
-                      alt={listing.influencer.name}
-                      className="w-8 h-8 rounded-full mr-2 object-cover"
-                    />
-                  )}
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">
-                      {listing.influencer?.name}
-                    </p>
-                    {(() => {
-                      const reviewText = getFirstReviewSectionText(listing);
-                      if (reviewText) {
-                        return (
-                          <p className="text-xs text-gray-500 italic line-clamp-3">
-                            &quot;{reviewText}&quot;
-                          </p>
-                        );
-                      }
-                      return null;
-                    })()}
+              {(() => {
+                const listing = listings[0];
+                return (
+                  <div key={listing.id} className="flex items-center mb-2">
+                    {listing.influencer && listing.influencer.avatar_url && (
+                      <Image
+                        width={32}
+                        height={32}
+                        src={listing.influencer?.avatar_url}
+                        alt={listing.influencer.name}
+                        className="w-8 h-8 rounded-full mr-2 object-cover"
+                      />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">
+                        {listing.influencer?.name}
+                      </p>
+                      {(() => {
+                        const reviewText = getFirstReviewSectionText(listing);
+                        if (reviewText) {
+                          return (
+                            <p className="text-xs text-gray-500 italic line-clamp-3">
+                              &quot;{reviewText}&quot;
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })()}
             </div>
           )}
 
