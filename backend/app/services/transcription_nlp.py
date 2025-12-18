@@ -11,6 +11,8 @@ import subprocess
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, Tuple
 
+from yt_dlp.utils import DownloadError
+
 from googleapiclient.http import HttpRequest
 from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
@@ -243,6 +245,7 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
     # Multiple attempts: try different strategies for bot detection and geo-restrictions
     use_tor = False
     max_attempts = 4  # Increased to allow for multiple fallback strategies
+    forced_cookie_refresh_done = False
 
     for attempt in range(max_attempts):
         downloaded_file = None
@@ -276,6 +279,10 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                 "sleep_interval_requests": 1,
                 "sleep_interval_subtitles": 1,
             }
+
+            # Ensure yt-dlp has a supported JS runtime for EJS-based extraction.
+            # Without this, yt-dlp may warn and YouTube extraction can be incomplete/broken.
+            ydl_opts["js_runtimes"] = {"node": {}}
 
             # Configure PO tokens and cookies
             extractor_args = {}
@@ -317,15 +324,39 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                 logger.info(f"Extractor args for attempt {attempt + 1}: {extractor_args}")
             
             # Add cookie configuration
-            if get_cookies_age_hours() > 24:
+            cookies_stale = get_cookies_age_hours() > 24
+            cookies_file_exists = bool(YTDLP_COOKIES_FILE and os.path.exists(YTDLP_COOKIES_FILE))
+
+            if cookies_stale or not cookies_file_exists:
                 logger.info("Cookies stale; refreshing...")
-                await refresh_youtube_cookies()
+                refreshed = await refresh_youtube_cookies()
+                if not refreshed:
+                    details = {
+                        "video_url": video_url,
+                        "youtube_video_id": video.youtube_video_id,
+                        "cookies_file": YTDLP_COOKIES_FILE,
+                        "cookies_stale": cookies_stale,
+                    }
+                    raise PipelineError(
+                        "auth_cookies_unavailable",
+                        "Unable to refresh YouTube cookies (check GOOGLE_EMAIL/GOOGLE_PASSWORD and Playwright/Chrome setup).",
+                        details,
+                    )
             
             if YTDLP_COOKIES_FILE and os.path.exists(YTDLP_COOKIES_FILE):
                 ydl_opts["cookiefile"] = YTDLP_COOKIES_FILE
                 logger.info(f"Using cookie file: {YTDLP_COOKIES_FILE}")
             else:
-                logger.warning("No valid cookie file found - this may cause authentication issues")
+                details = {
+                    "video_url": video_url,
+                    "youtube_video_id": video.youtube_video_id,
+                    "cookies_file": YTDLP_COOKIES_FILE,
+                }
+                raise PipelineError(
+                    "auth_cookies_missing",
+                    "No valid YouTube cookie file found after refresh attempt.",
+                    details,
+                )
             
             # Force cookie refresh if authentication fails
             # logger.info("Forcing cookie refresh to ensure fresh authentication")
@@ -363,7 +394,7 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
             logger.info(f"yt-dlp options configured: format={ydl_opts.get('format')}, cookies={'cookiefile' in ydl_opts or 'cookiesfrombrowser' in ydl_opts}, proxy={'proxy' in ydl_opts}")
             
             # Download the audio
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:  # type: ignore[arg-type]
                 logger.info(f"Starting yt-dlp extract_info for {video_url}")
                 logger.info(f"ydl_opts configuration: {ydl_opts}")
                 
@@ -474,7 +505,7 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
             else:
                 raise Exception("Converted file is empty or doesn't exist")
 
-        except yt_dlp.utils.DownloadError as e:
+        except DownloadError as e:
             err = str(e)
             logger.error(f"Download error for {video_url}: {err}")
 
@@ -501,9 +532,24 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                 "sign in to confirm" in err_l
                 or "not a bot" in err_l
                 or "confirm you're not a bot" in err_l
+                or "login_required" in err_l
             )
             if bot_detection_hit and attempt < max_attempts - 1:
                 logger.warning(f"=== BOT DETECTION DETECTED === on attempt {attempt + 1}, trying fallback strategies")
+
+                # If we haven't already, force-refresh cookies once and retry.
+                if not forced_cookie_refresh_done:
+                    forced_cookie_refresh_done = True
+                    logger.info("=== COOKIE REFRESH === forcing YouTube cookie refresh due to auth/bot detection")
+                    refreshed = await refresh_youtube_cookies()
+                    if refreshed:
+                        # Cleanup and retry quickly with fresh cookies
+                        if downloaded_file and os.path.exists(downloaded_file):
+                            os.remove(downloaded_file)
+                        if os.path.exists(final_output_path):
+                            os.remove(final_output_path)
+                        await asyncio.sleep(1)
+                        continue
                 
                 # Try different fallback strategies based on attempt number
                 if attempt == 0:

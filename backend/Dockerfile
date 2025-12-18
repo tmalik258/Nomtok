@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y \
 wget \
 gnupg \
 ca-certificates \
+nodejs \
+npm \
 fonts-liberation \
 libasound2 \
 libatk-bridge2.0-0 \

@@ -77,9 +77,12 @@ async def get_influencers(
             query = query.join(Listing, Influencer.id == Listing.influencer_id).join(
                 Restaurant, Listing.restaurant_id == Restaurant.id
             )
+            # Apply city filter early to avoid cartesian product
+            query = query.filter(Restaurant.city.ilike(f"%{city}%"))
         
-        # Add listings if requested
-        if include_listings:
+        # Add listings if requested (only if city filter is not applied to avoid cartesian product)
+        # When city filter is applied, we'll load listings separately
+        if include_listings and not city:
             if include_video_details:
                 query = query.options(
                     joinedload(Influencer.listings)
@@ -106,8 +109,6 @@ async def get_influencers(
             query = query.filter(Influencer.youtube_channel_url == youtube_channel_url)
         if slug:
             query = query.filter(Influencer.slug.ilike(f"%{slug}%"))
-        if city:
-            query = query.filter(Restaurant.city.ilike(f"%{city}%"))
         
         # Distinct if city filter is applied to avoid duplicate influencers
         if city:
@@ -148,6 +149,35 @@ async def get_influencers(
         listing_count_result = await db.execute(listing_count_query)
         listing_counts = {row.influencer_id: row.listing_count for row in listing_count_result}
 
+        # Load listings separately if city filter is applied and include_listings is True
+        if include_listings and city:
+            influencer_ids = [inf.id for inf in influencers]
+            listings_query = select(Listing).filter(Listing.influencer_id.in_(influencer_ids))
+            
+            if include_video_details:
+                listings_query = listings_query.options(
+                    joinedload(Listing.video),
+                    joinedload(Listing.restaurant)
+                )
+            else:
+                listings_query = listings_query.options(
+                    joinedload(Listing.video),
+                    joinedload(Listing.restaurant)
+                )
+            
+            listings_result = await db.execute(listings_query)
+            all_listings = listings_result.unique().scalars().all()
+            # Group listings by influencer_id
+            listings_by_influencer = {}
+            for listing in all_listings:
+                if listing.influencer_id not in listings_by_influencer:
+                    listings_by_influencer[listing.influencer_id] = []
+                listings_by_influencer[listing.influencer_id].append(listing)
+            
+            # Attach listings to influencers
+            for influencer in influencers:
+                influencer.listings = listings_by_influencer.get(influencer.id, [])
+
         # Convert to response format
         result_list = []
         for influencer in influencers:
@@ -171,7 +201,7 @@ async def get_influencers(
                 listings=None
             )
             
-            if include_listings and influencer.listings:
+            if include_listings and hasattr(influencer, 'listings') and influencer.listings:
                 listings_data = []
                 for listing in influencer.listings:
                     if include_video_details:
@@ -199,6 +229,7 @@ async def get_influencers(
                             price_level=listing.restaurant.price_level,
                             website=listing.restaurant.website,
                             tags=None,  # Avoid lazy loading
+                            cuisines=None,  # Avoid lazy loading
                             listings=None  # Avoid lazy loading
                         )
                         
@@ -272,6 +303,7 @@ async def get_influencers(
                             price_level=listing.restaurant.price_level,
                             website=listing.restaurant.website,
                             tags=None,  # Avoid lazy loading
+                            cuisines=None,  # Avoid lazy loading
                             listings=None  # Avoid lazy loading
                         )
                         
@@ -388,6 +420,7 @@ async def get_influencer(
                         price_level=listing.restaurant.price_level,
                         website=listing.restaurant.website,
                         tags=None,  # Avoid lazy loading
+                        cuisines=None,  # Avoid lazy loading
                         listings=None  # Avoid lazy loading
                     )
                     
@@ -461,6 +494,7 @@ async def get_influencer(
                         price_level=listing.restaurant.price_level,
                         website=listing.restaurant.website,
                         tags=None,  # Avoid lazy loading
+                        cuisines=None,  # Avoid lazy loading
                         listings=None  # Avoid lazy loading
                     )
                     
