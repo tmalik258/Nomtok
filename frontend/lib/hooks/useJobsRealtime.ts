@@ -147,6 +147,8 @@ export const useJobsRealtime = ({ onJobUpdate, onJobCreate, onJobDelete }: UseJo
     }
 
     console.log('Setting up Supabase realtime subscription...');
+    console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Configured' : 'MISSING');
+    console.log('Supabase Key:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Configured' : 'MISSING');
     setSubscriptionStatus('SUBSCRIBING');
     
     const channel = supabase
@@ -157,26 +159,57 @@ export const useJobsRealtime = ({ onJobUpdate, onJobCreate, onJobDelete }: UseJo
         }
       })
       .on('postgres_changes', 
-        { event: 'UPDATE', schema: 'public', table: 'jobs' },
-        handleJobUpdate
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'jobs'
+        },
+        (payload) => {
+          console.log('📥 Raw UPDATE payload received:', payload);
+          handleJobUpdate(payload);
+        }
       )
       .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'jobs' },
-        handleJobCreate
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'jobs'
+        },
+        (payload) => {
+          console.log('📥 Raw INSERT payload received:', payload);
+          handleJobCreate(payload);
+        }
       )
       .on('postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'jobs' },
-        handleJobDelete
+        { 
+          event: 'DELETE', 
+          schema: 'public', 
+          table: 'jobs'
+        },
+        (payload) => {
+          console.log('📥 Raw DELETE payload received:', payload);
+          handleJobDelete(payload);
+        }
       )
-      .subscribe((status) => {
-        console.log('Subscription status changed:', status);
+      .subscribe((status, err) => {
+        console.log('📡 Subscription status changed:', status);
+        if (err) {
+          console.error('❌ Subscription error:', err);
+        }
         setSubscriptionStatus(status as SubscriptionStatus);
 
         if (status === 'SUBSCRIBED') {
           console.log('✅ Successfully subscribed to jobs realtime');
+          console.log('🔍 Listening for changes on: public.jobs table');
+          console.log('⚠️ If no events are received, check:');
+          console.log('   1. Supabase Dashboard → Database → Replication → Enable on jobs table');
+          console.log('   2. RLS policies allow SELECT for anon role');
           retryCountRef.current = 0; // Reset retry count on success
         } else if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
           console.error('❌ Subscription failed:', status);
+          if (err) {
+            console.error('Error details:', err);
+          }
           
           // Retry with exponential backoff
           if (retryCountRef.current < MAX_RETRIES) {
@@ -190,9 +223,13 @@ export const useJobsRealtime = ({ onJobUpdate, onJobCreate, onJobDelete }: UseJo
             }, delay);
           } else {
             console.error('❌ Max retries reached. Subscription failed permanently.');
+            console.error('💡 Troubleshooting steps:');
+            console.error('   1. Verify Supabase realtime is enabled on jobs table');
+            console.error('   2. Check RLS policies allow anon SELECT');
+            console.error('   3. Verify WebSocket connection (check browser Network tab)');
             toast.error('Failed to connect to real-time updates', {
-              description: 'Please refresh the page to try again.',
-              duration: 10000,
+              description: 'Check browser console for details. Verify Supabase realtime is enabled on jobs table.',
+              duration: 15000,
             });
           }
         } else if (status === 'CLOSED') {

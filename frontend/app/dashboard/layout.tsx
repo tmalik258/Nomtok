@@ -6,6 +6,8 @@ import { DashboardRealtimeProvider } from '@/lib/contexts/dashboard-realtime-con
 import { ProtectedRoute } from '@/components/protected-route';
 import { Sidebar } from './_components/sidebar';
 import { NotificationPermissionPrompt } from './_components/notification-permission-prompt';
+import { RealtimeStatusIndicator } from './_components/realtime-status-indicator';
+import { RealtimeDiagnostics } from './_components/realtime-diagnostics';
 
 export default function DashboardLayout({
   children,
@@ -23,6 +25,8 @@ export default function DashboardLayout({
       <ProtectedRoute>
         <DashboardRealtimeProvider>
           <NotificationPermissionPrompt />
+          <RealtimeStatusIndicator />
+          <RealtimeDiagnostics />
           <div className="min-h-screen bg-background flex">
             <Sidebar
               isMobileOpen={isMobileSidebarOpen}

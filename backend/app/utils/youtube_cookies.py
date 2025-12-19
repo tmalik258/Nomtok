@@ -137,6 +137,7 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
             page = await context.new_page()
 
             # If no state or expired, perform login
+            login_performed = False
             if not os.path.exists(STORAGE_STATE_FILE) or await _is_login_needed(page):
                 logger.info("Performing Google/YouTube login")
                 login_success = await _login_to_google_with_retry(page, max_retries=1)  # Limit to 1 for loop avoidance
@@ -145,22 +146,63 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
                     await browser.close()
                     return False
                 await _navigate_to_youtube(page)
+                login_performed = True
 
                 # Save new storage state for future runs
                 _ensure_cookies_dir()
                 await context.storage_state(path=STORAGE_STATE_FILE)
                 logger.info(f"Saved storage state to {STORAGE_STATE_FILE}")
 
-            # Extract and format cookies from all relevant domains (including dot-prefixed domains)
-            cookies = await context.cookies([
-                "https://www.youtube.com", 
-                "https://youtube.com",
-                "https://accounts.google.com", 
-                "https://www.google.com",
-                "https://google.com",
-                "https://studio.youtube.com",
-                "https://music.youtube.com"
-            ])
+            # Always navigate to YouTube and verify login before extracting cookies
+            # This ensures all cookies are fresh and we're in a logged-in state
+            logger.info("Navigating to YouTube to refresh session and extract cookies")
+            await page.goto("https://www.youtube.com", wait_until="networkidle")
+            await asyncio.sleep(3)  # Wait for all cookies to be set/refreshed
+            
+            # If we just logged in, wait a bit longer for all auth cookies to propagate
+            if login_performed:
+                await asyncio.sleep(2)
+            
+            # Check if we're logged in by looking for logged-in indicators
+            # _is_login_needed returns True if login is needed (not logged in), False if logged in
+            login_needed = await _is_login_needed(page)
+            if login_needed:
+                logger.warning("Not logged in after refresh attempt; cookies may be incomplete")
+            else:
+                logger.info("Login verified; extracting authentication cookies")
+            
+            # Extract cookies from ALL domains (use empty list to get all cookies)
+            # This ensures we get authentication cookies from .google.com, .youtube.com, etc.
+            all_cookies = await context.cookies()
+            
+            # Filter to only include relevant domains (but get ALL cookies from those domains)
+            relevant_domains = [
+                ".youtube.com",
+                "youtube.com",
+                "www.youtube.com",
+                ".google.com",
+                "google.com",
+                "www.google.com",
+                "accounts.google.com",
+                "studio.youtube.com",
+                "music.youtube.com"
+            ]
+            
+            cookies = [
+                cookie for cookie in all_cookies
+                if any(domain in cookie.get('domain', '') for domain in relevant_domains)
+            ]
+            
+            # Verify we have authentication cookies
+            auth_cookie_names = ['SID', 'HSID', 'SSID', 'APISID', 'SAPISID', 'LOGIN_INFO']
+            found_auth_cookies = [name for name in auth_cookie_names 
+                                 if any(c.get('name') == name for c in cookies)]
+            
+            if found_auth_cookies:
+                logger.info(f"Found authentication cookies: {', '.join(found_auth_cookies)}")
+            else:
+                logger.warning("No authentication cookies found! YouTube may reject requests.")
+            
             await _export_cookies_to_netscape(cookies)
 
             await browser.close()
