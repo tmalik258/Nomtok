@@ -71,10 +71,12 @@ Events Received: ${eventsReceived}
 Last Event: ${lastEventTime || 'Never'}
 
 Troubleshooting:
-1. Go to Supabase Dashboard → Database → Replication
-2. Find "jobs" table and enable replication
-3. Check Authentication → Policies
-4. Ensure RLS allows SELECT for anon role on jobs table
+1. ✅ Realtime enabled on jobs table
+2. ❌ Missing RLS Policy - This is the issue!
+3. Run SQL in Supabase Dashboard:
+   CREATE POLICY IF NOT EXISTS "Allow anon to read jobs for realtime"
+   ON public.jobs FOR SELECT TO anon USING (true);
+4. Refresh page after creating policy
     `.trim();
 
     navigator.clipboard.writeText(diagnostics);
@@ -159,10 +161,21 @@ Troubleshooting:
         {subscriptionStatus === 'SUBSCRIBED' && eventsReceived === 0 && (
           <div className="bg-amber-50 border border-amber-200 rounded p-2 text-xs text-amber-800">
             <div className="font-semibold mb-1">⚠️ No events received</div>
-            <div className="space-y-1">
-              <div>1. Enable replication on jobs table in Supabase</div>
-              <div>2. Check RLS policies allow SELECT for anon</div>
-              <div>3. Try updating a job to test</div>
+            <div className="space-y-1 mb-2">
+              <div>Realtime is enabled but no events are coming through.</div>
+              <div className="font-semibold mt-1">Most likely cause: Missing RLS Policy</div>
+            </div>
+            <div className="bg-white border border-amber-300 rounded p-2 mt-2">
+              <div className="font-semibold mb-1">Quick Fix:</div>
+              <div className="space-y-1 text-xs">
+                <div>1. Go to Supabase Dashboard → SQL Editor</div>
+                <div>2. Run this SQL:</div>
+                <div className="bg-gray-100 p-1 rounded font-mono text-[10px] mt-1 break-all">
+                  CREATE POLICY IF NOT EXISTS &quot;Allow anon to read jobs for realtime&quot;<br/>
+                  ON public.jobs FOR SELECT TO anon USING (true);
+                </div>
+                <div className="mt-1">3. Refresh this page</div>
+              </div>
             </div>
           </div>
         )}

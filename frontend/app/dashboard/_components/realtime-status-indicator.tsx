@@ -117,7 +117,7 @@ export function RealtimeStatusIndicator() {
           )}
           {eventCount === 0 && (
             <div className="text-amber-600 dark:text-amber-400 mt-1 text-xs">
-              ⚠️ No events received. Check Supabase configuration.
+              ⚠️ No events received. Missing RLS policy? Check diagnostics panel.
             </div>
           )}
         </div>
