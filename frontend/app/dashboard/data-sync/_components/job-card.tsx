@@ -4,10 +4,19 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { JobCardProps } from "@/lib/types/dashboard";
 import { Progress } from "@radix-ui/react-progress";
 import { CheckCircle, RefreshCw, AlertCircle, Clock, Activity, TrendingUp, Timer, X, Play } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useDashboardRealtime } from "@/lib/contexts/dashboard-realtime-context";
 
 export function JobCard({ job, onTrigger, cancelJob }: JobCardProps & { cancelJob: (jobId: string, reason?: string) => Promise<void> }) {
   const [cancelling, setCancelling] = useState(false);
+  const { getJob } = useDashboardRealtime();
+  
+  // Get real-time job state if available, otherwise use prop
+  const realtimeJob = getJob(job.id);
+  const currentJob = useMemo(() => {
+    // Merge real-time updates with prop job (realtime takes precedence)
+    return realtimeJob ? { ...job, ...realtimeJob } : job;
+  }, [job, realtimeJob]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -35,7 +44,7 @@ export function JobCard({ job, onTrigger, cancelJob }: JobCardProps & { cancelJo
     }
   };
 
-  const progress = job.total_items > 0 ? (job.processed_items / job.total_items) * 100 : 0;
+  const progress = currentJob.total_items > 0 ? (currentJob.processed_items / currentJob.total_items) * 100 : (currentJob.progress || 0);
 
   const handleCancelJob = async () => {
     setCancelling(true);
@@ -74,22 +83,22 @@ export function JobCard({ job, onTrigger, cancelJob }: JobCardProps & { cancelJo
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {getStatusIcon(job.status)}
-            <CardTitle className="text-lg text-gray-900 dark:text-gray-100">{job.title}</CardTitle>
+            {getStatusIcon(currentJob.status)}
+            <CardTitle className="text-lg text-gray-900 dark:text-gray-100">{currentJob.title}</CardTitle>
           </div>
-          <Badge className={getStatusColor(job.status)}>
-            {job.status}
+          <Badge className={getStatusColor(currentJob.status)}>
+            {currentJob.status}
           </Badge>
         </div>
-        <CardDescription className="text-gray-600 dark:text-gray-400">{job.description}</CardDescription>
+        <CardDescription className="text-gray-600 dark:text-gray-400">{currentJob.description}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {job.status === "running" && (
+          {currentJob.status === "running" && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Progress</span>
-                <span>{job.processed_items} / {job.total_items}</span>
+                <span>{currentJob.processed_items} / {currentJob.total_items}</span>
               </div>
               <Progress value={progress} className="h-2" />
             </div>
@@ -100,92 +109,92 @@ export function JobCard({ job, onTrigger, cancelJob }: JobCardProps & { cancelJo
             <div>
               <span className="text-gray-600 dark:text-gray-400">Started:</span>
               <p className="font-medium text-gray-900 dark:text-gray-100">
-                {job.started_at ? new Date(job.started_at).toLocaleString() : "Not started"}
+                {currentJob.started_at ? new Date(currentJob.started_at).toLocaleString() : "Not started"}
               </p>
             </div>
             <div>
               <span className="text-gray-600 dark:text-gray-400">Duration:</span>
               <p className="font-medium text-gray-900 dark:text-gray-100">
-                {formatDuration(job.started_at, job.completed_at)}
+                {formatDuration(currentJob.started_at, currentJob.completed_at)}
               </p>
             </div>
             <div>
               <span className="text-gray-600 dark:text-gray-400">Type:</span>
               <p className="font-medium text-gray-900 dark:text-gray-100">
-                {job.job_type.replace('_', ' ').toUpperCase()}
+                {currentJob.job_type.replace('_', ' ').toUpperCase()}
               </p>
             </div>
           </div>
 
           {/* Advanced Tracking Info for Running Jobs */}
-          {job.status === "running" && (
+          {currentJob.status === "running" && (
             <div className="space-y-3 p-3 bg-orange-50/50 border border-orange-200/50 rounded-md">
               <div className="grid grid-cols-2 gap-4 text-sm">
-                {job.queue_size !== undefined && (
+                {currentJob.queue_size !== undefined && (
                   <div className="flex items-center gap-2">
                     <Activity className="h-4 w-4 text-orange-600" />
                     <span className="text-gray-600">Queue:</span>
-                    <span className="font-medium text-gray-900">{job.queue_size}</span>
+                    <span className="font-medium text-gray-900">{currentJob.queue_size}</span>
                   </div>
                 )}
-                {job.items_in_progress !== undefined && (
+                {currentJob.items_in_progress !== undefined && (
                   <div className="flex items-center gap-2">
                     <RefreshCw className="h-4 w-4 text-orange-600" />
                     <span className="text-gray-600">In Progress:</span>
-                    <span className="font-medium text-gray-900">{job.items_in_progress}</span>
+                    <span className="font-medium text-gray-900">{currentJob.items_in_progress}</span>
                   </div>
                 )}
-                {job.failed_items !== undefined && job.failed_items > 0 && (
+                {currentJob.failed_items !== undefined && currentJob.failed_items > 0 && (
                   <div className="flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-red-500" />
                     <span className="text-gray-600">Failed:</span>
-                    <span className="font-medium text-red-600">{job.failed_items}</span>
+                    <span className="font-medium text-red-600">{currentJob.failed_items}</span>
                   </div>
                 )}
-                {job.processing_rate !== undefined && job.processing_rate !== null && (
+                {currentJob.processing_rate !== undefined && currentJob.processing_rate !== null && (
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-green-600" />
                     <span className="text-gray-600">Rate:</span>
-                    <span className="font-medium text-green-600">{typeof job.processing_rate === 'number' ? job.processing_rate.toFixed(1) : '0.0'}/min</span>
+                    <span className="font-medium text-green-600">{typeof currentJob.processing_rate === 'number' ? currentJob.processing_rate.toFixed(1) : '0.0'}/min</span>
                   </div>
                 )}
               </div>
               
-              {job.estimated_completion_time && (
+              {currentJob.estimated_completion_time && (
                 <div className="flex items-center gap-2 text-sm">
                   <Timer className="h-4 w-4 text-blue-600" />
                   <span className="text-gray-600">ETA:</span>
-                  <span className="font-medium text-blue-600">{formatEstimatedTime(job.estimated_completion_time)}</span>
+                  <span className="font-medium text-blue-600">{formatEstimatedTime(currentJob.estimated_completion_time)}</span>
                 </div>
               )}
               
-              {job.retry_count !== undefined && job.retry_count > 0 && (
+              {currentJob.retry_count !== undefined && currentJob.retry_count > 0 && (
                 <div className="text-sm text-amber-600">
-                  Retries: {job.retry_count}{job.max_retries ? `/${job.max_retries}` : ''}
+                  Retries: {currentJob.retry_count}{currentJob.max_retries ? `/${currentJob.max_retries}` : ''}
                 </div>
               )}
             </div>
           )}
 
           {/* Cancellation Status */}
-          {job.cancellation_requested && (
+          {currentJob.cancellation_requested && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-md">
               <div className="flex items-center gap-2 text-sm text-red-800">
                 <X className="h-4 w-4" />
                 <span>Cancellation requested</span>
               </div>
-              {job.cancelled_at && (
+              {currentJob.cancelled_at && (
                 <p className="text-xs text-red-600 mt-1">
-                  {new Date(job.cancelled_at).toLocaleString()}
+                  {new Date(currentJob.cancelled_at).toLocaleString()}
                 </p>
               )}
             </div>
           )}
 
-          {Array.isArray(job?.error_messages) && job?.error_messages?.length > 0 && (
+          {Array.isArray(currentJob?.error_messages) && currentJob?.error_messages?.length > 0 && (
             <div className="p-3 bg-orange-50 border border-orange-200 rounded-md">
               <ul className="list-disc list-inside space-y-1">
-                {job?.error_messages?.map((msg: string, idx: number) => (
+                {currentJob?.error_messages?.map((msg: string, idx: number) => (
                   <li key={idx} className="text-sm text-orange-800">{msg}</li>
                 ))}
               </ul>
@@ -194,7 +203,7 @@ export function JobCard({ job, onTrigger, cancelJob }: JobCardProps & { cancelJo
 
           {/* Action Buttons */}
           <div className="flex gap-2">
-            {job.status === "running" && !job.cancellation_requested && (
+            {currentJob.status === "running" && !currentJob.cancellation_requested && (
               <Button 
                 onClick={handleCancelJob}
                 disabled={cancelling}
@@ -210,16 +219,16 @@ export function JobCard({ job, onTrigger, cancelJob }: JobCardProps & { cancelJo
               </Button>
             )}
             
-            {( ["failed", "cancelled"].includes(job.status) ) && (
+            {( ["failed", "cancelled"].includes(currentJob.status) ) && (
               <Button 
-                onClick={() => onTrigger(job.job_type)}
+                onClick={() => onTrigger(currentJob.job_type)}
                 className="flex-1 bg-orange-600 hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-cream cursor-pointer"
               >
                 <Play className="h-4 w-4 mr-2 text-cream" />
                 Restart Job
               </Button>
             )}
-            {job.status === "completed" && (
+            {currentJob.status === "completed" && (
               <Button 
                 disabled
                 className="flex-1 bg-gray-400 text-gray-600 cursor-not-allowed"

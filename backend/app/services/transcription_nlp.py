@@ -327,8 +327,9 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
             cookies_stale = get_cookies_age_hours() > 24
             cookies_file_exists = bool(YTDLP_COOKIES_FILE and os.path.exists(YTDLP_COOKIES_FILE))
 
-            if cookies_stale or not cookies_file_exists:
-                logger.info("Cookies stale; refreshing...")
+            # Refresh cookies if stale or missing (but not on every retry - only once per download attempt)
+            if (cookies_stale or not cookies_file_exists) and not forced_cookie_refresh_done:
+                logger.info("Cookies stale or missing; refreshing...")
                 refreshed = await refresh_youtube_cookies()
                 if not refreshed:
                     details = {
@@ -342,6 +343,8 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                         "Unable to refresh YouTube cookies (check GOOGLE_EMAIL/GOOGLE_PASSWORD and Playwright/Chrome setup).",
                         details,
                     )
+                # Wait a bit after refresh to ensure cookies are fully set
+                await asyncio.sleep(2)
             
             if YTDLP_COOKIES_FILE and os.path.exists(YTDLP_COOKIES_FILE):
                 ydl_opts["cookiefile"] = YTDLP_COOKIES_FILE
@@ -357,14 +360,6 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                     "No valid YouTube cookie file found after refresh attempt.",
                     details,
                 )
-            
-            # Force cookie refresh if authentication fails
-            # logger.info("Forcing cookie refresh to ensure fresh authentication")
-            # await refresh_youtube_cookies()
-            
-            if YTDLP_COOKIES_FILE and os.path.exists(YTDLP_COOKIES_FILE):
-                ydl_opts["cookiefile"] = YTDLP_COOKIES_FILE
-                logger.info(f"Using refreshed cookie file: {YTDLP_COOKIES_FILE}")
             # elif YTDLP_COOKIES_FROM_BROWSER:
             #     # Handle browser profile properly - if None or empty, use just the browser name
             #     if YTDLP_BROWSER_PROFILE and YTDLP_BROWSER_PROFILE.strip():
@@ -543,13 +538,17 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                     logger.info("=== COOKIE REFRESH === forcing YouTube cookie refresh due to auth/bot detection")
                     refreshed = await refresh_youtube_cookies()
                     if refreshed:
-                        # Cleanup and retry quickly with fresh cookies
+                        # Cleanup and retry with fresh cookies after a longer delay
+                        # YouTube needs time to recognize the new session
                         if downloaded_file and os.path.exists(downloaded_file):
                             os.remove(downloaded_file)
                         if os.path.exists(final_output_path):
                             os.remove(final_output_path)
-                        await asyncio.sleep(1)
+                        logger.info("=== WAITING === 5 seconds after cookie refresh to allow session recognition")
+                        await asyncio.sleep(5)
                         continue
+                    else:
+                        logger.warning("Cookie refresh failed; will try other fallback strategies")
                 
                 # Try different fallback strategies based on attempt number
                 if attempt == 0:

@@ -5,8 +5,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { Job } from "@/lib/types";
-import { ReactNode } from "react";
+import { Job } from "@/lib/types/api";
+import { ReactNode, useMemo } from "react";
+import { useDashboardRealtime } from "@/lib/contexts/dashboard-realtime-context";
 
 interface JobDetailsDialogProps {
   selectedJob: Job | null;
@@ -23,8 +24,16 @@ export default function JobDetailsDialog({
   formatDate,
   formatDuration,
 }: JobDetailsDialogProps) {
+  const { getJob } = useDashboardRealtime();
+  
+  // Get real-time job state if available
+  const currentJob = useMemo(() => {
+    if (!selectedJob) return null;
+    const realtimeJob = getJob(selectedJob.id);
+    return realtimeJob ? { ...selectedJob, ...realtimeJob } : selectedJob;
+  }, [selectedJob, getJob]);
   return (
-    <Dialog open={!!selectedJob} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={!!currentJob} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="glass-effect backdrop-blur-xl bg-cream/95 border border-orange-200/50 shadow-2xl max-w-2xl max-h-[80vh]">
         <DialogHeader>
           <div className="flex items-center justify-between">

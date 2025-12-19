@@ -21,6 +21,7 @@ import { useJobActions } from "@/lib/hooks";
 import { toast } from "sonner";
 import type { Job } from "@/lib/types/api";
 import JobDetailsDialog from "./job-details-dialog";
+import { useDashboardRealtime } from "@/lib/contexts/dashboard-realtime-context";
 
 interface JobsTableProps {
   jobs: Job[];
@@ -83,6 +84,15 @@ function JobsTable({ jobs, onRefresh }: JobsTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const { cancelJob } = useJobActions();
+  const { getJob } = useDashboardRealtime();
+
+  // Merge real-time job state with props
+  const jobsWithRealtime = useMemo(() => {
+    return jobs.map(job => {
+      const realtimeJob = getJob(job.id);
+      return realtimeJob ? { ...job, ...realtimeJob } : job;
+    });
+  }, [jobs, getJob]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -95,7 +105,7 @@ function JobsTable({ jobs, onRefresh }: JobsTableProps) {
   };
 
   const sortedJobs = useMemo(() => {
-    return [...jobs].sort((a, b) => {
+    return [...jobsWithRealtime].sort((a, b) => {
       let aValue: string | number | undefined = a[sortField];
       let bValue: string | number | undefined = b[sortField];
 
@@ -269,14 +279,14 @@ function JobsTable({ jobs, onRefresh }: JobsTableProps) {
                     <div className="flex items-center gap-2 min-w-[120px]">
                       {job.status === 'running' ? (
                         <>
-                          <Progress value={job.progress} className="flex-1 h-2" />
+                          <Progress value={job.progress || 0} className="flex-1 h-2" />
                           <span className="text-sm text-gray-600 min-w-[35px]">
-                            {job.progress}%
+                            {job.progress || 0}%
                           </span>
                         </>
                       ) : (
                         <span className="text-sm text-gray-600">
-                          {job.progress}%
+                          {job.progress || 0}%
                         </span>
                       )}
                     </div>

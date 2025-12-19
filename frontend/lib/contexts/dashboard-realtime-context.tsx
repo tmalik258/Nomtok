@@ -16,6 +16,8 @@ interface JobEvent {
 interface DashboardRealtimeContextValue {
   version: number;
   lastEvent: JobEvent | null;
+  jobs: Map<string, Job>;
+  getJob: (jobId: string) => Job | undefined;
 }
 
 const DashboardRealtimeContext = createContext<DashboardRealtimeContextValue | undefined>(undefined);
@@ -23,25 +25,56 @@ const DashboardRealtimeContext = createContext<DashboardRealtimeContextValue | u
 export const DashboardRealtimeProvider = ({ children }: { children: React.ReactNode }) => {
   const [version, setVersion] = useState(0);
   const [lastEvent, setLastEvent] = useState<JobEvent | null>(null);
+  const [jobsMap, setJobsMap] = useState<Map<string, Job>>(new Map());
 
   const onJobUpdate = useCallback((job: Job) => {
     setLastEvent({ type: "update", job, timestamp: Date.now() });
     setVersion((v) => v + 1);
+    
+    // Update job in map
+    setJobsMap((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(job.id, job);
+      return newMap;
+    });
   }, []);
 
   const onJobCreate = useCallback((job: Job) => {
     setLastEvent({ type: "create", job, timestamp: Date.now() });
     setVersion((v) => v + 1);
+    
+    // Add job to map
+    setJobsMap((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(job.id, job);
+      return newMap;
+    });
   }, []);
 
   const onJobDelete = useCallback((jobId: string) => {
     setLastEvent({ type: "delete", jobId, timestamp: Date.now() });
     setVersion((v) => v + 1);
+    
+    // Remove job from map
+    setJobsMap((prev) => {
+      const newMap = new Map(prev);
+      newMap.delete(jobId);
+      return newMap;
+    });
   }, []);
 
   useJobsRealtime({ onJobUpdate, onJobCreate, onJobDelete });
 
-  const value = useMemo(() => ({ version, lastEvent }), [version, lastEvent]);
+  const getJob = useCallback((jobId: string): Job | undefined => {
+    return jobsMap.get(jobId);
+  }, [jobsMap]);
+
+  const value = useMemo(() => ({ 
+    version, 
+    lastEvent, 
+    jobs: jobsMap,
+    getJob
+  }), [version, lastEvent, jobsMap, getJob]);
 
   return (
     <DashboardRealtimeContext.Provider value={value}>
