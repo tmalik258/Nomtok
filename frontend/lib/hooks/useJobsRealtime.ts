@@ -164,7 +164,7 @@ export const useJobsRealtime = ({ onJobUpdate, onJobCreate, onJobDelete }: UseJo
           schema: 'public', 
           table: 'jobs'
         },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<Job>) => {
           console.log('📥 Raw UPDATE payload received:', payload);
           handleJobUpdate(payload);
         }
@@ -175,7 +175,7 @@ export const useJobsRealtime = ({ onJobUpdate, onJobCreate, onJobDelete }: UseJo
           schema: 'public', 
           table: 'jobs'
         },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<Job>) => {
           console.log('📥 Raw INSERT payload received:', payload);
           handleJobCreate(payload);
         }
@@ -186,7 +186,7 @@ export const useJobsRealtime = ({ onJobUpdate, onJobCreate, onJobDelete }: UseJo
           schema: 'public', 
           table: 'jobs'
         },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<Job>) => {
           console.log('📥 Raw DELETE payload received:', payload);
           handleJobDelete(payload);
         }
