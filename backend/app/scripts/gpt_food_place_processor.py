@@ -368,16 +368,21 @@ class GPTFoodPlaceProcessor:
                 # Transcribe each chunk
                 transcription = ""
                 for chunk_path in chunks:
+                    # Read file content into memory before passing to executor
+                    # This prevents "closed stream" errors when the context manager exits
                     with open(chunk_path, "rb") as chunk_file:
-                        chunk_transcription = await loop.run_in_executor(
-                            None,
-                            lambda: self.openai_client.audio.transcriptions.create(
-                                model="whisper-1",
-                                file=chunk_file,
-                                response_format="text",
-                            ),
-                        )
-                        transcription += chunk_transcription + " "
+                        chunk_data = chunk_file.read()
+                    
+                    # Now pass the bytes to the executor (file is already closed, but we have the data)
+                    chunk_transcription = await loop.run_in_executor(
+                        None,
+                        lambda data=chunk_data: self.openai_client.audio.transcriptions.create(
+                            model="whisper-1",
+                            file=("chunk.mp3", data, "audio/mpeg"),
+                            response_format="text",
+                        ),
+                    )
+                    transcription += chunk_transcription + " "
 
                     # Clean up chunk file
                     chunk_path.unlink()
@@ -386,13 +391,20 @@ class GPTFoodPlaceProcessor:
                 return transcription.strip()
 
             # Original transcription for files under 25MB
+            # Read file content into memory before passing to executor
+            # This prevents "closed stream" errors when the context manager exits
             with open(audio_file_path, "rb") as audio_file:
-                transcription = await loop.run_in_executor(
-                    None,
-                    lambda: self.openai_client.audio.transcriptions.create(
-                        model="whisper-1", file=audio_file, response_format="text"
-                    ),
-                )
+                audio_data = audio_file.read()
+            
+            # Now pass the bytes to the executor (file is already closed, but we have the data)
+            transcription = await loop.run_in_executor(
+                None,
+                lambda data=audio_data: self.openai_client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=(audio_file_path.name, data, "audio/mpeg"),
+                    response_format="text"
+                ),
+            )
             logger.info(f"Transcription completed for {audio_path}: {transcription}")
             return transcription
 

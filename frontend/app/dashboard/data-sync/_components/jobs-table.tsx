@@ -24,7 +24,7 @@ import JobDetailsDialog from "./job-details-dialog";
 import { useDashboardRealtime } from "@/lib/contexts/dashboard-realtime-context";
 
 interface JobsTableProps {
-  jobs: Job[];
+  jobs?: Job[] | null;
   onRefresh: () => void;
 }
 
@@ -42,13 +42,15 @@ function getStatusBadge(status: Job['status']) {
     cancelled: { variant: 'secondary' as const, icon: X, className: 'bg-gray-100 text-gray-800' },
   };
 
-  const config = statusConfig[status];
+  // Handle undefined/null status
+  const safeStatus = status || 'pending';
+  const config = statusConfig[safeStatus] || statusConfig.pending; // Fallback to pending for unknown statuses
   const Icon = config.icon;
 
   return (
     <Badge variant={config.variant} className={config.className}>
       <Icon className="h-3 w-3 mr-1" />
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {safeStatus.charAt(0).toUpperCase() + safeStatus.slice(1)}
     </Badge>
   );
 }
@@ -78,7 +80,7 @@ function formatDuration(startTime?: string, endTime?: string) {
   return `${hours}h ${remainingMinutes}m`;
 }
 
-function JobsTable({ jobs, onRefresh }: JobsTableProps) {
+function JobsTable({ jobs = [], onRefresh }: JobsTableProps) {
   const [sortField, setSortField] = useState<SortField>('started_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -88,10 +90,13 @@ function JobsTable({ jobs, onRefresh }: JobsTableProps) {
 
   // Merge real-time job state with props
   const jobsWithRealtime = useMemo(() => {
-    return jobs.map(job => {
-      const realtimeJob = getJob(job.id);
-      return realtimeJob ? { ...job, ...realtimeJob } : job;
-    });
+    if (!jobs || !Array.isArray(jobs)) return [];
+    return jobs
+      .filter((job): job is Job => job != null && typeof job === 'object' && 'id' in job && 'status' in job)
+      .map(job => {
+        const realtimeJob = getJob(job.id);
+        return realtimeJob ? { ...job, ...realtimeJob } : job;
+      });
   }, [jobs, getJob]);
 
   const handleSort = (field: SortField) => {
@@ -181,7 +186,7 @@ function JobsTable({ jobs, onRefresh }: JobsTableProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-gray-900 dark:text-gray-100">
-            All Jobs ({jobs.length})
+            All Jobs ({jobs?.length || 0})
           </CardTitle>
           <Button 
             onClick={onRefresh}
@@ -259,19 +264,26 @@ function JobsTable({ jobs, onRefresh }: JobsTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedJobs.map((job) => (
-                <TableRow key={job.id} className="hover:bg-orange-50/30 transition-colors">
-                  <TableCell className="font-mono text-sm">
-                    {job.id.substring(0, 8)}
+              {paginatedJobs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center text-gray-500 py-8">
+                    No jobs found
                   </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="border-orange-200">
-                      {job.job_type.replace('_', ' ').toUpperCase()}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(job.status)}
-                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedJobs.map((job) => (
+                  <TableRow key={job.id} className="hover:bg-orange-50/30 transition-colors">
+                    <TableCell className="font-mono text-sm">
+                      {job.id.substring(0, 8)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="border-orange-200">
+                        {job.job_type.replace('_', ' ').toUpperCase()}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(job.status)}
+                    </TableCell>
                   <TableCell className="max-w-xs truncate" title={job.title}>
                     {job.title}
                   </TableCell>
@@ -347,7 +359,8 @@ function JobsTable({ jobs, onRefresh }: JobsTableProps) {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
