@@ -130,7 +130,7 @@ function JobsTable({ jobs, onRefresh }: JobsTableProps) {
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [jobs, sortField, sortDirection]);
+  }, [jobsWithRealtime, sortField, sortDirection]);
 
   const totalPages = Math.ceil(sortedJobs.length / ITEMS_PER_PAGE);
   const paginatedJobs = sortedJobs.slice(

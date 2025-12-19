@@ -4,7 +4,7 @@ interface NotificationOptions {
   tag?: string;
   icon?: string;
   badge?: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   requireInteraction?: boolean;
 }
 
