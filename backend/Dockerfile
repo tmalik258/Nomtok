@@ -7,8 +7,6 @@ RUN apt-get update && apt-get install -y \
 wget \
 gnupg \
 ca-certificates \
-nodejs \
-npm \
 fonts-liberation \
 libasound2 \
 libatk-bridge2.0-0 \
@@ -31,6 +29,12 @@ xvfb \
 xauth \
 cron \
 && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 24.12 from NodeSource (required for yt-dlp EJS support)
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
+    apt-get install -y nodejs && \
+    node --version && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
 COPY requirements.txt .
