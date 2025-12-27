@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +11,68 @@ interface SidebarLogoProps {
 
 export const SidebarLogo = memo(
   ({ isCollapsed, forMobile = false }: SidebarLogoProps) => {
+    const [isDarkMode, setIsDarkMode] = useState(false);
+
+    useEffect(() => {
+      // Check initial theme
+      const checkTheme = () => {
+        const savedTheme = localStorage.getItem("theme");
+        const systemPrefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)"
+        ).matches;
+        const isDark =
+          savedTheme === "dark" ||
+          (!savedTheme && systemPrefersDark) ||
+          document.documentElement.classList.contains("dark");
+        setIsDarkMode(isDark);
+      };
+
+      checkTheme();
+
+      // Listen for DOM class changes (when theme toggle updates the class)
+      const observer = new MutationObserver(() => {
+        checkTheme();
+      });
+
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+
+      // Listen for system preference changes
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleMediaChange = () => {
+        checkTheme();
+      };
+
+      mediaQuery.addEventListener("change", handleMediaChange);
+
+      // Listen for storage changes (when theme is changed in another tab/window)
+      const handleStorageChange = () => {
+        checkTheme();
+      };
+
+      window.addEventListener("storage", handleStorageChange);
+
+      // Also listen for custom theme change events (if dispatched by theme toggle)
+      const handleThemeChange = () => {
+        checkTheme();
+      };
+
+      window.addEventListener("themechange", handleThemeChange);
+
+      return () => {
+        observer.disconnect();
+        mediaQuery.removeEventListener("change", handleMediaChange);
+        window.removeEventListener("storage", handleStorageChange);
+        window.removeEventListener("themechange", handleThemeChange);
+      };
+    }, []);
+
+    const logoSrc = isDarkMode
+      ? "/logo-2.2-without-name-transparent-dark.png"
+      : "/logo-2.2-without-name-transparent-light.png";
+
     return (
       <div className="flex items-center space-x-2">
         {/* Compact circular logo (always mounted) */}
@@ -25,7 +87,7 @@ export const SidebarLogo = memo(
           )}
         >
           <Image
-            src={"/logo-2.2-without-name-transparent-dark.png"}
+            src={logoSrc}
             alt="Logo"
             width={150}
             height={150}
@@ -46,7 +108,7 @@ export const SidebarLogo = memo(
           )}
         >
           <Image
-            src={"/logo-2.2-without-name-transparent-dark.png"}
+            src={logoSrc}
             alt="Logo"
             width={150}
             height={150}

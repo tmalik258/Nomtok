@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +22,7 @@ export function DataSyncManagement() {
   const [cookiesAge, setCookiesAge] = useState<number | null>(null);
   const [cookieFile, setCookieFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Refresh jobs when any realtime job event occurs
   useEffect(() => {
@@ -137,17 +138,17 @@ export function DataSyncManagement() {
             <Button 
               onClick={() => handleTriggerJob("youtube_scraping")}
               disabled={triggering === "youtube_scraping"}
-              className="h-auto p-4 flex flex-col items-start bg-orange-600 hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-cream"
+              className="h-auto p-4 flex flex-col items-start bg-orange-600 hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-cream whitespace-normal"
             >
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-nowrap">
                 {triggering === "youtube_scraping" ? (
-                  <RefreshCw className="h-5 w-5 animate-spin" />
+                  <RefreshCw className="h-5 w-5 animate-spin shrink-0" />
                 ) : (
-                  <Play className="h-5 w-5 text-cream" />
+                  <Play className="h-5 w-5 text-cream shrink-0" />
                 )}
-                <span className="font-semibold">YouTube Scraping</span>
+                <span className="font-semibold break-words">YouTube Scraping</span>
               </div>
-              <span className="text-sm text-orange-100 text-left">
+              <span className="text-sm text-orange-100 text-left break-words">
                 Scrape new videos and update existing data
               </span>
             </Button>
@@ -155,17 +156,17 @@ export function DataSyncManagement() {
             <Button 
               onClick={() => handleTriggerJob("nlp_processing")}
               disabled={triggering === "nlp_processing"}
-              className="h-auto p-4 flex flex-col items-start shadow-lg bg白/70 border-orange-200/50 hover:bg-orange-600 cursor-pointer focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-cream hover:text-cream dark:text-gray-100 group"
+              className="h-auto p-4 flex flex-col items-start shadow-lg bg白/70 border-orange-200/50 hover:bg-orange-600 cursor-pointer focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-cream hover:text-cream dark:text-gray-100 group whitespace-normal"
             >
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-nowrap">
                 {triggering === "nlp_processing" ? (
-                  <RefreshCw className="h-5 w-5 animate-spin" />
+                  <RefreshCw className="h-5 w-5 animate-spin shrink-0" />
                 ) : (
-                  <Play className="h-5 w-5 text-cream group-hover:text-cream" />
+                  <Play className="h-5 w-5 text-cream group-hover:text-cream shrink-0" />
                 )}
-                <span className="font-semibold">NLP Processing</span>
+                <span className="font-semibold break-words">NLP Processing</span>
               </div>
-              <span className="text-sm text-gray-100 group-hover:text-orange-100 dark:text-gray-400 text-left">
+              <span className="text-sm text-gray-100 group-hover:text-orange-100 dark:text-gray-400 text-left break-words">
                 Process video content and extract insights
               </span>
             </Button>
@@ -173,35 +174,45 @@ export function DataSyncManagement() {
             <Button 
               onClick={handleRefreshCookies}
               disabled={triggering === "refresh_cookies"}
-              className="h-auto p-4 flex flex-col items-start shadow-lg bg-cream/70 border-orange-200/50 hover:bg-orange-600 cursor-pointer focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-gray-900 hover:text-cream dark:text-gray-100 group"
+              className="h-auto p-4 flex flex-col items-start shadow-lg bg-cream/70 border-orange-200/50 hover:bg-orange-600 cursor-pointer focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-gray-900 hover:text-cream dark:text-gray-100 group whitespace-normal"
             >
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-nowrap">
                 {triggering === "refresh_cookies" ? (
-                  <RefreshCw className="h-5 w-5 animate-spin" />
+                  <RefreshCw className="h-5 w-5 animate-spin shrink-0" />
                 ) : (
-                  <Clock className="h-5 w-5 text-orange-600 group-hover:text-cream" />
+                  <Clock className="h-5 w-5 text-orange-600 group-hover:text-cream shrink-0" />
                 )}
-                <span className="font-semibold">Refresh YouTube Cookies</span>
+                <span className="font-semibold break-words">Refresh YouTube Cookies</span>
               </div>
-              <span className="text-sm text-gray-600 group-hover:text-orange-100 dark:text-gray-400 text-left">
+              <span className="text-sm text-gray-600 group-hover:text-orange-100 dark:text-gray-400 text-left break-words">
                 Refresh auth cookies used for scraping
               </span>
             </Button>
           </div>
 
-          <div className="mt-4 flex flex-col md:flex-row gap-4 items-start md:items-center">
+          <div className="mt-4 flex flex-col justify-between md:flex-row gap-4 items-start md:items-center">
             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
               <Clock className="h-4 w-4" />
               <span className="text-sm">Cookies age: <span className="font-semibold">{cookiesAgeDisplay}</span></span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <input
+                ref={fileInputRef}
                 type="file"
                 accept=".txt"
                 onChange={(e) => setCookieFile(e.target.files?.[0] ?? null)}
-                className="text-sm"
+                className="hidden"
                 disabled={uploading}
               />
+              <Button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                variant="outline"
+                className="border-orange-200 text-gray-700 hover:bg-orange-50 dark:border-orange-800 dark:text-gray-300 dark:hover:bg-orange-900/20 min-w-48"
+              >
+                {cookieFile ? cookieFile.name : "Choose File"}
+              </Button>
               <Button
                 onClick={handleUploadCookies}
                 disabled={!cookieFile || uploading}

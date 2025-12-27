@@ -9,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { 
   ChevronUp, 
   ChevronDown, 
-  Eye, 
   X, 
   Play, 
   RefreshCw,
@@ -272,7 +271,11 @@ function JobsTable({ jobs = [], onRefresh }: JobsTableProps) {
                 </TableRow>
               ) : (
                 paginatedJobs.map((job) => (
-                  <TableRow key={job.id} className="hover:bg-orange-50/30 transition-colors">
+                  <TableRow 
+                    key={job.id} 
+                    className="hover:bg-orange-50/30 transition-colors cursor-pointer"
+                    onClick={() => setSelectedJob(job)}
+                  >
                     <TableCell className="font-mono text-sm">
                       {job.id.substring(0, 8)}
                     </TableCell>
@@ -313,21 +316,15 @@ function JobsTable({ jobs = [], onRefresh }: JobsTableProps) {
                     {formatDuration(job.started_at, job.completed_at)}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedJob(job)}
-                        className="h-8 w-8 p-0 hover:bg-orange-100"
-                        title="View Details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                       {job.status === 'running' && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleCancelJob(job.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCancelJob(job.id);
+                          }}
                           className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
                           title="Cancel Job"
                         >
@@ -338,7 +335,10 @@ function JobsTable({ jobs = [], onRefresh }: JobsTableProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleRestartJob(job)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRestartJob(job);
+                          }}
                           className="h-8 w-8 p-0 hover:bg-green-100 text-green-600 cursor-pointer"
                           title="Restart Job"
                         >
