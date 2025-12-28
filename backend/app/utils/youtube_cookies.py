@@ -155,8 +155,17 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
                     color_scheme='light',
                 )
                 
-                # Only use custom UA for bundled Chromium (channel=None), not for real Chrome
-                if channel is None:
+                # CRITICAL: In headless mode, Chrome reports "HeadlessChrome" in User-Agent
+                # We MUST override this to avoid detection
+                if headless:
+                    # Use a realistic Chrome UA that doesn't contain "Headless"
+                    context_opts["user_agent"] = (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/143.0.0.0 Safari/537.36"
+                    )
+                elif channel is None:
+                    # Only for bundled Chromium in headed mode
                     context_opts["user_agent"] = REALISTIC_UA
 
                 # Use launch_persistent_context for a realistic browser profile
@@ -169,7 +178,7 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
                     **context_opts
                 )
             
-                logger.info(f"Persistent context launched (browser: {context.browser.version if context.browser else 'unknown'})")
+                logger.info(f"Persistent context launched (browser: {context.browser.version if context.browser else 'unknown'}, headless={headless})")
 
                 if not context:
                     logger.error("Failed to create browser context")
@@ -179,6 +188,32 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
                 // Remove webdriver traces
                 Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
                 delete navigator.__proto__.webdriver;
+                
+                // Hide headless indicators in user agent
+                const originalUA = navigator.userAgent;
+                Object.defineProperty(navigator, 'userAgent', {
+                    get: () => originalUA.replace('HeadlessChrome', 'Chrome')
+                });
+                
+                // Fix WebGL renderer to not return empty/none
+                const getParameterOrig = WebGLRenderingContext.prototype.getParameter;
+                WebGLRenderingContext.prototype.getParameter = function(param) {
+                    // UNMASKED_VENDOR_WEBGL
+                    if (param === 37445) return 'Google Inc. (NVIDIA)';
+                    // UNMASKED_RENDERER_WEBGL
+                    if (param === 37446) return 'ANGLE (NVIDIA, NVIDIA GeForce GTX 1650 Direct3D11 vs_5_0 ps_5_0, D3D11)';
+                    return getParameterOrig.call(this, param);
+                };
+                
+                // Also fix WebGL2
+                if (typeof WebGL2RenderingContext !== 'undefined') {
+                    const getParameter2Orig = WebGL2RenderingContext.prototype.getParameter;
+                    WebGL2RenderingContext.prototype.getParameter = function(param) {
+                        if (param === 37445) return 'Google Inc. (NVIDIA)';
+                        if (param === 37446) return 'ANGLE (NVIDIA, NVIDIA GeForce GTX 1650 Direct3D11 vs_5_0 ps_5_0, D3D11)';
+                        return getParameter2Orig.call(this, param);
+                    };
+                }
                 
                 // Add chrome object
                 window.chrome = {
@@ -285,7 +320,7 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
                     logger.error("  3. Account is not restricted or suspended")
 
                     # Take diagnostic screenshot
-                    await _take_screenshot(page, "cookie-extraction-failed")
+                    await _take_screenshot(page, "step09-error-cookie-extraction-failed")
                     logger.error(f"Current page URL: {page.url}")
                     logger.error(f"Current page title: {await page.title()}")
                 else:
@@ -364,7 +399,7 @@ async def _is_login_needed(page) -> bool:
     """Check if login is required by verifying authenticated YouTube elements."""
     await page.goto("https://www.youtube.com")
     await page.wait_for_load_state("networkidle", timeout=15000)
-    await _take_screenshot(page, "step1-youtube-check")
+    await _take_screenshot(page, "step01-youtube-check")
     
     # First check for explicit sign-in button (definitive sign we're NOT logged in)
     try:
@@ -578,7 +613,7 @@ async def _ensure_password_input(page) -> None:
         current_url = page.url
         current_title = await page.title()
         logger.warning(f"Password field not found after retries. URL: {current_url}, Title: {current_title}...")
-        await _take_screenshot(page, "password-not-found")
+        await _take_screenshot(page, "step03-error-password-not-found")
         
         # Also log page content for debugging
         page_content = await page.content()
@@ -603,7 +638,7 @@ async def _login_to_google(page):
     await page.goto("https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fwww.youtube.com%2F&dsh=S-2147279974%3A1759988436171692&followup=https%3A%2F%2Faccounts.google.com%2F&ifkv=AfYwgwXSrxGEIClHmM1YYF3IUQnqFv6KRohiAa4gNIchCV-z6eJ4CZypirCLzgqFfDqKVaqnveYRig&passive=1209600&flowName=GlifWebSignIn&flowEntry=ServiceLogin")
     await page.wait_for_load_state("domcontentloaded")
     await _click_consent_if_present(page)
-    await _take_screenshot(page, "step2-google-signin")
+    await _take_screenshot(page, "step02-google-signin")
 
     await _ensure_identifier_input(page)
 
@@ -659,12 +694,19 @@ async def _login_to_google(page):
     
     # Check if we're already logged in (session restored from persistent profile)
     current_url = page.url
+    
+    # Check for rejection by Google (bot detection)
+    if "signin/rejected" in current_url:
+        page_title = await page.title()
+        logger.error(f"REJECTED by Google! URL: {current_url}")
+        logger.error(f"Page title: {page_title}")
+    
     if "youtube.com" in current_url and "accounts.google.com" not in current_url:
         logger.info(f"Already logged in! Session restored, redirected to: {current_url}")
         return  # Skip password - we're already authenticated
     
     # Take a screenshot to debug what page we're on
-    await _take_screenshot(page, "after-email-submit")
+    await _take_screenshot(page, "step03-after-email-submit")
     logger.info(f"After email submit - URL: {current_url}")
     
     await _ensure_password_input(page)
@@ -705,7 +747,7 @@ async def _login_to_google(page):
         # Diagnostics: log current URL/title and capture a screenshot to aid debugging
         current_title = await page.title()
         logger.error(f"Password field not found at URL: {page.url} - title: {current_title}")
-        await _take_screenshot(page, "google-password-field-missing")
+        await _take_screenshot(page, "step03-error-password-missing")
         raise RuntimeError("Could not locate password field on Google sign-in")
 
     logger.info("Clicking 'Next' after password")
@@ -743,19 +785,19 @@ async def _navigate_to_youtube(page):
         logger.info("Step 3: Visiting YouTube main page")
         await page.goto("https://www.youtube.com", wait_until="networkidle")
         await asyncio.sleep(4)
-    await _take_screenshot(page, "step3-youtube-main")
+    await _take_screenshot(page, "step04-youtube-main")
 
     # Step 4: YouTube subscriptions (triggers LOGIN_INFO - requires auth)
     logger.info("Step 4: Visiting YouTube subscriptions (requires auth)")
     await page.goto("https://www.youtube.com/feed/subscriptions", wait_until="networkidle")
     await asyncio.sleep(4)
-    await _take_screenshot(page, "step4-youtube-subscriptions")
+    await _take_screenshot(page, "step05-youtube-subscriptions")
 
     # Step 5: YouTube Studio (additional auth coverage)
     logger.info("Step 5: Visiting YouTube Studio")
     await page.goto("https://studio.youtube.com", wait_until="networkidle")
     await asyncio.sleep(4)
-    await _take_screenshot(page, "step5-youtube-studio")
+    await _take_screenshot(page, "step06-youtube-studio")
 
     # Step 6: Google main (cross-domain sync)
     logger.info("Step 6: Visiting Google main page")
@@ -768,13 +810,13 @@ async def _navigate_to_youtube(page):
         except Exception as fallback_err:
             logger.warning(f"Google.com domcontentloaded also failed: {fallback_err}")
     await asyncio.sleep(4)
-    await _take_screenshot(page, "step6-google-main")
+    await _take_screenshot(page, "step07-google-main")
 
     # Step 7: Final YouTube visit with extended wait
     logger.info("Step 7: Final navigation to YouTube with extended wait")
     await page.goto("https://www.youtube.com", wait_until="networkidle")
     await asyncio.sleep(6)  # Extended wait for cookie propagation
-    await _take_screenshot(page, "step7-youtube-final")
+    await _take_screenshot(page, "step08-youtube-final")
 
     logger.info("Navigation sequence completed - total wait time: ~34 seconds")
 
