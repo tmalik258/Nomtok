@@ -64,6 +64,7 @@ packaging==25.0
 platformdirs==4.3.8
 playwright==1.55.0
 playwright-stealth==2.0.0
+pyvirtualdisplay==3.0
 pluggy==1.6.0
 pooch==1.8.2
 postgrest==1.1.1

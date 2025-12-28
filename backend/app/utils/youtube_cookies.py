@@ -7,6 +7,7 @@ import re
 from datetime import datetime
 from typing import Optional, cast
 from http.cookiejar import MozillaCookieJar, Cookie
+from contextlib import contextmanager
 
 from playwright_stealth import Stealth
 from playwright.async_api import async_playwright, BrowserContext, Page
@@ -15,6 +16,40 @@ from app.config import YTDLP_COOKIES_FILE, GOOGLE_EMAIL, GOOGLE_PASSWORD
 from app.utils.logging import setup_logger
 
 logger = setup_logger(__name__)
+
+
+@contextmanager
+def _nullcontext():
+    """A no-op context manager for when virtual_display is not needed."""
+    yield
+
+
+@contextmanager
+def virtual_display():
+    """Create a virtual display for headed browser on headless servers.
+    
+    Uses pyvirtualdisplay (Xvfb wrapper) on Linux servers without a display.
+    On Windows or when DISPLAY is already set, this is a no-op.
+    """
+    display = None
+    try:
+        # Only needed on Linux without a display
+        if os.name != 'nt' and not os.environ.get('DISPLAY'):
+            try:
+                from pyvirtualdisplay import Display
+                display = Display(visible=False, size=(1920, 1080))
+                display.start()
+                logger.info(f"Started virtual display: {os.environ.get('DISPLAY')}")
+            except ImportError:
+                logger.warning("pyvirtualdisplay not installed - headed mode may fail on headless servers")
+                logger.warning("Install with: pip install pyvirtualdisplay")
+            except Exception as e:
+                logger.warning(f"Could not start virtual display: {e}")
+        yield
+    finally:
+        if display:
+            display.stop()
+            logger.info("Stopped virtual display")
 
 # Paths for persisted state (mount these in Docker volumes for persistence)
 BASE_COOKIES_DIR = os.path.dirname(cast(str, YTDLP_COOKIES_FILE))
@@ -35,11 +70,38 @@ def is_docker() -> bool:
     except:
         return False
 
+SCREENSHOTS_DIR = os.path.join("logs", "screenshots")
+
+
 def _ensure_cookies_dir():
     try:
         os.makedirs(BASE_COOKIES_DIR, exist_ok=True)
     except Exception as e:
         logger.warning(f"Could not create cookies dir {BASE_COOKIES_DIR}: {e}")
+
+
+def _clear_old_screenshots():
+    """Clear old screenshots before starting a new login attempt."""
+    try:
+        if os.path.exists(SCREENSHOTS_DIR):
+            import shutil
+            shutil.rmtree(SCREENSHOTS_DIR)
+            logger.info(f"Cleared old screenshots from {SCREENSHOTS_DIR}")
+        os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
+    except Exception as e:
+        logger.warning(f"Could not clear screenshots: {e}")
+
+
+async def _take_screenshot(page, step_name: str):
+    """Take a screenshot with a descriptive name."""
+    try:
+        os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
+        filename = f"{step_name.replace(' ', '-').lower()}-{int(time.time())}.png"
+        path = os.path.join(SCREENSHOTS_DIR, filename)
+        await page.screenshot(path=path, full_page=True)
+        logger.info(f"Screenshot saved: {path}")
+    except Exception as e:
+        logger.warning(f"Failed to take screenshot for {step_name}: {e}")
 
 async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> bool:
     """Internal helper to run the refresh logic with given headless mode and browser channel."""
@@ -47,62 +109,73 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
         logger.error("GOOGLE_EMAIL and GOOGLE_PASSWORD env vars required for cookie refresh")
         return False
 
+    # Clear old screenshots at the start
+    _clear_old_screenshots()
+
     docker = is_docker()
     if docker:
         logger.info("Docker detected; using container-optimized args")
 
-    try:
-        async with Stealth().use_async(async_playwright()) as p:
-            args = [
-                '--no-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-blink-features=AutomationControlled',
-                '--disable-infobars',
-                '--no-first-run',
-                '--no-default-browser-check',
-                '--window-size=1920,1080',  # Larger, more common resolution
-            ]
-            if headless and not docker:
-                args.append('--virtual-time-budget=5000')
+    # For headed mode on Linux servers, start virtual display (no-op on Windows or if headless)
+    with virtual_display() if not headless else _nullcontext():
+        try:
+            async with Stealth().use_async(async_playwright()) as p:
+                args = [
+                    '--no-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-blink-features=AutomationControlled',
+                    '--disable-infobars',
+                    '--no-first-run',
+                    '--no-default-browser-check',
+                    '--window-size=1920,1080',
+                ]
+                
+                # Headless-specific args for better stealth
+                if headless:
+                    args.extend([
+                        '--headless=new',  # New headless mode - less detectable
+                        '--disable-gpu',
+                        '--disable-software-rasterizer',
+                    ])
+                
+                if docker:
+                    args.extend(['--disable-gpu', '--single-process'])
+
+                # Use a persistent profile directory for more realistic browser fingerprint
+                # This is REQUIRED to bypass Google's bot detection - fresh contexts are detected
+                persistent_profile_dir = Path(BASE_COOKIES_DIR) / "chrome_profile"
+                os.makedirs(persistent_profile_dir, exist_ok=True)
+                
+                logger.info(f"Using persistent browser profile: {persistent_profile_dir}")
+
+                context_opts = dict(
+                    locale='en-US',
+                    timezone_id='Asia/Karachi',
+                    viewport={"width": 1366, "height": 768},
+                    color_scheme='light',
+                )
+                
+                # Only use custom UA for bundled Chromium (channel=None), not for real Chrome
+                if channel is None:
+                    context_opts["user_agent"] = REALISTIC_UA
+
+                # Use launch_persistent_context for a realistic browser profile
+                # This maintains cookies, localStorage, history between sessions - critical for avoiding bot detection
+                context = await p.chromium.launch_persistent_context(
+                    user_data_dir=str(persistent_profile_dir),
+                    headless=headless,
+                    channel="chrome" if channel == "chrome" else None,
+                    args=args,
+                    **context_opts
+                )
             
-            if docker:
-                args.extend(['--disable-gpu', '--single-process'])
+                logger.info(f"Persistent context launched (browser: {context.browser.version if context.browser else 'unknown'})")
 
-            # Use a persistent profile directory for more realistic browser fingerprint
-            # This is REQUIRED to bypass Google's bot detection - fresh contexts are detected
-            persistent_profile_dir = Path(BASE_COOKIES_DIR) / "chrome_profile"
-            os.makedirs(persistent_profile_dir, exist_ok=True)
-            
-            logger.info(f"Using persistent browser profile: {persistent_profile_dir}")
+                if not context:
+                    logger.error("Failed to create browser context")
+                    return False
 
-            context_opts = dict(
-                locale='en-US',
-                timezone_id='Asia/Karachi',
-                viewport={"width": 1366, "height": 768},
-                color_scheme='light',
-            )
-            
-            # Only use custom UA for bundled Chromium (channel=None), not for real Chrome
-            if channel is None:
-                context_opts["user_agent"] = REALISTIC_UA
-
-            # Use launch_persistent_context for a realistic browser profile
-            # This maintains cookies, localStorage, history between sessions - critical for avoiding bot detection
-            context = await p.chromium.launch_persistent_context(
-                user_data_dir=str(persistent_profile_dir),
-                headless=headless,
-                channel="chrome",
-                args=args,
-                **context_opts
-            )
-            
-            logger.info(f"Persistent context launched (browser: {context.browser.version if context.browser else 'unknown'})")
-
-            if not context:
-                logger.error("Failed to create browser context")
-                return False
-
-            await context.add_init_script('''
+                await context.add_init_script('''
                 // Remove webdriver traces
                 Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
                 delete navigator.__proto__.webdriver;
@@ -139,104 +212,96 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
                         clientY: Math.random() * window.innerHeight
                     }));
                 }, Math.random() * 5000 + 2000);
-            ''')
-            page = await context.new_page()
+                ''')
+                page = await context.new_page()
 
-            # Check if login is needed (also navigates to YouTube to check)
-            login_needed = await _is_login_needed(page)
-            
-            if login_needed:
-                logger.info("Performing Google/YouTube login")
-                login_success = await _login_to_google_with_retry(page, max_retries=1)
-                if not login_success:
-                    logger.error("Login failed after retries; aborting")
-                    await context.close()
-                    return False
-                await _navigate_to_youtube(page)
+                # Check if login is needed (also navigates to YouTube to check)
+                login_needed = await _is_login_needed(page)
+                
+                if login_needed:
+                    logger.info("Performing Google/YouTube login")
+                    login_success = await _login_to_google_with_retry(page, max_retries=1)
+                    if not login_success:
+                        logger.error("Login failed after retries; aborting")
+                        await context.close()
+                        return False
+                    await _navigate_to_youtube(page)
 
-                # Save new storage state for future runs
-                _ensure_cookies_dir()
-                await context.storage_state(path=STORAGE_STATE_FILE)
-                logger.info(f"Saved storage state to {STORAGE_STATE_FILE}")
-            else:
-                # Already logged in - just ensure we're on YouTube for cookie extraction
-                logger.info("Already logged in via persistent profile - extracting cookies directly")
+                    # Save new storage state for future runs
+                    _ensure_cookies_dir()
+                    await context.storage_state(path=STORAGE_STATE_FILE)
+                    logger.info(f"Saved storage state to {STORAGE_STATE_FILE}")
+                else:
+                    # Already logged in - just ensure we're on YouTube for cookie extraction
+                    logger.info("Already logged in via persistent profile - extracting cookies directly")
 
-            # Extract cookies with retry logic
-            MAX_ATTEMPTS = 3
-            cookies = []
-            all_auth_found = False
+                # Extract cookies with retry logic
+                MAX_ATTEMPTS = 3
+                cookies = []
+                all_auth_found = False
 
-            for attempt in range(MAX_ATTEMPTS):
-                logger.info(f"Cookie extraction attempt {attempt + 1}/{MAX_ATTEMPTS}")
+                for attempt in range(MAX_ATTEMPTS):
+                    logger.info(f"Cookie extraction attempt {attempt + 1}/{MAX_ATTEMPTS}")
 
-                # Extract and validate cookies
-                cookies, all_auth_found = await _validate_and_extract_cookies(context)
+                    # Extract and validate cookies
+                    cookies, all_auth_found = await _validate_and_extract_cookies(context)
 
-                if all_auth_found:
-                    logger.info(f"[OK] All authentication cookies found on attempt {attempt + 1}")
-                    break
+                    if all_auth_found:
+                        logger.info(f"[OK] All authentication cookies found on attempt {attempt + 1}")
+                        break
 
-                if attempt < MAX_ATTEMPTS - 1:
-                    # Not all cookies found, and we have retries left
-                    logger.warning(f"Attempt {attempt + 1}: Missing auth cookies, retrying with additional navigation")
+                    if attempt < MAX_ATTEMPTS - 1:
+                        # Not all cookies found, and we have retries left
+                        logger.warning(f"Attempt {attempt + 1}: Missing auth cookies, retrying with additional navigation")
 
-                    # Strategy: Visit more authenticated pages to trigger cookie generation
-                    retry_urls = [
-                        "https://accounts.google.com/ManageAccount",
-                        "https://myaccount.google.com/data-and-privacy",
-                        "https://www.youtube.com/feed/subscriptions",
-                        "https://www.youtube.com/feed/library",
-                    ]
+                        # Strategy: Visit more authenticated pages to trigger cookie generation
+                        retry_urls = [
+                            "https://accounts.google.com/ManageAccount",
+                            "https://myaccount.google.com/data-and-privacy",
+                            "https://www.youtube.com/feed/subscriptions",
+                            "https://www.youtube.com/feed/library",
+                        ]
 
-                    for url in retry_urls:
-                        try:
-                            logger.info(f"  Visiting {url} to trigger cookies")
-                            await page.goto(url, wait_until="networkidle", timeout=15000)
-                            await asyncio.sleep(3)
-                        except Exception as e:
-                            logger.warning(f"  Failed to visit {url}: {e}")
-                            continue
+                        for url in retry_urls:
+                            try:
+                                logger.info(f"  Visiting {url} to trigger cookies")
+                                await page.goto(url, wait_until="networkidle", timeout=15000)
+                                await asyncio.sleep(3)
+                            except Exception as e:
+                                logger.warning(f"  Failed to visit {url}: {e}")
+                                continue
 
-                    # Extra wait for cookies to propagate
-                    logger.info("  Waiting 8 seconds for cookies to propagate...")
-                    await asyncio.sleep(8)
+                        # Extra wait for cookies to propagate
+                        logger.info("  Waiting 8 seconds for cookies to propagate...")
+                        await asyncio.sleep(8)
 
-            # Final validation
-            if not all_auth_found:
-                logger.error("CRITICAL: Failed to extract all authentication cookies after all retries!")
-                logger.error("Missing cookies will likely cause yt-dlp download failures.")
-                logger.error("Please verify:")
-                logger.error("  1. GOOGLE_EMAIL and GOOGLE_PASSWORD are correct")
-                logger.error("  2. Google account doesn't require 2FA")
-                logger.error("  3. Account is not restricted or suspended")
+                # Final validation
+                if not all_auth_found:
+                    logger.error("CRITICAL: Failed to extract all authentication cookies after all retries!")
+                    logger.error("Missing cookies will likely cause yt-dlp download failures.")
+                    logger.error("Please verify:")
+                    logger.error("  1. GOOGLE_EMAIL and GOOGLE_PASSWORD are correct")
+                    logger.error("  2. Google account doesn't require 2FA")
+                    logger.error("  3. Account is not restricted or suspended")
 
-                # Take diagnostic screenshot
-                try:
-                    os.makedirs(os.path.join("logs", "screenshots"), exist_ok=True)
-                    screenshot_path = os.path.join("logs", "screenshots", f"cookie-extraction-failed-{int(time.time())}.png")
-                    await page.screenshot(path=screenshot_path, full_page=True)
-                    logger.error(f"Saved diagnostic screenshot: {screenshot_path}")
-
-                    # Also save the current URL for debugging
+                    # Take diagnostic screenshot
+                    await _take_screenshot(page, "cookie-extraction-failed")
                     logger.error(f"Current page URL: {page.url}")
                     logger.error(f"Current page title: {await page.title()}")
-                except Exception as e:
-                    logger.error(f"Failed to capture diagnostics: {e}")
-            else:
-                logger.info("SUCCESS: All required authentication cookies extracted")
+                else:
+                    logger.info("SUCCESS: All required authentication cookies extracted")
 
-            # Export cookies regardless (even incomplete cookies are better than none)
-            await _export_cookies_to_netscape(cookies)
+                # Export cookies regardless (even incomplete cookies are better than none)
+                await _export_cookies_to_netscape(cookies)
 
-            await context.close()
-            _update_last_refresh_timestamp()
-            logger.info(f"Successfully refreshed cookies at {datetime.now()} (headless={headless}, channel={channel})")
-            return True
+                await context.close()
+                _update_last_refresh_timestamp()
+                logger.info(f"Successfully refreshed cookies at {datetime.now()} (headless={headless}, channel={channel})")
+                return True
 
-    except Exception as e:
-        logger.error(f"Cookie refresh failed (headless={headless}, channel={channel}): {e}")
-        return False
+        except Exception as e:
+            logger.error(f"Cookie refresh failed (headless={headless}, channel={channel}): {e}")
+            return False
 
 async def refresh_youtube_cookies(headless: bool = True) -> bool:
     """Automate YouTube login via Google and export fresh cookies to Netscape format.
@@ -299,6 +364,7 @@ async def _is_login_needed(page) -> bool:
     """Check if login is required by verifying authenticated YouTube elements."""
     await page.goto("https://www.youtube.com")
     await page.wait_for_load_state("networkidle", timeout=15000)
+    await _take_screenshot(page, "step1-youtube-check")
     
     # First check for explicit sign-in button (definitive sign we're NOT logged in)
     try:
@@ -512,13 +578,11 @@ async def _ensure_password_input(page) -> None:
         current_url = page.url
         current_title = await page.title()
         logger.warning(f"Password field not found after retries. URL: {current_url}, Title: {current_title}...")
-        os.makedirs(os.path.join("logs", "screenshots"), exist_ok=True)
-        screenshot_path = os.path.join("logs", "screenshots", f"password-not-found-{int(time.time())}.png")
-        await page.screenshot(path=screenshot_path, full_page=True)
-        logger.warning(f"Saved diagnostic screenshot: {screenshot_path}")
+        await _take_screenshot(page, "password-not-found")
         
         # Also log page content for debugging
         page_content = await page.content()
+        os.makedirs("logs", exist_ok=True)
         content_path = os.path.join("logs", f"password-not-found-{int(time.time())}.html")
         with open(content_path, "w", encoding="utf-8") as f:
             f.write(page_content)
@@ -539,6 +603,7 @@ async def _login_to_google(page):
     await page.goto("https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fwww.youtube.com%2F&dsh=S-2147279974%3A1759988436171692&followup=https%3A%2F%2Faccounts.google.com%2F&ifkv=AfYwgwXSrxGEIClHmM1YYF3IUQnqFv6KRohiAa4gNIchCV-z6eJ4CZypirCLzgqFfDqKVaqnveYRig&passive=1209600&flowName=GlifWebSignIn&flowEntry=ServiceLogin")
     await page.wait_for_load_state("domcontentloaded")
     await _click_consent_if_present(page)
+    await _take_screenshot(page, "step2-google-signin")
 
     await _ensure_identifier_input(page)
 
@@ -599,13 +664,8 @@ async def _login_to_google(page):
         return  # Skip password - we're already authenticated
     
     # Take a screenshot to debug what page we're on
-    try:
-        os.makedirs(os.path.join("logs", "screenshots"), exist_ok=True)
-        screenshot_path = os.path.join("logs", "screenshots", f"after-email-submit-{int(time.time())}.png")
-        await page.screenshot(path=screenshot_path, full_page=True)
-        logger.info(f"After email submit - URL: {current_url}, saved screenshot: {screenshot_path}")
-    except Exception:
-        pass
+    await _take_screenshot(page, "after-email-submit")
+    logger.info(f"After email submit - URL: {current_url}")
     
     await _ensure_password_input(page)
 
@@ -643,15 +703,9 @@ async def _login_to_google(page):
             pass
     if not filled_pwd:
         # Diagnostics: log current URL/title and capture a screenshot to aid debugging
-        try:
-            current_title = await page.title()
-            logger.error(f"Password field not found at URL: {page.url} - title: {current_title}")
-            os.makedirs(os.path.join("logs", "screenshots"), exist_ok=True)
-            screenshot_path = os.path.join("logs", "screenshots", f"google-password-field-missing-{int(time.time())}.png")
-            await page.screenshot(path=screenshot_path, full_page=True)
-            logger.error(f"Saved diagnostic screenshot: {screenshot_path}")
-        except Exception:
-            pass
+        current_title = await page.title()
+        logger.error(f"Password field not found at URL: {page.url} - title: {current_title}")
+        await _take_screenshot(page, "google-password-field-missing")
         raise RuntimeError("Could not locate password field on Google sign-in")
 
     logger.info("Clicking 'Next' after password")
@@ -689,16 +743,19 @@ async def _navigate_to_youtube(page):
         logger.info("Step 3: Visiting YouTube main page")
         await page.goto("https://www.youtube.com", wait_until="networkidle")
         await asyncio.sleep(4)
+    await _take_screenshot(page, "step3-youtube-main")
 
     # Step 4: YouTube subscriptions (triggers LOGIN_INFO - requires auth)
     logger.info("Step 4: Visiting YouTube subscriptions (requires auth)")
     await page.goto("https://www.youtube.com/feed/subscriptions", wait_until="networkidle")
     await asyncio.sleep(4)
+    await _take_screenshot(page, "step4-youtube-subscriptions")
 
     # Step 5: YouTube Studio (additional auth coverage)
     logger.info("Step 5: Visiting YouTube Studio")
     await page.goto("https://studio.youtube.com", wait_until="networkidle")
     await asyncio.sleep(4)
+    await _take_screenshot(page, "step5-youtube-studio")
 
     # Step 6: Google main (cross-domain sync)
     logger.info("Step 6: Visiting Google main page")
@@ -711,11 +768,13 @@ async def _navigate_to_youtube(page):
         except Exception as fallback_err:
             logger.warning(f"Google.com domcontentloaded also failed: {fallback_err}")
     await asyncio.sleep(4)
+    await _take_screenshot(page, "step6-google-main")
 
     # Step 7: Final YouTube visit with extended wait
     logger.info("Step 7: Final navigation to YouTube with extended wait")
     await page.goto("https://www.youtube.com", wait_until="networkidle")
     await asyncio.sleep(6)  # Extended wait for cookie propagation
+    await _take_screenshot(page, "step7-youtube-final")
 
     logger.info("Navigation sequence completed - total wait time: ~34 seconds")
 
