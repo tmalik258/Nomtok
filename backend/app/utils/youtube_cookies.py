@@ -68,34 +68,40 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
             if docker:
                 args.extend(['--disable-gpu', '--single-process'])
 
-            profile_path = Path.home() / "AppData" / "Local" / "Google" / "Chrome" / "User Data"
+            # Use a persistent profile directory for more realistic browser fingerprint
+            # This is REQUIRED to bypass Google's bot detection - fresh contexts are detected
+            persistent_profile_dir = Path(BASE_COOKIES_DIR) / "chrome_profile"
+            os.makedirs(persistent_profile_dir, exist_ok=True)
+            
+            logger.info(f"Using persistent browser profile: {persistent_profile_dir}")
 
-            browser = await p.chromium.launch(
+            context_opts = dict(
+                locale='en-US',
+                timezone_id='Asia/Karachi',
+                viewport={"width": 1366, "height": 768},
+                color_scheme='light',
+            )
+            
+            # Only use custom UA for bundled Chromium (channel=None), not for real Chrome
+            if channel is None:
+                context_opts["user_agent"] = REALISTIC_UA
+
+            # Use launch_persistent_context for a realistic browser profile
+            # This maintains cookies, localStorage, history between sessions - critical for avoiding bot detection
+            context = await p.chromium.launch_persistent_context(
+                user_data_dir=str(persistent_profile_dir),
                 headless=headless,
                 channel="chrome",
                 args=args,
+                **context_opts
             )
-
-            context: Optional[BrowserContext] = None
-
-            context_opts = dict(
-                locale='en-PK',  # or 'ur-PK' if you want Urdu as the browser language
-                timezone_id='Asia/Karachi',  # Pakistan timezone
-                user_agent=REALISTIC_UA,
-                viewport={"width": 1366, "height": 768}
-            )
-
-            # Try loading persisted state first (skips login if valid)
-            if os.path.exists(STORAGE_STATE_FILE):
-                logger.info("Loading persisted YouTube storage state")
-                context = await browser.new_context(storage_state=STORAGE_STATE_FILE, **context_opts)
-            else:
-                context = await browser.new_context(**context_opts)
+            
+            logger.info(f"Persistent context launched (browser: {context.browser.version if context.browser else 'unknown'})")
 
             if not context:
                 logger.error("Failed to create browser context")
                 return False
-            
+
             await context.add_init_script('''
                 // Remove webdriver traces
                 Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
@@ -136,48 +142,25 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
             ''')
             page = await context.new_page()
 
-            # If no state or expired, perform login
-            login_performed = False
-            if not os.path.exists(STORAGE_STATE_FILE) or await _is_login_needed(page):
+            # Check if login is needed (also navigates to YouTube to check)
+            login_needed = await _is_login_needed(page)
+            
+            if login_needed:
                 logger.info("Performing Google/YouTube login")
-                login_success = await _login_to_google_with_retry(page, max_retries=1)  # Limit to 1 for loop avoidance
+                login_success = await _login_to_google_with_retry(page, max_retries=1)
                 if not login_success:
                     logger.error("Login failed after retries; aborting")
-                    await browser.close()
+                    await context.close()
                     return False
                 await _navigate_to_youtube(page)
-                login_performed = True
 
                 # Save new storage state for future runs
                 _ensure_cookies_dir()
                 await context.storage_state(path=STORAGE_STATE_FILE)
                 logger.info(f"Saved storage state to {STORAGE_STATE_FILE}")
-
-            # Always navigate to YouTube and verify login before extracting cookies
-            # This ensures all cookies are fresh and we're in a logged-in state
-            logger.info("Navigating to YouTube services for cookie extraction")
-
-            # Use enhanced navigation sequence if we just logged in, otherwise do quick refresh
-            if login_performed:
-                logger.info("Fresh login detected - using enhanced navigation sequence")
-                await _navigate_to_youtube(page)
             else:
-                # Quick refresh for existing sessions
-                logger.info("Using existing session - doing quick refresh")
-                await page.goto("https://www.youtube.com", wait_until="networkidle")
-                await asyncio.sleep(3)
-                await page.goto("https://myaccount.google.com", wait_until="networkidle")
-                await asyncio.sleep(3)
-                await page.goto("https://www.youtube.com", wait_until="networkidle")
-                await asyncio.sleep(5)
-
-            # Check if we're logged in by looking for logged-in indicators
-            # _is_login_needed returns True if login is needed (not logged in), False if logged in
-            login_needed = await _is_login_needed(page)
-            if login_needed:
-                logger.warning("Not logged in after refresh attempt; cookies may be incomplete")
-            else:
-                logger.info("Login verified; proceeding with cookie extraction")
+                # Already logged in - just ensure we're on YouTube for cookie extraction
+                logger.info("Already logged in via persistent profile - extracting cookies directly")
 
             # Extract cookies with retry logic
             MAX_ATTEMPTS = 3
@@ -191,7 +174,7 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
                 cookies, all_auth_found = await _validate_and_extract_cookies(context)
 
                 if all_auth_found:
-                    logger.info(f"✓ All authentication cookies found on attempt {attempt + 1}")
+                    logger.info(f"[OK] All authentication cookies found on attempt {attempt + 1}")
                     break
 
                 if attempt < MAX_ATTEMPTS - 1:
@@ -246,7 +229,7 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
             # Export cookies regardless (even incomplete cookies are better than none)
             await _export_cookies_to_netscape(cookies)
 
-            await browser.close()
+            await context.close()
             _update_last_refresh_timestamp()
             logger.info(f"Successfully refreshed cookies at {datetime.now()} (headless={headless}, channel={channel})")
             return True
@@ -302,7 +285,7 @@ async def _login_to_google_with_retry(page: Page, max_retries: int = 1) -> bool:
                     logger.error("Max login retries exceeded due to rejection loop; aborting")
                     return False
                 # Reset page to start of login for retry
-                await page.goto("https://accounts.google.com/v2/signin/identifier?continue=https%3A%2F%2Fwww.youtube.com%2F&dsh=S-2147279974%3A1759988436171692&followup=https%3A%2F%2Faccounts.google.com%2F&ifkv=AfYwgwXSrxGEIClHmM1YYF3IUQnqFv6KRohiAa4gNIchCV-z6eJ4CZypirCLzgqFfDqKVaqnveYRig&passive=1209600&flowName=GlifWebSignIn&flowEntry=ServiceLogin")
+                await page.goto("https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fwww.youtube.com%2F&dsh=S-2147279974%3A1759988436171692&followup=https%3A%2F%2Faccounts.google.com%2F&ifkv=AfYwgwXSrxGEIClHmM1YYF3IUQnqFv6KRohiAa4gNIchCV-z6eJ4CZypirCLzgqFfDqKVaqnveYRig&passive=1209600&flowName=GlifWebSignIn&flowEntry=ServiceLogin")
                 await page.wait_for_load_state("domcontentloaded")
                 continue
             else:
@@ -335,7 +318,7 @@ async def _is_login_needed(page) -> bool:
     
     # Fallback: Explicit sign-in prompt
     try:
-        signin = page.locator('tp-yt-iron-button:has-text("Sign in")')
+        signin = page.locator('yt-button-shape:has-text("Sign in")')
         if await signin.is_visible(timeout=2000):
             logger.warning("Sign-in prompt detected")
             return True
@@ -363,13 +346,24 @@ async def _click_consent_if_present(page):
             continue
 
 async def _ensure_identifier_input(page) -> None:
-    selector_any = 'input[name="identifier"], input#identifierId, text=/Choose an account/i, text=/Use another account|Add account/i'
+    """Ensure identifier input is visible, handling account chooser if present.
+    
+    Note: This function assumes we're already on the signin page - no redundant navigation.
+    """
+    logger.info("Ensuring identifier input is ready")
+    
+    # First check if identifier input is already visible
+    identifier_selector = 'input[name="identifier"], input#identifierId'
     try:
-        await page.wait_for_selector(selector_any, timeout=15000)
+        await page.wait_for_selector(identifier_selector, timeout=5000)
+        logger.info("Identifier input already visible")
+        return
     except Exception:
-        await page.wait_for_load_state("networkidle")
-        await _click_consent_if_present(page)
-
+        pass
+    
+    # Maybe we're on account chooser - try clicking "Use another account"
+    await _click_consent_if_present(page)
+    
     for role in ["button", "link"]:
         try:
             use_another_regex = re.compile(
@@ -386,25 +380,12 @@ async def _ensure_identifier_input(page) -> None:
                 break
         except Exception:
             pass
-
-    def endpoints():
-        return [
-            "https://accounts.google.com/v2/signin/identifier?continue=https%3A%2F%2Fwww.youtube.com%2F&dsh=S-2147279974%3A1759988436171692&followup=https%3A%2F%2Faccounts.google.com%2F&ifkv=AfYwgwXSrxGEIClHmM1YYF3IUQnqFv6KRohiAa4gNIchCV-z6eJ4CZypirCLzgqFfDqKVaqnveYRig&passive=1209600&flowName=GlifWebSignIn&flowEntry=ServiceLogin",
-        ]
-
-    for url in endpoints():
-        try:
-            await page.goto(url)
-            await page.wait_for_load_state("domcontentloaded")
-            await _click_consent_if_present(page)
-            await page.wait_for_selector('input[name="identifier"], input#identifierId', timeout=10000)
-            return
-        except Exception:
-            continue
-
-    await page.goto("https://accounts.google.com/v2/signin/identifier?continue=https%3A%2F%2Fwww.youtube.com%2F&dsh=S-2147279974%3A1759988436171692&followup=https%3A%2F%2Faccounts.google.com%2F&ifkv=AfYwgwXSrxGEIClHmM1YYF3IUQnqFv6KRohiAa4gNIchCV-z6eJ4CZypirCLzgqFfDqKVaqnveYRig&passive=1209600&flowName=GlifWebSignIn&flowEntry=ServiceLogin")
-    await page.wait_for_load_state("domcontentloaded")
-    await _click_consent_if_present(page)
+    
+    # Final wait for identifier input
+    try:
+        await page.wait_for_selector(identifier_selector, timeout=10000)
+    except Exception:
+        logger.warning("Identifier input not found after account chooser handling")
 
 async def _ensure_password_input(page) -> None:
     """Ensure we reach the password entry screen, handling challenge flows and locale variants robustly."""
@@ -438,8 +419,8 @@ async def _ensure_password_input(page) -> None:
     )
 
     # Attempt multiple cycles to navigate to password screen
-    for attempt in range(8):  # Increased from 5 to 8
-        logger.info(f"Password field search attempt {attempt + 1}/8")
+    for attempt in range(3):  # Increased from 5 to 8
+        logger.info(f"Password field search attempt {attempt + 1}/3")
         
         # 1) Directly look for a visible password input
         try:
@@ -550,22 +531,27 @@ async def _ensure_password_input(page) -> None:
 
 async def _login_to_google(page):
     """Automate Google login flow with robust selectors and consent handling."""
+    logger.info("Logging in to Google")
+
     await page.goto("https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fwww.youtube.com%2F&dsh=S-2147279974%3A1759988436171692&followup=https%3A%2F%2Faccounts.google.com%2F&ifkv=AfYwgwXSrxGEIClHmM1YYF3IUQnqFv6KRohiAa4gNIchCV-z6eJ4CZypirCLzgqFfDqKVaqnveYRig&passive=1209600&flowName=GlifWebSignIn&flowEntry=ServiceLogin")
     await page.wait_for_load_state("domcontentloaded")
     await _click_consent_if_present(page)
 
     await _ensure_identifier_input(page)
 
-    email_value = os.getenv('GOOGLE_EMAIL')
+    email_value = os.getenv('GOOGLE_EMAIL') or ""
     logger.info("Filling email identifier")
     filled = False
     for sel in ['input[name="identifier"]', 'input#identifierId']:
         try:
             await page.wait_for_selector(sel, timeout=10000)
-            await asyncio.sleep(random.uniform(0.5, 1.5))
+            await asyncio.sleep(random.uniform(1.0, 2.0))
             await page.focus(sel)
-            await asyncio.sleep(random.uniform(0.5, 1.5))
-            await page.fill(sel, email_value)
+            await asyncio.sleep(random.uniform(0.5, 1.0))
+            # Type character by character with random delays (human-like)
+            for char in email_value:
+                await page.keyboard.type(char, delay=random.randint(50, 150))
+                await asyncio.sleep(random.uniform(0.02, 0.08))
             filled = True
             break
         except Exception:
@@ -603,12 +589,18 @@ async def _login_to_google(page):
     await page.wait_for_load_state("networkidle", timeout=30000)
     await _click_consent_if_present(page)
     
+    # Check if we're already logged in (session restored from persistent profile)
+    current_url = page.url
+    if "youtube.com" in current_url and "accounts.google.com" not in current_url:
+        logger.info(f"Already logged in! Session restored, redirected to: {current_url}")
+        return  # Skip password - we're already authenticated
+    
     # Take a screenshot to debug what page we're on
     try:
         os.makedirs("logs", exist_ok=True)
         screenshot_path = os.path.join("logs", f"after-email-submit-{int(time.time())}.png")
         await page.screenshot(path=screenshot_path, full_page=True)
-        logger.info(f"After email submit - URL: {page.url}, saved screenshot: {screenshot_path}")
+        logger.info(f"After email submit - URL: {current_url}, saved screenshot: {screenshot_path}")
     except Exception:
         pass
     
@@ -617,14 +609,19 @@ async def _login_to_google(page):
     await page.wait_for_load_state("domcontentloaded")
     await _click_consent_if_present(page)
 
-    pwd_value = os.getenv('GOOGLE_PASSWORD')
+    pwd_value = os.getenv('GOOGLE_PASSWORD') or ""
     logger.info("Filling password")
     filled_pwd = False
     for sel in ['input[type="password"][name="Passwd"]', 'input[type="password"]', 'input#password', 'input[name="password"]']:
         try:
             await page.wait_for_selector(sel, timeout=20000)
+            await asyncio.sleep(random.uniform(0.5, 1.0))
             await page.focus(sel)
-            await page.fill(sel, pwd_value)
+            await asyncio.sleep(random.uniform(0.3, 0.7))
+            # Type character by character with random delays (human-like)
+            for char in pwd_value:
+                await page.keyboard.type(char, delay=random.randint(50, 150))
+                await asyncio.sleep(random.uniform(0.02, 0.08))
             filled_pwd = True
             break
         except Exception:
@@ -674,15 +671,6 @@ async def _navigate_to_youtube(page):
     This function strategically visits Google services in a specific order to trigger
     all authentication cookies (SID, HSID, SSID, APISID, SAPISID, LOGIN_INFO).
     """
-    # Step 1: Google Account Management (triggers SID, HSID, SSID)
-    logger.info("Step 1: Visiting accounts.google.com to trigger auth cookies")
-    await page.goto("https://accounts.google.com/ManageAccount", wait_until="networkidle")
-    await asyncio.sleep(4)
-
-    # Step 2: MyAccount (triggers APISID, SAPISID)
-    logger.info("Step 2: Visiting myaccount.google.com for API auth cookies")
-    await page.goto("https://myaccount.google.com", wait_until="networkidle")
-    await asyncio.sleep(4)
 
     # Step 3: YouTube main
     logger.info("Step 3: Visiting YouTube main page")
@@ -745,9 +733,9 @@ async def _validate_and_extract_cookies(context: BrowserContext) -> tuple[list[d
     logger.info(f"Total cookies: {len(cookies)}, Auth cookies: {len(found_auth)}/{len(AUTH_COOKIE_NAMES)}")
     for name in AUTH_COOKIE_NAMES:
         if name in found_auth:
-            logger.info(f"  ✓ {name} (domain: {found_auth[name]})")
+            logger.info(f"  [OK] {name} (domain: {found_auth[name]})")
         else:
-            logger.warning(f"  ✗ {name} MISSING")
+            logger.warning(f"  [MISSING] {name}")
 
     all_found = len(found_auth) == len(AUTH_COOKIE_NAMES)
     return cookies, all_found
