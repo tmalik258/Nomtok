@@ -31,7 +31,12 @@ RUN apt-get update && apt-get install -y \
     cron \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js 24.12 from NodeSource (required for yt-dlp EJS support)
+# Install Deno (recommended for yt-dlp EJS support - see https://github.com/yt-dlp/yt-dlp/wiki/EJS)
+RUN curl -fsSL https://deno.land/install.sh | sh && \
+    mv /root/.deno/bin/deno /usr/local/bin/deno && \
+    deno --version
+
+# Also install Node.js 24.12 as fallback for yt-dlp EJS support
 RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
     apt-get install -y nodejs && \
     node --version && \

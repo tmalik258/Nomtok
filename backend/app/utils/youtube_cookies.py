@@ -155,54 +155,95 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
 
             # Always navigate to YouTube and verify login before extracting cookies
             # This ensures all cookies are fresh and we're in a logged-in state
-            logger.info("Navigating to YouTube to refresh session and extract cookies")
-            await page.goto("https://www.youtube.com", wait_until="networkidle")
-            await asyncio.sleep(3)  # Wait for all cookies to be set/refreshed
-            
-            # If we just logged in, wait a bit longer for all auth cookies to propagate
+            logger.info("Navigating to YouTube services for cookie extraction")
+
+            # Use enhanced navigation sequence if we just logged in, otherwise do quick refresh
             if login_performed:
-                await asyncio.sleep(2)
-            
+                logger.info("Fresh login detected - using enhanced navigation sequence")
+                await _navigate_to_youtube(page)
+            else:
+                # Quick refresh for existing sessions
+                logger.info("Using existing session - doing quick refresh")
+                await page.goto("https://www.youtube.com", wait_until="networkidle")
+                await asyncio.sleep(3)
+                await page.goto("https://myaccount.google.com", wait_until="networkidle")
+                await asyncio.sleep(3)
+                await page.goto("https://www.youtube.com", wait_until="networkidle")
+                await asyncio.sleep(5)
+
             # Check if we're logged in by looking for logged-in indicators
             # _is_login_needed returns True if login is needed (not logged in), False if logged in
             login_needed = await _is_login_needed(page)
             if login_needed:
                 logger.warning("Not logged in after refresh attempt; cookies may be incomplete")
             else:
-                logger.info("Login verified; extracting authentication cookies")
-            
-            # Extract cookies from ALL domains (use empty list to get all cookies)
-            # This ensures we get authentication cookies from .google.com, .youtube.com, etc.
-            all_cookies = await context.cookies()
-            
-            # Filter to only include relevant domains (but get ALL cookies from those domains)
-            relevant_domains = [
-                ".youtube.com",
-                "youtube.com",
-                "www.youtube.com",
-                ".google.com",
-                "google.com",
-                "www.google.com",
-                "accounts.google.com",
-                "studio.youtube.com",
-                "music.youtube.com"
-            ]
-            
-            cookies = [
-                cookie for cookie in all_cookies
-                if any(domain in cookie.get('domain', '') for domain in relevant_domains)
-            ]
-            
-            # Verify we have authentication cookies
-            auth_cookie_names = ['SID', 'HSID', 'SSID', 'APISID', 'SAPISID', 'LOGIN_INFO']
-            found_auth_cookies = [name for name in auth_cookie_names 
-                                 if any(c.get('name') == name for c in cookies)]
-            
-            if found_auth_cookies:
-                logger.info(f"Found authentication cookies: {', '.join(found_auth_cookies)}")
+                logger.info("Login verified; proceeding with cookie extraction")
+
+            # Extract cookies with retry logic
+            MAX_ATTEMPTS = 3
+            cookies = []
+            all_auth_found = False
+
+            for attempt in range(MAX_ATTEMPTS):
+                logger.info(f"Cookie extraction attempt {attempt + 1}/{MAX_ATTEMPTS}")
+
+                # Extract and validate cookies
+                cookies, all_auth_found = await _validate_and_extract_cookies(context)
+
+                if all_auth_found:
+                    logger.info(f"✓ All authentication cookies found on attempt {attempt + 1}")
+                    break
+
+                if attempt < MAX_ATTEMPTS - 1:
+                    # Not all cookies found, and we have retries left
+                    logger.warning(f"Attempt {attempt + 1}: Missing auth cookies, retrying with additional navigation")
+
+                    # Strategy: Visit more authenticated pages to trigger cookie generation
+                    retry_urls = [
+                        "https://accounts.google.com/ManageAccount",
+                        "https://myaccount.google.com/data-and-privacy",
+                        "https://www.youtube.com/feed/subscriptions",
+                        "https://www.youtube.com/feed/library",
+                    ]
+
+                    for url in retry_urls:
+                        try:
+                            logger.info(f"  Visiting {url} to trigger cookies")
+                            await page.goto(url, wait_until="networkidle", timeout=15000)
+                            await asyncio.sleep(3)
+                        except Exception as e:
+                            logger.warning(f"  Failed to visit {url}: {e}")
+                            continue
+
+                    # Extra wait for cookies to propagate
+                    logger.info("  Waiting 8 seconds for cookies to propagate...")
+                    await asyncio.sleep(8)
+
+            # Final validation
+            if not all_auth_found:
+                logger.error("CRITICAL: Failed to extract all authentication cookies after all retries!")
+                logger.error("Missing cookies will likely cause yt-dlp download failures.")
+                logger.error("Please verify:")
+                logger.error("  1. GOOGLE_EMAIL and GOOGLE_PASSWORD are correct")
+                logger.error("  2. Google account doesn't require 2FA")
+                logger.error("  3. Account is not restricted or suspended")
+
+                # Take diagnostic screenshot
+                try:
+                    os.makedirs("logs", exist_ok=True)
+                    screenshot_path = os.path.join("logs", f"cookie-extraction-failed-{int(time.time())}.png")
+                    await page.screenshot(path=screenshot_path, full_page=True)
+                    logger.error(f"Saved diagnostic screenshot: {screenshot_path}")
+
+                    # Also save the current URL for debugging
+                    logger.error(f"Current page URL: {page.url}")
+                    logger.error(f"Current page title: {await page.title()}")
+                except Exception as e:
+                    logger.error(f"Failed to capture diagnostics: {e}")
             else:
-                logger.warning("No authentication cookies found! YouTube may reject requests.")
-            
+                logger.info("SUCCESS: All required authentication cookies extracted")
+
+            # Export cookies regardless (even incomplete cookies are better than none)
             await _export_cookies_to_netscape(cookies)
 
             await browser.close()
@@ -628,36 +669,88 @@ async def _login_to_google(page):
     await asyncio.sleep(3)
 
 async def _navigate_to_youtube(page):
-    """Navigate to YouTube and ensure full authentication by visiting key Google services."""
-    # Visit YouTube first
-    await page.goto("https://www.youtube.com")
-    await page.wait_for_load_state("networkidle")
-    await asyncio.sleep(3)
-    
-    # Visit Google accounts to trigger authentication cookies
-    await page.goto("https://accounts.google.com")
-    await page.wait_for_load_state("networkidle")
-    await asyncio.sleep(3)
-    
-    # Visit Google main page to ensure all auth cookies are set
-    await page.goto("https://www.google.com")
-    await page.wait_for_load_state("networkidle")
-    await asyncio.sleep(3)
-    
-    # Visit YouTube Studio to trigger additional auth cookies
-    await page.goto("https://studio.youtube.com")
-    await page.wait_for_load_state("networkidle")
-    await asyncio.sleep(3)
-    
-    # Visit YouTube Music to ensure comprehensive cookie coverage
-    await page.goto("https://music.youtube.com")
-    await page.wait_for_load_state("networkidle")
-    await asyncio.sleep(3)
-    
-    # Return to YouTube to finalize the session
-    await page.goto("https://www.youtube.com")
-    await page.wait_for_load_state("networkidle")
-    await asyncio.sleep(5)  # Extra wait to ensure all cookies are set
+    """Navigate to Google services in sequence to trigger all auth cookies.
+
+    This function strategically visits Google services in a specific order to trigger
+    all authentication cookies (SID, HSID, SSID, APISID, SAPISID, LOGIN_INFO).
+    """
+    # Step 1: Google Account Management (triggers SID, HSID, SSID)
+    logger.info("Step 1: Visiting accounts.google.com to trigger auth cookies")
+    await page.goto("https://accounts.google.com/ManageAccount", wait_until="networkidle")
+    await asyncio.sleep(4)
+
+    # Step 2: MyAccount (triggers APISID, SAPISID)
+    logger.info("Step 2: Visiting myaccount.google.com for API auth cookies")
+    await page.goto("https://myaccount.google.com", wait_until="networkidle")
+    await asyncio.sleep(4)
+
+    # Step 3: YouTube main
+    logger.info("Step 3: Visiting YouTube main page")
+    await page.goto("https://www.youtube.com", wait_until="networkidle")
+    await asyncio.sleep(4)
+
+    # Step 4: YouTube subscriptions (triggers LOGIN_INFO - requires auth)
+    logger.info("Step 4: Visiting YouTube subscriptions (requires auth)")
+    await page.goto("https://www.youtube.com/feed/subscriptions", wait_until="networkidle")
+    await asyncio.sleep(4)
+
+    # Step 5: YouTube Studio (additional auth coverage)
+    logger.info("Step 5: Visiting YouTube Studio")
+    await page.goto("https://studio.youtube.com", wait_until="networkidle")
+    await asyncio.sleep(4)
+
+    # Step 6: Google main (cross-domain sync)
+    logger.info("Step 6: Visiting Google main page")
+    await page.goto("https://www.google.com", wait_until="networkidle")
+    await asyncio.sleep(4)
+
+    # Step 7: Final YouTube visit with extended wait
+    logger.info("Step 7: Final navigation to YouTube with extended wait")
+    await page.goto("https://www.youtube.com", wait_until="networkidle")
+    await asyncio.sleep(6)  # Extended wait for cookie propagation
+
+    logger.info("Navigation sequence completed - total wait time: ~34 seconds")
+
+async def _validate_and_extract_cookies(context: BrowserContext) -> tuple[list[dict], bool]:
+    """Extract cookies and validate authentication cookies are present.
+
+    Returns:
+        tuple: (cookies_list, all_auth_cookies_found)
+    """
+    AUTH_COOKIE_NAMES = ['SID', 'HSID', 'SSID', 'APISID', 'SAPISID', 'LOGIN_INFO']
+
+    all_cookies = await context.cookies()
+
+    # Filter to Google/YouTube domains
+    relevant_domains = [
+        ".youtube.com", "youtube.com", "www.youtube.com",
+        ".google.com", "google.com", "www.google.com",
+        "accounts.google.com", "myaccount.google.com",
+        "studio.youtube.com"
+    ]
+
+    cookies = [
+        c for c in all_cookies
+        if any(domain in c.get('domain', '') for domain in relevant_domains)
+    ]
+
+    # Check for auth cookies
+    found_auth = {}
+    for cookie in cookies:
+        name = cookie.get('name')
+        if name in AUTH_COOKIE_NAMES:
+            found_auth[name] = cookie.get('domain')
+
+    # Log results
+    logger.info(f"Total cookies: {len(cookies)}, Auth cookies: {len(found_auth)}/{len(AUTH_COOKIE_NAMES)}")
+    for name in AUTH_COOKIE_NAMES:
+        if name in found_auth:
+            logger.info(f"  ✓ {name} (domain: {found_auth[name]})")
+        else:
+            logger.warning(f"  ✗ {name} MISSING")
+
+    all_found = len(found_auth) == len(AUTH_COOKIE_NAMES)
+    return cookies, all_found
 
 async def _export_cookies_to_netscape(cookies: list[dict]):
     _ensure_cookies_dir()

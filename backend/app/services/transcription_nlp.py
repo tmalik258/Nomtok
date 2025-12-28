@@ -282,7 +282,9 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
 
             # Ensure yt-dlp has a supported JS runtime for EJS-based extraction.
             # Without this, yt-dlp may warn and YouTube extraction can be incomplete/broken.
-            ydl_opts["js_runtimes"] = {"node": {}}
+            # Prefer deno (recommended by yt-dlp) with node as fallback
+            # See: https://github.com/yt-dlp/yt-dlp/wiki/EJS
+            ydl_opts["js_runtimes"] = {"deno": {}, "node": {}}
 
             # Configure PO tokens and cookies
             extractor_args = {}

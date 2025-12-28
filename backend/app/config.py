@@ -164,3 +164,8 @@ PLACES_BASE_URL = "https://places.googleapis.com/v1"
 # Frontend URL for sitemap regeneration
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 FRONTEND_SITEMAP_SECRET = os.getenv("FRONTEND_SITEMAP_SECRET")
+
+# YouTube cookie extraction configuration
+COOKIE_EXTRACTION_WAIT_TIME = int(os.getenv("COOKIE_EXTRACTION_WAIT_TIME", "4"))  # seconds per page
+COOKIE_EXTRACTION_FINAL_WAIT = int(os.getenv("COOKIE_EXTRACTION_FINAL_WAIT", "6"))  # final wait
+COOKIE_EXTRACTION_MAX_RETRIES = int(os.getenv("COOKIE_EXTRACTION_MAX_RETRIES", "3"))  # retry attempts
