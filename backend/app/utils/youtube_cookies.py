@@ -213,8 +213,8 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
 
                 # Take diagnostic screenshot
                 try:
-                    os.makedirs("logs", exist_ok=True)
-                    screenshot_path = os.path.join("logs", f"cookie-extraction-failed-{int(time.time())}.png")
+                    os.makedirs(os.path.join("logs", "screenshots"), exist_ok=True)
+                    screenshot_path = os.path.join("logs", "screenshots", f"cookie-extraction-failed-{int(time.time())}.png")
                     await page.screenshot(path=screenshot_path, full_page=True)
                     logger.error(f"Saved diagnostic screenshot: {screenshot_path}")
 
@@ -298,34 +298,37 @@ async def _login_to_google_with_retry(page: Page, max_retries: int = 1) -> bool:
 async def _is_login_needed(page) -> bool:
     """Check if login is required by verifying authenticated YouTube elements."""
     await page.goto("https://www.youtube.com")
-    await page.wait_for_load_state("networkidle", timeout=10000)
+    await page.wait_for_load_state("networkidle", timeout=15000)
     
-    # Multi-check: Avatar + dashboard indicators (more robust than single selector)
-    auth_selectors = [
-        'a#avatar-link, button#avatar-btn',  # Avatar
-        'yt-icon-button#avatar-btn',  # Alternative avatar
-        'div#endpoint[title*="Subscriptions"]',  # Dashboard presence
-        'ytd-rich-grid-renderer',  # Home feed (logged-in only)
-    ]
-    
-    for selector in auth_selectors:
-        try:
-            await page.wait_for_selector(selector, timeout=3000)
-            logger.info(f"Auth confirmed via: {selector}")
-            return False  # Logged in
-        except Exception:
-            continue
-    
-    # Fallback: Explicit sign-in prompt
+    # First check for explicit sign-in button (definitive sign we're NOT logged in)
     try:
-        signin = page.locator('yt-button-shape:has-text("Sign in")')
-        if await signin.is_visible(timeout=2000):
-            logger.warning("Sign-in prompt detected")
+        signin = page.locator('yt-button-shape:has-text("Sign in"), a[href*="accounts.google.com"]:has-text("Sign in")')
+        if await signin.first.is_visible(timeout=3000):
+            logger.info("Sign-in button detected - not logged in")
             return True
     except Exception:
         pass
     
-    return True  # Assume needed if no auth signals
+    # Check for avatar button (definitive sign we ARE logged in)
+    # Note: Do NOT use ytd-rich-grid-renderer - it appears for guests too!
+    auth_selectors = [
+        'button#avatar-btn',  # Avatar button (logged-in users only)
+        'a#avatar-link',  # Avatar link variant
+        'yt-icon-button#avatar-btn',  # Alternative avatar
+        'img#img.yt-img-shadow[alt*="Avatar"]',  # Avatar image
+    ]
+    
+    for selector in auth_selectors:
+        try:
+            elem = page.locator(selector).first
+            if await elem.is_visible(timeout=2000):
+                logger.info(f"Auth confirmed via: {selector}")
+                return False  # Logged in
+        except Exception:
+            continue
+    
+    logger.warning("Could not determine auth state - assuming login needed")
+    return True  # Assume needed if no clear auth signals
 
 async def _click_consent_if_present(page):
     """Dismiss Google/YouTube consent dialogs, including iframe-based ones."""
@@ -509,8 +512,8 @@ async def _ensure_password_input(page) -> None:
         current_url = page.url
         current_title = await page.title()
         logger.warning(f"Password field not found after retries. URL: {current_url}, Title: {current_title}...")
-        os.makedirs("logs", exist_ok=True)
-        screenshot_path = os.path.join("logs", f"password-not-found-{int(time.time())}.png")
+        os.makedirs(os.path.join("logs", "screenshots"), exist_ok=True)
+        screenshot_path = os.path.join("logs", "screenshots", f"password-not-found-{int(time.time())}.png")
         await page.screenshot(path=screenshot_path, full_page=True)
         logger.warning(f"Saved diagnostic screenshot: {screenshot_path}")
         
@@ -597,8 +600,8 @@ async def _login_to_google(page):
     
     # Take a screenshot to debug what page we're on
     try:
-        os.makedirs("logs", exist_ok=True)
-        screenshot_path = os.path.join("logs", f"after-email-submit-{int(time.time())}.png")
+        os.makedirs(os.path.join("logs", "screenshots"), exist_ok=True)
+        screenshot_path = os.path.join("logs", "screenshots", f"after-email-submit-{int(time.time())}.png")
         await page.screenshot(path=screenshot_path, full_page=True)
         logger.info(f"After email submit - URL: {current_url}, saved screenshot: {screenshot_path}")
     except Exception:
@@ -643,8 +646,8 @@ async def _login_to_google(page):
         try:
             current_title = await page.title()
             logger.error(f"Password field not found at URL: {page.url} - title: {current_title}")
-            os.makedirs("logs", exist_ok=True)
-            screenshot_path = os.path.join("logs", f"google-password-field-missing-{int(time.time())}.png")
+            os.makedirs(os.path.join("logs", "screenshots"), exist_ok=True)
+            screenshot_path = os.path.join("logs", "screenshots", f"google-password-field-missing-{int(time.time())}.png")
             await page.screenshot(path=screenshot_path, full_page=True)
             logger.error(f"Saved diagnostic screenshot: {screenshot_path}")
         except Exception:
@@ -671,11 +674,21 @@ async def _navigate_to_youtube(page):
     This function strategically visits Google services in a specific order to trigger
     all authentication cookies (SID, HSID, SSID, APISID, SAPISID, LOGIN_INFO).
     """
-
-    # Step 3: YouTube main
-    logger.info("Step 3: Visiting YouTube main page")
-    await page.goto("https://www.youtube.com", wait_until="networkidle")
-    await asyncio.sleep(4)
+    # Wait for any in-progress navigation to settle (e.g., post-login redirect)
+    try:
+        await page.wait_for_load_state("networkidle", timeout=10000)
+    except Exception:
+        pass  # Timeout is OK, just ensuring stability
+    
+    # Step 3: YouTube main - only navigate if not already on YouTube
+    current_url = page.url
+    if "youtube.com" in current_url and "accounts.google.com" not in current_url:
+        logger.info("Step 3: Already on YouTube - skipping redundant navigation")
+        await asyncio.sleep(2)  # Brief wait for page stability
+    else:
+        logger.info("Step 3: Visiting YouTube main page")
+        await page.goto("https://www.youtube.com", wait_until="networkidle")
+        await asyncio.sleep(4)
 
     # Step 4: YouTube subscriptions (triggers LOGIN_INFO - requires auth)
     logger.info("Step 4: Visiting YouTube subscriptions (requires auth)")
@@ -689,7 +702,14 @@ async def _navigate_to_youtube(page):
 
     # Step 6: Google main (cross-domain sync)
     logger.info("Step 6: Visiting Google main page")
-    await page.goto("https://www.google.com", wait_until="networkidle")
+    try:
+        await page.goto("https://www.google.com", wait_until="networkidle", timeout=30000)
+    except Exception as google_err:
+        logger.warning(f"Google.com networkidle timeout, falling back to domcontentloaded: {google_err}")
+        try:
+            await page.goto("https://www.google.com", wait_until="domcontentloaded", timeout=15000)
+        except Exception as fallback_err:
+            logger.warning(f"Google.com domcontentloaded also failed: {fallback_err}")
     await asyncio.sleep(4)
 
     # Step 7: Final YouTube visit with extended wait
