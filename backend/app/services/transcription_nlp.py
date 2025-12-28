@@ -59,6 +59,29 @@ logger = setup_logger(__name__)
 # Initialize Redis client
 redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
+
+async def _check_tor_health() -> bool:
+    """Check if Tor proxy is healthy by attempting a simple connection test."""
+    try:
+        import socket
+        # Parse Tor proxy URL (socks5://tor:9150)
+        if TOR_PROXY and TOR_PROXY.startswith("socks5://"):
+            # Extract host and port
+            proxy_parts = TOR_PROXY.replace("socks5://", "").split(":")
+            if len(proxy_parts) == 2:
+                host, port = proxy_parts[0], int(proxy_parts[1])
+                # Try to connect to Tor SOCKS port with a short timeout
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(2)
+                result = sock.connect_ex((host, port))
+                sock.close()
+                return result == 0
+    except Exception as e:
+        logger.debug(f"Tor health check failed: {e}")
+        return False
+    return False
+
+
 # Custom HTTP client to add referer header for YouTube API
 class CustomHttpRequest(HttpRequest):
     def __init__(self, *args, **kwargs):
@@ -373,8 +396,38 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
             
             # Add proxy configuration
             if use_tor and TOR_PROXY:
-                ydl_opts["proxy"] = TOR_PROXY
-                logger.info(f"Using Tor proxy: {TOR_PROXY}")
+                # Check if Tor is healthy before using it
+                tor_healthy = await _check_tor_health()
+                
+                # #region agent log
+                try:
+                    os.makedirs('/root/Nomtok/.cursor', exist_ok=True)
+                    with open('/root/Nomtok/.cursor/debug.log', 'a') as f:
+                        f.write(json.dumps({
+                            'sessionId': 'debug-session',
+                            'runId': 'run1',
+                            'hypothesisId': 'F',
+                            'location': 'transcription_nlp.py:401',
+                            'message': 'Tor health check before use',
+                            'data': {
+                                'tor_proxy': TOR_PROXY,
+                                'tor_healthy': tor_healthy,
+                                'use_tor': use_tor,
+                                'attempt': attempt + 1
+                            },
+                            'timestamp': int(time.time() * 1000)
+                        }) + '\n')
+                except Exception:
+                    pass
+                # #endregion
+                
+                if not tor_healthy:
+                    logger.warning(f"Tor proxy is unhealthy, skipping Tor for this attempt. Proxy: {TOR_PROXY}")
+                    # Don't set proxy if Tor is unhealthy - this will cause connection failures
+                    ydl_opts.pop("proxy", None)
+                else:
+                    ydl_opts["proxy"] = TOR_PROXY
+                    logger.info(f"Using Tor proxy: {TOR_PROXY}")
             elif YTDLP_PROXY:
                 ydl_opts["proxy"] = YTDLP_PROXY
                 logger.info(f"Using proxy: {YTDLP_PROXY}")

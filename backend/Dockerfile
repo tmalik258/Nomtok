@@ -28,6 +28,7 @@ fonts-liberation \
 xvfb \
 xauth \
 cron \
+unzip \
 && rm -rf /var/lib/apt/lists/*
 
 # Install Deno (recommended for yt-dlp EJS support - see https://github.com/yt-dlp/yt-dlp/wiki/EJS)
