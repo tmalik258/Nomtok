@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import type { ReactElement } from "react";
 import { buildPageMetadata } from "@/lib/seo/utils";
 import { canonicalForPath } from "@/lib/seo/site";
 import { buildVideoObjectJsonLd } from "@/lib/seo/video-jsonld";
-import { extractYouTubeVideoId, fetchYouTubeMetadata } from "@/lib/utils/youtube-metadata";
+import { fetchYouTubeMetadata } from "@/lib/utils/youtube-metadata";
 import RestaurantDetailClient from "./_components/restaurant-detail-client";
 import RestaurantHero from "./_components/restaurant-hero";
 import axios from "axios";
@@ -163,7 +164,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
   }
 
   // Generate VideoObject JSON-LD for embedded videos
-  const videoJsonLdScripts: JSX.Element[] = [];
+  const videoJsonLdScripts: ReactElement[] = [];
   
   if (initialRestaurant?.listings) {
     const restaurantUrl = canonicalForPath(`/restaurants/${slug}`);
@@ -182,7 +183,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
     }
     
     // Fetch metadata and generate JSON-LD for each video
-    for (const { videoId, listing } of videoMap.values()) {
+    for (const { videoId } of videoMap.values()) {
       try {
         const getVideoMetadataCached = unstable_cache(
           async () => {

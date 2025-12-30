@@ -5,8 +5,6 @@
  * https://schema.org/VideoObject
  */
 
-import { canonicalForPath } from "./site";
-
 export interface VideoMetadata {
   title?: string;
   description?: string;
@@ -43,7 +41,33 @@ export function buildVideoObjectJsonLd({
     ? restaurantUrl.replace("https://www.nomtok.com", "https://nomtok.com")
     : restaurantUrl;
   
-  const videoObject: any = {
+  interface VideoObjectSchema {
+    "@context": string;
+    "@type": string;
+    name: string;
+    description: string;
+    thumbnailUrl?: string;
+    uploadDate?: string;
+    embedUrl: string;
+    contentUrl: string;
+    mainEntityOfPage: {
+      "@type": string;
+      "@id": string;
+    };
+    publisher: {
+      "@type": string;
+      name: string;
+      url: string;
+    };
+    duration?: string;
+    creator?: {
+      "@type": string;
+      name: string;
+    };
+    [key: string]: unknown;
+  }
+  
+  const videoObject: VideoObjectSchema = {
     "@context": "https://schema.org",
     "@type": "VideoObject",
     name: metadata.title || `${restaurantName} Review`,
