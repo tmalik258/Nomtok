@@ -1,7 +1,7 @@
 """Add YouTube metadata fields to videos table
 
 Revision ID: f1a2b3c4d5e6
-Revises: 920d05f5a88e
+Revises: 3c38a3142441
 Create Date: 2025-01-13 12:00:00.000000
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'f1a2b3c4d5e6'
-down_revision: Union[str, Sequence[str], None] = '920d05f5a88e'
+down_revision: Union[str, Sequence[str], None] = '3c38a3142441'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

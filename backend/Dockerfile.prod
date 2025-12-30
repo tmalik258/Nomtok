@@ -3,7 +3,7 @@ FROM python:3.13-slim-bookworm
 WORKDIR /code
 
 # Install system dependencies (removed duplicates)
-RUN apt-get update && apt-get install -y \
+RUN apt-get update -qq && apt-get install -y -qq \
     curl \
     wget \
     gnupg \
@@ -30,17 +30,15 @@ RUN apt-get update && apt-get install -y \
     xauth \
     cron \
     unzip \
-    && rm -rf /var/lib/apt/lists/*
+    > /dev/null 2>&1 && rm -rf /var/lib/apt/lists/*
 
 # Install Deno (recommended for yt-dlp EJS support - see https://github.com/yt-dlp/yt-dlp/wiki/EJS)
-RUN curl -fsSL https://deno.land/install.sh | sh && \
-    mv /root/.deno/bin/deno /usr/local/bin/deno && \
-    deno --version
+RUN curl -fsSL https://deno.land/install.sh | sh -s > /dev/null 2>&1 && \
+    mv /root/.deno/bin/deno /usr/local/bin/deno
 
 # Also install Node.js 24.12 as fallback for yt-dlp EJS support
-RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
-    apt-get install -y nodejs && \
-    node --version && \
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash -s > /dev/null 2>&1 && \
+    apt-get install -y -qq nodejs > /dev/null 2>&1 && \
     rm -rf /var/lib/apt/lists/*
 
 # Add Google Chrome repo and install
