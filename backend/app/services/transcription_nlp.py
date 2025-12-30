@@ -42,6 +42,7 @@ from app.config import (
     POT_DISABLE_INNERTUBE,
     YTDLP_PLAYER_CLIENT,
     YTDLP_PROXY,
+    YTDLP_DISABLE_TOR_FOR_DOWNLOADS,
 )
 from app.database import AsyncSessionLocal
 from app.services.jobs import JobService
@@ -385,16 +386,13 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                     "No valid YouTube cookie file found after refresh attempt.",
                     details,
                 )
-            # elif YTDLP_COOKIES_FROM_BROWSER:
-            #     # Handle browser profile properly - if None or empty, use just the browser name
-            #     if YTDLP_BROWSER_PROFILE and YTDLP_BROWSER_PROFILE.strip():
-            #         ydl_opts["cookiesfrombrowser"] = (YTDLP_COOKIES_FROM_BROWSER, YTDLP_BROWSER_PROFILE)
-            #         logger.info(f"Using cookies from browser: {YTDLP_COOKIES_FROM_BROWSER} with profile: {YTDLP_BROWSER_PROFILE}")
-            #     else:
-            #         ydl_opts["cookiesfrombrowser"] = (YTDLP_COOKIES_FROM_BROWSER,)
-            #         logger.info(f"Using cookies from browser: {YTDLP_COOKIES_FROM_BROWSER} (default profile)")
             
             # Add proxy configuration
+            # Check if Tor should be disabled for downloads (Google/YouTube often blocks Tor for video downloads)
+            if YTDLP_DISABLE_TOR_FOR_DOWNLOADS:
+                logger.info("YTDLP_DISABLE_TOR_FOR_DOWNLOADS is enabled - skipping Tor for video downloads")
+                use_tor = False
+            
             if use_tor and TOR_PROXY:
                 # Check if Tor is healthy before using it
                 tor_healthy = await _check_tor_health()
@@ -559,8 +557,28 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
             err = str(e)
             logger.error(f"Download error for {video_url}: {err}")
 
-            # Detect geo-restriction; fallback to Tor on next attempt
             err_l = err.lower()
+            
+            # PRIORITY FIX: Detect 403 Forbidden when using Tor - retry without Tor
+            # Google/YouTube often block video downloads from Tor IPs even with valid cookies
+            is_403_forbidden = (
+                "http error 403" in err_l
+                or "403" in err_l
+                or "forbidden" in err_l
+            )
+            if is_403_forbidden and use_tor and attempt < max_attempts - 1:
+                logger.warning("=== TOR PROXY BLOCKING DETECTED === 403 Forbidden error with Tor enabled")
+                logger.warning("Google/YouTube is blocking video downloads from Tor IP. Retrying without Tor proxy...")
+                use_tor = False
+                # Cleanup and retry without Tor
+                if downloaded_file and os.path.exists(downloaded_file):
+                    os.remove(downloaded_file)
+                if os.path.exists(final_output_path):
+                    os.remove(final_output_path)
+                await asyncio.sleep(2)
+                continue
+
+            # Detect geo-restriction; fallback to Tor on next attempt
             geo_hit = (
                 "not made this video available in your country" in err_l
                 or "available in your country" in err_l

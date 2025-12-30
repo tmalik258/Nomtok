@@ -107,11 +107,11 @@ export default function RestaurantDetailClient({
       <Script id="breadcrumb-jsonld" type="application/ld+json">
         {JSON.stringify(
           buildBreadcrumbJsonLd([
-            { name: "Home", url: "https://www.nomtok.com" },
-            { name: "Restaurants", url: "https://www.nomtok.com/restaurants" },
+            { name: "Home", url: "https://nomtok.com" },
+            { name: "Restaurants", url: "https://nomtok.com/restaurants" },
             {
               name: toTitleFromSlug(String(hydratedRestaurant?.slug)),
-              url: `https://www.nomtok.com/restaurants/${String(hydratedRestaurant?.slug)}`,
+              url: `https://nomtok.com/restaurants/${String(hydratedRestaurant?.slug)}`,
             },
           ])
         )}

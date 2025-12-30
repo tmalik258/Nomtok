@@ -1,5 +1,5 @@
 export const siteConfig = {
-  baseUrl: "https://www.nomtok.com",
+  baseUrl: "https://nomtok.com",
   siteName: "Nomtok",
   defaultOgImage: "/hero-main.jpg",
   defaultKeywords: [

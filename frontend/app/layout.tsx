@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.nomtok.com"),
+  metadataBase: new URL("https://nomtok.com"),
   title: {
     default: "Nomtok",
     template: "%s | Nomtok",
@@ -30,13 +30,13 @@ export const metadata: Metadata = {
     "city guides",
   ],
   robots: { index: true, follow: true },
-  alternates: { canonical: "https://www.nomtok.com" },
+  alternates: { canonical: "https://nomtok.com" },
   openGraph: {
     type: "website",
     title: "Nomtok",
     description:
       "Discover amazing restaurants recommended by your favorite food influencers",
-    url: "https://www.nomtok.com",
+    url: "https://nomtok.com",
     images: [
       { url: "/hero-main.jpg", width: 1200, height: 630, alt: "Nomtok" },
     ],
