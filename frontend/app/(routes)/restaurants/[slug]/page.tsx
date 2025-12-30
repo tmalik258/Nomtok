@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { buildPageMetadata } from "@/lib/seo/utils";
+import { canonicalForPath } from "@/lib/seo/site";
+import { buildVideoObjectJsonLd } from "@/lib/seo/video-jsonld";
+import { extractYouTubeVideoId, fetchYouTubeMetadata } from "@/lib/utils/youtube-metadata";
 import RestaurantDetailClient from "./_components/restaurant-detail-client";
 import RestaurantHero from "./_components/restaurant-hero";
 import axios from "axios";
@@ -158,11 +162,71 @@ export default async function RestaurantDetailPage({ params }: Props) {
     } catch {}
   }
 
+  // Generate VideoObject JSON-LD for embedded videos
+  const videoJsonLdScripts: JSX.Element[] = [];
+  
+  if (initialRestaurant?.listings) {
+    const restaurantUrl = canonicalForPath(`/restaurants/${slug}`);
+    const restaurantName = initialRestaurant.name || "";
+    
+    // Get unique videos from listings
+    const videoMap = new Map<string, { videoId: string; listing: Listing }>();
+    
+    for (const listing of initialRestaurant.listings) {
+      if (listing.approved && listing.video?.youtube_video_id) {
+        const videoId = listing.video.youtube_video_id;
+        if (!videoMap.has(videoId)) {
+          videoMap.set(videoId, { videoId, listing });
+        }
+      }
+    }
+    
+    // Fetch metadata and generate JSON-LD for each video
+    for (const { videoId, listing } of videoMap.values()) {
+      try {
+        const getVideoMetadataCached = unstable_cache(
+          async () => {
+            const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
+            return await fetchYouTubeMetadata(videoId, base);
+          },
+          ["youtube-metadata", videoId],
+          { revalidate: 3600 } // Cache for 1 hour
+        );
+        
+        const metadata = await getVideoMetadataCached();
+        
+        if (metadata) {
+          const videoJsonLd = buildVideoObjectJsonLd({
+            videoId,
+            metadata,
+            restaurantUrl,
+            restaurantName,
+          });
+          
+          videoJsonLdScripts.push(
+            <Script
+              key={`video-jsonld-${videoId}`}
+              id={`video-jsonld-${videoId}`}
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify(videoJsonLd),
+              }}
+            />
+          );
+        }
+      } catch (error) {
+        console.error(`Error generating VideoObject JSON-LD for video ${videoId}:`, error);
+        // Continue with other videos even if one fails
+      }
+    }
+  }
+
   return (
     <>
       {initialRestaurant && <div className="p-2">
         <RestaurantHero restaurant={initialRestaurant} />
       </div>}
+      {videoJsonLdScripts}
       <RestaurantDetailClient 
         slug={slug} 
         initialRestaurant={initialRestaurant} 

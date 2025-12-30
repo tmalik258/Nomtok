@@ -13,6 +13,8 @@ from fastapi.exception_handlers import request_validation_exception_handler
 
 from app.utils.logging import setup_logger
 from app.utils.youtube_cookies import refresh_youtube_cookies
+from app.services.video_metadata_refresh import refresh_stale_video_metadata
+from app.database import AsyncSessionLocal
 from app.routes.tags import router as tags_router
 from app.routes.cuisines import router as cuisines_router
 from app.routes.videos import router as videos_router
@@ -32,13 +34,34 @@ from app.routes.admin.cuisines import admin_cuisines_router
 from app.routes.admin.dashboard import router as dashboard_router
 from app.routes.geocoding import router as geocoding_router
 from app.routes.cache import router as cache_router
+from app.routes.youtube_metadata import router as youtube_metadata_router
 
 # Configure logging
 logger = setup_logger(__name__)
 
 # Create scheduler before app
 scheduler = AsyncIOScheduler()
-scheduler.add_job(refresh_youtube_cookies, 'interval', hours=23)  # Refresh ~daily
+
+# Refresh YouTube cookies daily
+scheduler.add_job(refresh_youtube_cookies, 'interval', hours=23)
+
+# Refresh YouTube video metadata weekly (Sunday 2 AM)
+async def refresh_video_metadata_job():
+    """Weekly job to refresh YouTube video metadata."""
+    async with AsyncSessionLocal() as db:
+        try:
+            result = await refresh_stale_video_metadata(db, days_threshold=7)
+            logger.info(f"Weekly metadata refresh completed: {result}")
+        except Exception as e:
+            logger.error(f"Error in weekly metadata refresh job: {e}")
+
+scheduler.add_job(
+    refresh_video_metadata_job,
+    'cron',
+    day_of_week='sun',
+    hour=2,
+    minute=0
+)  # Weekly on Sunday at 2 AM
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -87,6 +110,7 @@ app.include_router(admin_cuisines_router, prefix="/admin/cuisines", tags=["admin
 app.include_router(geocoding_router, prefix="/geocoding", tags=["geocoding"])
 app.include_router(dashboard_router, prefix="/admin/dashboard", tags=["admin"])
 app.include_router(cache_router, prefix="/cache", tags=["cache"])
+app.include_router(youtube_metadata_router, prefix="/youtube-metadata", tags=["youtube-metadata"])
 
 
 # Custom exception handler for validation errors

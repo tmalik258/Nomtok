@@ -30,6 +30,10 @@ class Video(Base):
     transcription = Column(Text) # From Whisper
     status = Column(SQLEnum(VideoProcessingStatus), default=VideoProcessingStatus.PENDING, server_default=VideoProcessingStatus.PENDING.value, nullable=False) # Processing status
     error_message = Column(Text, nullable=True) # Error message if processing failed
+    youtube_thumbnail_url = Column(String(500), nullable=True) # Best quality thumbnail from YouTube
+    youtube_duration = Column(String(50), nullable=True) # ISO 8601 duration (e.g., "PT5M30S")
+    youtube_channel_title = Column(String(255), nullable=True) # Channel name
+    youtube_metadata_updated_at = Column(DateTime(timezone=True), nullable=True) # Last metadata refresh timestamp
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

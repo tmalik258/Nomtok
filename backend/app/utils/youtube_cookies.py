@@ -4,10 +4,12 @@ import random
 import time
 import asyncio
 import re
+import json
 from datetime import datetime
 from typing import Optional, cast
 from http.cookiejar import MozillaCookieJar, Cookie
 from contextlib import contextmanager
+from collections import defaultdict
 
 from playwright_stealth import Stealth
 from playwright.async_api import async_playwright, BrowserContext, Page
@@ -326,8 +328,12 @@ async def _run_refresh(headless: bool, channel: Optional[str] = "chrome") -> boo
                 else:
                     logger.info("SUCCESS: All required authentication cookies extracted")
 
-                # Export cookies regardless (even incomplete cookies are better than none)
+                # Export cookies with diagnostic logging
                 await _export_cookies_to_netscape(cookies)
+                await _save_cookie_diagnostics(cookies)
+                
+                # Validate cookies are suitable for video downloads
+                await _validate_cookies_for_downloads(cookies)
 
                 await context.close()
                 _update_last_refresh_timestamp()
@@ -827,15 +833,20 @@ async def _validate_and_extract_cookies(context: BrowserContext) -> tuple[list[d
         tuple: (cookies_list, all_auth_cookies_found)
     """
     AUTH_COOKIE_NAMES = ['SID', 'HSID', 'SSID', 'APISID', 'SAPISID', 'LOGIN_INFO']
+    
+    # Video-download-specific cookies that help with video stream access
+    VIDEO_COOKIE_NAMES = ['VISITOR_INFO1_LIVE', 'PREF', 'YSC', 'CONSENT', '__Secure-3PSID', '__Secure-3PAPISID']
 
     all_cookies = await context.cookies()
 
-    # Filter to Google/YouTube domains
+    # Filter to Google/YouTube domains (including googlevideo.com for video downloads)
     relevant_domains = [
         ".youtube.com", "youtube.com", "www.youtube.com",
         ".google.com", "google.com", "www.google.com",
         "accounts.google.com", "myaccount.google.com",
-        "studio.youtube.com"
+        "studio.youtube.com",
+        "googlevideo.com", ".googlevideo.com",  # For video stream downloads
+        "music.youtube.com",
     ]
 
     cookies = [
@@ -850,11 +861,27 @@ async def _validate_and_extract_cookies(context: BrowserContext) -> tuple[list[d
         if name in AUTH_COOKIE_NAMES:
             found_auth[name] = cookie.get('domain')
 
+    # Check for video-specific cookies
+    found_video = {}
+    for cookie in cookies:
+        name = cookie.get('name')
+        if name in VIDEO_COOKIE_NAMES:
+            found_video[name] = cookie.get('domain')
+
     # Log results
-    logger.info(f"Total cookies: {len(cookies)}, Auth cookies: {len(found_auth)}/{len(AUTH_COOKIE_NAMES)}")
+    logger.info(f"Total cookies: {len(cookies)}, Auth cookies: {len(found_auth)}/{len(AUTH_COOKIE_NAMES)}, Video cookies: {len(found_video)}/{len(VIDEO_COOKIE_NAMES)}")
+    
+    logger.info("Authentication cookies:")
     for name in AUTH_COOKIE_NAMES:
         if name in found_auth:
             logger.info(f"  [OK] {name} (domain: {found_auth[name]})")
+        else:
+            logger.warning(f"  [MISSING] {name}")
+    
+    logger.info("Video-download cookies:")
+    for name in VIDEO_COOKIE_NAMES:
+        if name in found_video:
+            logger.info(f"  [OK] {name} (domain: {found_video[name]})")
         else:
             logger.warning(f"  [MISSING] {name}")
 
@@ -900,6 +927,168 @@ async def _export_cookies_to_netscape(cookies: list[dict]):
     except Exception:
         # os.chmod may not be supported on Windows in the same way; ignore
         pass
+
+async def _save_cookie_diagnostics(cookies: list[dict]):
+    """Save diagnostic information about extracted cookies to a JSON file."""
+    try:
+        _ensure_cookies_dir()
+        
+        # Group cookies by domain
+        cookies_by_domain = defaultdict(list)
+        cookies_by_type = defaultdict(list)
+        
+        AUTH_COOKIE_NAMES = ['SID', 'HSID', 'SSID', 'APISID', 'SAPISID', 'LOGIN_INFO']
+        VIDEO_COOKIE_NAMES = ['VISITOR_INFO1_LIVE', 'PREF', 'YSC', 'CONSENT', '__Secure-3PSID', '__Secure-3PAPISID']
+        
+        for cookie in cookies:
+            domain = cookie.get('domain', 'unknown')
+            name = cookie.get('name', 'unknown')
+            
+            cookies_by_domain[domain].append({
+                'name': name,
+                'path': cookie.get('path', '/'),
+                'secure': cookie.get('secure', False),
+                'expires': cookie.get('expires'),
+                'httpOnly': cookie.get('httpOnly', False),
+            })
+            
+            # Categorize by type
+            if name in AUTH_COOKIE_NAMES:
+                cookies_by_type['auth'].append(name)
+            elif name in VIDEO_COOKIE_NAMES:
+                cookies_by_type['video'].append(name)
+            elif name.startswith('__Secure-'):
+                cookies_by_type['secure'].append(name)
+            else:
+                cookies_by_type['other'].append(name)
+        
+        # Create diagnostic summary
+        diagnostic = {
+            'timestamp': datetime.now().isoformat(),
+            'total_cookies': len(cookies),
+            'domains': {
+                domain: {
+                    'count': len(cookie_list),
+                    'cookies': cookie_list
+                }
+                for domain, cookie_list in cookies_by_domain.items()
+            },
+            'cookie_types': {
+                'auth': {
+                    'count': len(cookies_by_type['auth']),
+                    'cookies': cookies_by_type['auth']
+                },
+                'video': {
+                    'count': len(cookies_by_type['video']),
+                    'cookies': cookies_by_type['video']
+                },
+                'secure': {
+                    'count': len(cookies_by_type['secure']),
+                    'cookies': cookies_by_type['secure']
+                },
+                'other': {
+                    'count': len(cookies_by_type['other']),
+                    'cookies': cookies_by_type['other'][:20]  # Limit to first 20
+                }
+            },
+            'domain_summary': {
+                domain: len(cookie_list)
+                for domain, cookie_list in cookies_by_domain.items()
+            }
+        }
+        
+        # Save to JSON file
+        diagnostic_file = os.path.join(BASE_COOKIES_DIR, 'cookies_diagnostics.json')
+        with open(diagnostic_file, 'w') as f:
+            json.dump(diagnostic, f, indent=2)
+        
+        # Log summary
+        logger.info(f"Cookie diagnostics saved to {diagnostic_file}")
+        logger.info(f"Cookies by domain: {dict(diagnostic['domain_summary'])}")
+        logger.info(f"Auth cookies: {len(cookies_by_type['auth'])}, Video cookies: {len(cookies_by_type['video'])}, Secure cookies: {len(cookies_by_type['secure'])}")
+        
+    except Exception as e:
+        logger.warning(f"Failed to save cookie diagnostics: {e}")
+
+async def _validate_cookies_for_downloads(cookies: list[dict]):
+    """Validate that extracted cookies are suitable for video downloads, not just metadata extraction.
+    
+    Checks:
+    - Cookie expiration times (warn if expiring soon)
+    - Presence of video-specific cookies
+    - Domain coverage for googlevideo.com access
+    """
+    try:
+        current_time = time.time()
+        expiring_soon = []
+        expired = []
+        
+        AUTH_COOKIE_NAMES = ['SID', 'HSID', 'SSID', 'APISID', 'SAPISID', 'LOGIN_INFO']
+        VIDEO_COOKIE_NAMES = ['VISITOR_INFO1_LIVE', 'PREF', 'YSC']
+        
+        # Check cookie expiration
+        for cookie in cookies:
+            name = cookie.get('name', '')
+            expires = cookie.get('expires')
+            
+            if expires and expires != -1:
+                expires_time = float(expires)
+                time_until_expiry = expires_time - current_time
+                
+                # Warn if cookie expires within 24 hours
+                if time_until_expiry < 0:
+                    expired.append(name)
+                elif time_until_expiry < 86400:  # 24 hours
+                    hours_until = time_until_expiry / 3600
+                    expiring_soon.append((name, hours_until))
+        
+        if expired:
+            logger.warning(f"Found {len(expired)} expired cookies: {expired[:5]}")
+        
+        if expiring_soon:
+            logger.warning(f"Found {len(expiring_soon)} cookies expiring within 24 hours:")
+            for name, hours in expiring_soon[:5]:
+                logger.warning(f"  - {name}: expires in {hours:.1f} hours")
+        
+        # Check for video-specific cookies
+        found_video_cookies = {name: False for name in VIDEO_COOKIE_NAMES}
+        for cookie in cookies:
+            name = cookie.get('name', '')
+            if name in VIDEO_COOKIE_NAMES:
+                found_video_cookies[name] = True
+        
+        missing_video = [name for name, found in found_video_cookies.items() if not found]
+        if missing_video:
+            logger.warning(f"Missing video-download cookies: {missing_video}")
+            logger.warning("These cookies help with video stream access but may not be critical if auth cookies are present")
+        else:
+            logger.info("All video-download cookies present")
+        
+        # Check domain coverage
+        domains = set(cookie.get('domain', '') for cookie in cookies)
+        has_google_domain = any('google.com' in d for d in domains)
+        has_youtube_domain = any('youtube.com' in d for d in domains)
+        
+        if not has_google_domain:
+            logger.warning("No cookies found for google.com domain - may cause issues")
+        if not has_youtube_domain:
+            logger.warning("No cookies found for youtube.com domain - may cause issues")
+        
+        # Note: googlevideo.com cookies are not always present, parent domain cookies should work
+        has_googlevideo = any('googlevideo.com' in d for d in domains)
+        if has_googlevideo:
+            logger.info("Found googlevideo.com cookies - good for direct video stream access")
+        else:
+            logger.info("No googlevideo.com cookies (parent domain cookies should work)")
+        
+        # Summary
+        if expired or (len(expiring_soon) > 3) or missing_video:
+            logger.warning("Cookie validation found potential issues - video downloads may fail")
+        else:
+            logger.info("Cookie validation passed - cookies appear suitable for video downloads")
+            
+    except Exception as e:
+        logger.warning(f"Cookie validation failed: {e}")
 
 def _update_last_refresh_timestamp():
     _ensure_cookies_dir()

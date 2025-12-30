@@ -157,6 +157,8 @@ POT_DISABLE_INNERTUBE = os.getenv("POT_DISABLE_INNERTUBE", "false").lower() == "
 YTDLP_PLAYER_CLIENT = os.getenv("YTDLP_PLAYER_CLIENT", "default,mweb")
 
 TOR_PROXY = "socks5://tor:9150"
+# Option to disable Tor for video downloads (Tor may be blocked by Google/YouTube for downloads)
+YTDLP_DISABLE_TOR_FOR_DOWNLOADS = os.getenv("YTDLP_DISABLE_TOR_FOR_DOWNLOADS", "false").lower() == "true"
 
 # Base URL for Places API
 PLACES_BASE_URL = "https://places.googleapis.com/v1"

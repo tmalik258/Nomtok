@@ -20,6 +20,10 @@ class VideoResponse(BaseModel):
     transcription: Optional[str] = None
     status: VideoProcessingStatus
     error_message: Optional[str] = None
+    youtube_thumbnail_url: Optional[str] = None
+    youtube_duration: Optional[str] = None
+    youtube_channel_title: Optional[str] = None
+    youtube_metadata_updated_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
     listings_count: int = 0
