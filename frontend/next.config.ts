@@ -111,10 +111,10 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        // This rule redirects the non-www domain to the www domain
+        // Redirect www to non-www (canonical is non-www)
         source: '/:path*',
-        has: [{ type: 'host', value: 'nomtok.com' }],
-        destination: 'https://www.nomtok.com/:path*',
+        has: [{ type: 'host', value: 'www.nomtok.com' }],
+        destination: 'https://nomtok.com/:path*',
         permanent: true, // This is a 301 redirect
       },
     ];

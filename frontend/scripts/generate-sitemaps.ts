@@ -13,17 +13,28 @@ const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8030').rep
 
 const LIMIT = Number(process.env.SITEMAP_PAGE_SIZE || 100)
 
+// Check if we're in a build context where backend might not be available
+const isBuildTime = process.env.NODE_ENV === 'production' && !process.env.RUNTIME_SITEMAP_GENERATION
+const isBackendUnavailable = API_URL.includes('backend:') && isBuildTime
+
 async function fetchAll<T extends BaseItem>(
   resource: 'restaurants' | 'influencers',
   listKey: 'restaurants' | 'influencers'
 ): Promise<T[]> {
+  // During Docker build, backend service isn't available yet
+  // Return empty array to allow build to complete
+  if (isBackendUnavailable) {
+    console.log(`[sitemaps] Skipping ${resource} fetch during build (backend unavailable)`)
+    return []
+  }
+
   const results: T[] = []
   let skip = 0
 
   // configure axios for backend origin (avoid Next /api proxy at build-time)
   const client = axios.create({
     baseURL: API_URL,
-    timeout: 30_000,
+    timeout: 10_000, // Reduced timeout for build-time
   })
 
   while (true) {
@@ -47,6 +58,12 @@ async function fetchAll<T extends BaseItem>(
       if (total !== undefined && skip >= total) break
       if (items.length < LIMIT) break
     } catch (err) {
+      // During build, log but don't fail - return empty results
+      const error = err as { code?: string; message?: string }
+      if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+        console.log(`[sitemaps] ${resource} fetch skipped (backend unavailable during build)`)
+        break
+      }
       console.error(`[sitemaps] ${resource} page fetch failed at skip=${skip}:`, err)
       // Break to avoid infinite loop on repeated failures
       break

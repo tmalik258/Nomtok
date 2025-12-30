@@ -22,10 +22,20 @@ async function fetchAllRestaurantSlugs(): Promise<string[]> {
   const LIMIT = 100; // Same as sitemap generation
   const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
 
+  // During Docker build, backend service isn't available yet
+  // Return empty array to allow build to complete (pages will be generated on-demand)
+  const isBuildTime = process.env.NODE_ENV === 'production';
+  const isBackendUnavailable = base.includes('backend:') && isBuildTime;
+  
+  if (isBackendUnavailable) {
+    console.log('[generateStaticParams] Skipping restaurant fetch during build (backend unavailable)');
+    return [];
+  }
+
   // Configure axios for build-time fetching
   const client = axios.create({
     baseURL: base,
-    timeout: 30_000,
+    timeout: 10_000, // Reduced timeout for build-time
   });
 
   try {
@@ -57,6 +67,12 @@ async function fetchAllRestaurantSlugs(): Promise<string[]> {
         if (total !== undefined && skip >= total) break;
         if (restaurants.length < LIMIT) break;
       } catch (err) {
+        const error = err as { code?: string; message?: string };
+        // During build, if backend is unavailable, just return empty array
+        if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+          console.log('[generateStaticParams] Backend unavailable during build, skipping static generation');
+          return [];
+        }
         console.error(
           `[generateStaticParams] Restaurant fetch failed at skip=${skip}:`,
           err
@@ -66,6 +82,12 @@ async function fetchAllRestaurantSlugs(): Promise<string[]> {
       }
     }
   } catch (err) {
+    const error = err as { code?: string; message?: string };
+    // During build, if backend is unavailable, just return empty array
+    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      console.log('[generateStaticParams] Backend unavailable during build, skipping static generation');
+      return [];
+    }
     console.error("[generateStaticParams] Failed to fetch restaurant slugs:", err);
     // Return empty array to allow build to continue
     return [];

@@ -1,4 +1,6 @@
 import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import axios from 'axios'
 import main from './generate-sitemaps.js'
 
@@ -33,21 +35,67 @@ async function checkHealth() {
 }
 
 async function startServer() {
-  console.log('[startup] launching Next.js server')
-  const child = spawn('node', ['server.js'], { stdio: 'inherit' })
-  child.on('exit', (code) => {
-    console.log(`[startup] Next.js server exited with code ${code}`)
-    process.exit(code ?? 0)
+  // Check if server.js exists
+  const serverPath = join(process.cwd(), 'server.js')
+  if (!existsSync(serverPath)) {
+    console.error('[startup] server.js not found at:', serverPath)
+    console.error('[startup] Current working directory:', process.cwd())
+    console.error('[startup] This usually means Next.js standalone output was not generated.')
+    console.error('[startup] Check that output: "standalone" is set in next.config.ts for production builds.')
+    process.exit(1)
+  }
+  
+  console.log('[startup] launching Next.js server from:', serverPath)
+  const child = spawn('node', ['server.js'], { 
+    stdio: 'inherit',
+    env: { ...process.env },
+    cwd: process.cwd()
+  })
+  
+  child.on('error', (err) => {
+    console.error('[startup] Failed to start Next.js server:', err)
+    console.error('[startup] Error details:', err.message, err.stack)
+    process.exit(1)
+  })
+  
+  child.on('exit', (code, signal) => {
+    if (code !== null && code !== 0) {
+      console.error(`[startup] Next.js server exited with code ${code}`)
+      process.exit(code)
+    } else if (signal) {
+      console.error(`[startup] Next.js server was killed with signal ${signal}`)
+      process.exit(1)
+    } else {
+      console.log('[startup] Next.js server exited normally')
+      process.exit(0)
+    }
+  })
+  
+  // Handle process termination signals
+  process.on('SIGTERM', () => {
+    console.log('[startup] Received SIGTERM, shutting down gracefully')
+    child.kill('SIGTERM')
+  })
+  
+  process.on('SIGINT', () => {
+    console.log('[startup] Received SIGINT, shutting down gracefully')
+    child.kill('SIGINT')
   })
 }
 
 async function run() {
-  await checkHealth()
+  try {
+    await checkHealth()
+  } catch (err) {
+    console.warn('[startup] Health check error (continuing anyway):', err?.message || err)
+  }
+  
   try {
     await main()
   } catch (err) {
     console.error('[startup] sitemap generation failed; starting server anyway:', err)
   }
+  
   await startServer()
 }
 
