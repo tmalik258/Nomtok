@@ -88,11 +88,9 @@ async def create_video(
                         subscriber_count=None,
                     )
                     db.add(influencer)
-                    await db.commit()
                     await db.refresh(influencer)
                     influencer_id = influencer.id
                 except IntegrityError as ie:
-                    await db.rollback()
                     msg = str(ie.orig) if getattr(ie, 'orig', None) else str(ie)
                     logger.error(f"Integrity error creating influencer for channel {channel_id}: {msg}")
                     raise HTTPException(status_code=400, detail="Failed to create influencer for this video.")
@@ -123,7 +121,6 @@ async def create_video(
             new_video = Video(**video_data.model_dump())
         
         db.add(new_video)
-        await db.commit()
         await db.refresh(new_video)
         
         # Fetch the video with influencer data for response
@@ -167,7 +164,6 @@ async def create_video(
     except HTTPException:
         raise
     except IntegrityError as ie:
-        await db.rollback()
         msg = str(ie.orig) if getattr(ie, 'orig', None) else str(ie)
         # Detect unique constraint violations on youtube_video_id or composite influencer/youtube
         if 'duplicate key value violates unique constraint' in msg and (
@@ -181,7 +177,6 @@ async def create_video(
         logger.error(f"Integrity error creating video: {msg}")
         raise HTTPException(status_code=400, detail="Integrity error creating video.")
     except Exception as e:
-        await db.rollback()
         logger.error(f"Failed to create video: {e}")
         raise HTTPException(
             status_code=500,
@@ -209,7 +204,6 @@ async def update_video(
         for field, value in video_update.model_dump(exclude_unset=True).items():
             setattr(existing_video, field, value)
         
-        await db.commit()
         await db.refresh(existing_video)
         
         # Fetch the updated video with influencer data for response
@@ -252,7 +246,6 @@ async def update_video(
     except HTTPException:
         raise
     except IntegrityError as ie:
-        await db.rollback()
         msg = str(ie.orig) if getattr(ie, 'orig', None) else str(ie)
         if 'duplicate key value violates unique constraint' in msg and (
             'videos_youtube_video_id_key' in msg or 'uix_influencer_youtube_video_id' in msg or 'ix_videos_youtube_video_id' in msg
@@ -265,7 +258,6 @@ async def update_video(
         logger.error(f"Integrity error updating video: {msg}")
         raise HTTPException(status_code=400, detail="Integrity error updating video.")
     except Exception as e:
-        await db.rollback()
         logger.error(f"Failed to update video: {e}")
         raise HTTPException(
             status_code=500,
@@ -290,13 +282,11 @@ async def delete_video(
             raise HTTPException(status_code=404, detail="Video not found")
         
         await db.execute(delete(Video).filter(Video.id == video_id))
-        await db.commit()
         
         return {"message": "Video deleted successfully"}
     except HTTPException:
         raise
     except Exception as e:
-        await db.rollback()
         logger.error(f"Failed to delete video: {e}")
         raise HTTPException(
             status_code=500,

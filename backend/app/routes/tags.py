@@ -28,7 +28,6 @@ async def create_tag(tag: TagCreate, db: AsyncSession = Depends(get_async_db)):
     try:
         db_tag = Tag(**tag.model_dump())
         db.add(db_tag)
-        await db.commit()
         await db.refresh(db_tag)
         return db_tag
     except Exception as e:
@@ -114,7 +113,6 @@ async def update_tag(tag_id: UUID, tag: TagUpdate, db: AsyncSession = Depends(ge
             raise HTTPException(status_code=404, detail="Tag not found")
         for key, value in tag.model_dump(exclude_unset=True).items():
             setattr(db_tag, key, value)
-        await db.commit()
         await db.refresh(db_tag)
         return db_tag
     except Exception as e:
@@ -131,7 +129,6 @@ async def delete_tag(tag_id: UUID, db: AsyncSession = Depends(get_async_db)):
         if not tag:
             raise HTTPException(status_code=404, detail="Tag not found")
         await db.delete(tag)
-        await db.commit()
         return {"message": "Tag deleted successfully"}
     except Exception as e:
         logger.error(f"Error deleting tag {tag_id}: {e}")
@@ -323,7 +320,6 @@ async def remove_restaurant_from_tag(
         
         # Remove the association
         await db.delete(restaurant_tag)
-        await db.commit()
         
         logger.info(f"Successfully removed restaurant {restaurant_id} from tag {tag_id}")
         return {"message": "Restaurant removed from tag successfully"}
@@ -332,5 +328,4 @@ async def remove_restaurant_from_tag(
         raise
     except Exception as e:
         logger.error(f"Error removing restaurant {restaurant_id} from tag {tag_id}: {e}")
-        await db.rollback()
         raise HTTPException(status_code=500, detail="Failed to remove restaurant from tag. Please try again later.")

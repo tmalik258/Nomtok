@@ -98,7 +98,6 @@ async def get_youtube_metadata(
                     youtube_metadata_updated_at=datetime.now()
                 )
             )
-            await db.commit()
         
         # Prepare response (exclude internal fields)
         response_metadata = {
@@ -173,7 +172,6 @@ async def refresh_youtube_metadata(
                     youtube_metadata_updated_at=datetime.now()
                 )
             )
-            await db.commit()
             logger.info(f"Updated metadata for video {video_id} in database")
         
         # Update Redis cache

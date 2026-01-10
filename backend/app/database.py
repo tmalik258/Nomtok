@@ -80,20 +80,16 @@ except Exception as e:
 
 AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
 
-# Async session dependency with improved error handling
+# Async session dependency with auto-commit/rollback
 async def get_async_db():
     async with AsyncSessionLocal() as session:
         try:
             yield session
-        except (OperationalError, SQLTimeoutError, TooManyConnectionsError, ConnectionDoesNotExistError) as e:
-            # Rollback on database connection errors to release the connection
-            await session.rollback()
-            logger.error(f"Database connection error in session: {str(e)}")
-            raise
+            await session.commit()  # Auto-commit successful requests
         except Exception as e:
-            # Rollback on any exception to ensure connection is released
+            # Rollback on any error (context manager will close session)
             await session.rollback()
+            # Log database connection errors specifically
+            if isinstance(e, (OperationalError, SQLTimeoutError, TooManyConnectionsError, ConnectionDoesNotExistError)):
+                logger.error(f"Database connection error in session: {str(e)}")
             raise
-        finally:
-            # Ensure session is properly closed
-            await session.close()

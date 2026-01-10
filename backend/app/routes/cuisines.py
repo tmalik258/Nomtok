@@ -70,7 +70,6 @@ async def create_cuisine(cuisine: CuisineCreate, db: AsyncSession = Depends(get_
     try:
         db_cuisine = Cuisine(name=cuisine.name)
         db.add(db_cuisine)
-        await db.commit()
         await db.refresh(db_cuisine)
         return db_cuisine
     except Exception as e:
@@ -87,7 +86,6 @@ async def update_cuisine(cuisine_id: UUID, cuisine: CuisineUpdate, db: AsyncSess
         if not db_cuisine:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cuisine not found")
         db_cuisine.name = cuisine.name
-        await db.commit()
         await db.refresh(db_cuisine)
         return db_cuisine
     except HTTPException:
@@ -106,7 +104,6 @@ async def delete_cuisine(cuisine_id: UUID, db: AsyncSession = Depends(get_async_
         if not db_cuisine:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cuisine not found")
         await db.delete(db_cuisine)
-        await db.commit()
         return
     except HTTPException:
         raise
@@ -332,7 +329,6 @@ async def remove_restaurant_from_cuisine(
         
         # Remove the association
         await db.delete(restaurant_cuisine)
-        await db.commit()
         
         logger.info(f"Successfully removed restaurant {restaurant_id} from cuisine {cuisine_id}")
         return {"message": "Restaurant removed from cuisine successfully"}
@@ -341,5 +337,4 @@ async def remove_restaurant_from_cuisine(
         raise
     except Exception as e:
         logger.error(f"Error removing restaurant {restaurant_id} from cuisine {cuisine_id}: {e}")
-        await db.rollback()
         raise HTTPException(status_code=500, detail="Failed to remove restaurant from cuisine. Please try again later.")

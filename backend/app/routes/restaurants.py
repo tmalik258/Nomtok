@@ -46,7 +46,7 @@ async def get_restaurants(
     google_place_id: str | None = None,
     tag: str | None = Query(None, description="Filter by tag name"),
     cuisine: str | None = Query(None, description="Filter by cuisine name"),
-    sort_by: str | None = Query("name", description="Sort by: name, rating, city, updated"),
+    sort_by: str | None = Query("name", description="Sort by: name, rating, city, updated, recent_listing"),
     skip: int = 0,
     limit: int = 10,
     include_listings: Optional[bool] = Query(False, description="Include listings with restaurants"),
@@ -128,6 +128,25 @@ async def get_restaurants(
             query = query.order_by(Restaurant.city.asc().nulls_last())
         elif sort_by == "updated":
             query = query.order_by(Restaurant.updated_at.desc())
+        elif sort_by == "recent_listing":
+            # Sort by most recent approved listing's created_at date
+            # Create a subquery to get max listing created_at per restaurant
+            latest_listing_subquery = (
+                select(
+                    Listing.restaurant_id,
+                    func.max(Listing.created_at).label("latest_listing_date")
+                )
+                .filter(Listing.approved == True)
+                .group_by(Listing.restaurant_id)
+                .subquery()
+            )
+            # Join with the subquery and order by latest listing date
+            query = query.outerjoin(
+                latest_listing_subquery,
+                Restaurant.id == latest_listing_subquery.c.restaurant_id
+            ).order_by(
+                latest_listing_subquery.c.latest_listing_date.desc().nulls_last()
+            )
         else:
             # Default to name sorting
             query = query.order_by(Restaurant.updated_at.asc())
@@ -608,7 +627,6 @@ async def refetch_restaurant_photo(
             raise HTTPException(status_code=502, detail="Failed to refetch photo from Google")
 
         restaurant_obj.photo_url = final_url
-        await db.commit()
         await db.refresh(restaurant_obj)
 
         # Update last refetch marker (5 minutes window for metrics, throttle uses 120s)

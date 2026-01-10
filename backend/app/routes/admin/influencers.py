@@ -66,7 +66,6 @@ async def create_influencer(
             existing_influencer.youtube_channel_url = channel.get('channel_url', influencer_data.youtube_url)
             existing_influencer.subscriber_count = channel.get('subscriber_count', existing_influencer.subscriber_count)
             
-            await db.commit()
             await db.refresh(existing_influencer)
             
             logger.info(f"Admin {current_admin.email} successfully updated influencer: {existing_influencer.name} (ID: {existing_influencer.id})")

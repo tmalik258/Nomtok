@@ -1,5 +1,5 @@
-import axios from 'axios';
-import type { Restaurant, Listing } from '@/lib/types';
+import axios from "axios";
+import type { Restaurant, Listing } from "@/lib/types";
 
 interface HomePageData {
   recentRestaurants: Restaurant[];
@@ -14,11 +14,15 @@ export async function fetchHomePageData(): Promise<HomePageData> {
   // Use the same pattern as sitemap generation
   // NEXT_PUBLIC_API_URL is available at both build-time and runtime
   // Falls back to 'http://backend:8000' for Docker production, or 'http://localhost:8030' for local dev
-  const raw = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'http://backend:8000' : 'http://localhost:8030');
-  const API_URL = raw.replace(/[`'"\s]+/g, '').replace(/\/$/, '');
+  const raw =
+    process.env.NEXT_PUBLIC_API_URL ||
+    (process.env.NODE_ENV === "production"
+      ? "http://backend:8000"
+      : "http://localhost:8030");
+  const API_URL = raw.replace(/[`'"\s]+/g, "").replace(/\/$/, "");
 
-  console.log('[HomePage] Fetching data from API:', API_URL);
-  console.log('[HomePage] Environment:', {
+  console.log("[HomePage] Fetching data from API:", API_URL);
+  console.log("[HomePage] Environment:", {
     NODE_ENV: process.env.NODE_ENV,
     hasNextPublicApiUrl: !!process.env.NEXT_PUBLIC_API_URL,
   });
@@ -31,73 +35,102 @@ export async function fetchHomePageData(): Promise<HomePageData> {
     restaurantsForAboutData,
   ] = await Promise.allSettled([
     // Popular cities (full list of top 5)
-    axios.get(`${API_URL}/restaurants/popular-cities/`, { timeout: 60000 }).then(res => {
-      console.log('[HomePage] Popular cities fetched:', res.data?.length || 0);
-      return res.data;
-    }),
+    axios
+      .get(`${API_URL}/restaurants/popular-cities/`, { timeout: 60000 })
+      .then((res) => {
+        console.log(
+          "[HomePage] Popular cities fetched:",
+          res.data?.length || 0
+        );
+        return res.data;
+      }),
     // Top cities with restaurants (top 2 cities with their restaurants)
-    axios.get(`${API_URL}/restaurants/top-cities-with-restaurants/`, {
-      params: { limit: 2, restaurants_per_city: 6 },
-      timeout: 60000,
-    }).then(res => {
-      console.log('[HomePage] Top cities fetched:', res.data?.cities?.length || 0);
-      return res.data;
-    }),
-            // Recent restaurants (with listings to sort by most recent listing)
-            // Set include_video_details=false to reduce payload size and speed up request
-            axios.get(`${API_URL}/restaurants/`, {
-      params: {
-        sort_by: 'updated',
-        limit: 6,
-        include_listings: true,
-        include_video_details: false, // Don't need full video details, just basic listing info
-      },
-      timeout: 60000,
-    }).then(res => {
-      const data = res.data;
-      const restaurants = Array.isArray(data) ? data : (data?.restaurants || []);
-      console.log('[HomePage] Recent restaurants fetched:', restaurants.length);
-      return res.data;
-    }),
-            // Mark Weins restaurants
-            // Set include_video_details=false to reduce payload size and speed up request
-            axios.get(`${API_URL}/restaurants/`, {
-      params: {
-        influencer_id: 'mark-wiens',
-        limit: 6,
-        include_listings: true,
-        include_video_details: false, // Don't need full video details, just basic listing info
-      },
-      timeout: 60000,
-    }).then(res => {
-      const data = res.data;
-      const restaurants = Array.isArray(data) ? data : (data?.restaurants || []);
-      console.log('[HomePage] Mark Weins restaurants fetched:', restaurants.length);
-      return res.data;
-    }),
-            // Restaurants for About section (5 restaurants with photos)
-            axios.get(`${API_URL}/restaurants/`, {
-      params: {
-        limit: 10,
-      },
-      timeout: 60000,
-    }).then(res => {
-      const data = res.data;
-      const restaurants = Array.isArray(data) ? data : (data?.restaurants || []);
-      console.log('[HomePage] About restaurants fetched:', restaurants.length);
-      return res.data;
-    }),
+    axios
+      .get(`${API_URL}/restaurants/top-cities-with-restaurants/`, {
+        params: { limit: 2, restaurants_per_city: 6 },
+        timeout: 60000,
+      })
+      .then((res) => {
+        console.log(
+          "[HomePage] Top cities fetched:",
+          res.data?.cities?.length || 0
+        );
+        return res.data;
+      }),
+    // Recent restaurants (sorted by most recent approved listing)
+    // Set include_video_details=false to reduce payload size and speed up request
+    axios
+      .get(`${API_URL}/restaurants/`, {
+        params: {
+          sort_by: "recent_listing", // Sort by most recent approved listing's created_at
+          limit: 6,
+          include_listings: true,
+          include_video_details: false, // Don't need full video details, just basic listing info
+        },
+        timeout: 60000,
+      })
+      .then((res) => {
+        const data = res.data;
+        const restaurants = Array.isArray(data)
+          ? data
+          : data?.restaurants || [];
+        console.log(
+          "[HomePage] Recent restaurants fetched:",
+          restaurants.length
+        );
+        return res.data;
+      }),
+    // Mark Weins restaurants
+    // Set include_video_details=false to reduce payload size and speed up request
+    axios
+      .get(`${API_URL}/restaurants/`, {
+        params: {
+          influencer_id: "mark-wiens",
+          limit: 6,
+          include_listings: true,
+          include_video_details: false, // Don't need full video details, just basic listing info
+        },
+        timeout: 60000,
+      })
+      .then((res) => {
+        const data = res.data;
+        const restaurants = Array.isArray(data)
+          ? data
+          : data?.restaurants || [];
+        console.log(
+          "[HomePage] Mark Weins restaurants fetched:",
+          restaurants.length
+        );
+        return res.data;
+      }),
+    // Restaurants for About section (5 restaurants with photos)
+    axios
+      .get(`${API_URL}/restaurants/`, {
+        params: {
+          limit: 10,
+        },
+        timeout: 60000,
+      })
+      .then((res) => {
+        const data = res.data;
+        const restaurants = Array.isArray(data)
+          ? data
+          : data?.restaurants || [];
+        console.log(
+          "[HomePage] About restaurants fetched:",
+          restaurants.length
+        );
+        return res.data;
+      }),
   ]);
 
   // Get popular cities (full list)
   const popularCities =
-    popularCitiesData.status === 'fulfilled'
-      ? popularCitiesData.value
-      : [];
+    popularCitiesData.status === "fulfilled" ? popularCitiesData.value : [];
 
-  if (popularCitiesData.status === 'rejected') {
+  if (popularCitiesData.status === "rejected") {
     const error = popularCitiesData.reason;
-    console.error('[HomePage] Failed to fetch popular cities:', {
+    console.error("[HomePage] Failed to fetch popular cities:", {
       message: error?.message || String(error),
       code: error?.code,
       response: error?.response?.status,
@@ -109,36 +142,40 @@ export async function fetchHomePageData(): Promise<HomePageData> {
   let city1Restaurants: Restaurant[] = [];
   let city2Restaurants: Restaurant[] = [];
 
-  if (topCitiesData.status === 'fulfilled') {
+  if (topCitiesData.status === "fulfilled") {
     const citiesData = topCitiesData.value.cities || [];
-    
+
     if (citiesData.length > 0) {
-      city1Restaurants = processCityRestaurants(citiesData[0].restaurants || []);
+      city1Restaurants = processCityRestaurants(
+        citiesData[0].restaurants || []
+      );
     }
     if (citiesData.length > 1) {
-      city2Restaurants = processCityRestaurants(citiesData[1].restaurants || []);
+      city2Restaurants = processCityRestaurants(
+        citiesData[1].restaurants || []
+      );
     }
-  } else if (topCitiesData.status === 'rejected') {
+  } else if (topCitiesData.status === "rejected") {
     const error = topCitiesData.reason;
-    console.error('[HomePage] Failed to fetch top cities with restaurants:', {
+    console.error("[HomePage] Failed to fetch top cities with restaurants:", {
       message: error?.message || String(error),
       code: error?.code,
       response: error?.response?.status,
-      url: error?.config?.url || `${API_URL}/restaurants/top-cities-with-restaurants/`,
+      url:
+        error?.config?.url ||
+        `${API_URL}/restaurants/top-cities-with-restaurants/`,
     });
   }
 
   // Process recent restaurants: filter for approved listings and sort by most recent listing
   let recentRestaurants: Restaurant[] = [];
-  if (recentRestaurantsData.status === 'fulfilled') {
+  if (recentRestaurantsData.status === "fulfilled") {
     const data = recentRestaurantsData.value;
-    const restaurants = Array.isArray(data)
-      ? data
-      : data?.restaurants || [];
+    const restaurants = Array.isArray(data) ? data : data?.restaurants || [];
     recentRestaurants = processRecentRestaurants(restaurants);
-  } else if (recentRestaurantsData.status === 'rejected') {
+  } else if (recentRestaurantsData.status === "rejected") {
     const error = recentRestaurantsData.reason;
-    console.error('[HomePage] Failed to fetch recent restaurants:', {
+    console.error("[HomePage] Failed to fetch recent restaurants:", {
       message: error?.message || String(error),
       code: error?.code,
       response: error?.response?.status,
@@ -148,15 +185,13 @@ export async function fetchHomePageData(): Promise<HomePageData> {
 
   // Process Mark Weins restaurants: filter for approved listings
   let markWeinsRestaurants: Restaurant[] = [];
-  if (markWeinsRestaurantsData.status === 'fulfilled') {
+  if (markWeinsRestaurantsData.status === "fulfilled") {
     const data = markWeinsRestaurantsData.value;
-    const restaurants = Array.isArray(data)
-      ? data
-      : data?.restaurants || [];
+    const restaurants = Array.isArray(data) ? data : data?.restaurants || [];
     markWeinsRestaurants = processInfluencerRestaurants(restaurants);
-  } else if (markWeinsRestaurantsData.status === 'rejected') {
+  } else if (markWeinsRestaurantsData.status === "rejected") {
     const error = markWeinsRestaurantsData.reason;
-    console.error('[HomePage] Failed to fetch Mark Weins restaurants:', {
+    console.error("[HomePage] Failed to fetch Mark Weins restaurants:", {
       message: error?.message || String(error),
       code: error?.code,
       response: error?.response?.status,
@@ -166,11 +201,9 @@ export async function fetchHomePageData(): Promise<HomePageData> {
 
   // Get restaurants for About section (with photos)
   let aboutRestaurants: Restaurant[] = [];
-  if (restaurantsForAboutData.status === 'fulfilled') {
+  if (restaurantsForAboutData.status === "fulfilled") {
     const data = restaurantsForAboutData.value;
-    const restaurants = Array.isArray(data)
-      ? data
-      : data?.restaurants || [];
+    const restaurants = Array.isArray(data) ? data : data?.restaurants || [];
 
     // Filter for restaurants with photos first
     const restaurantsWithPhotos = restaurants.filter(
@@ -186,9 +219,9 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       // Fallback: use any restaurants if none have photos (up to 5)
       aboutRestaurants = restaurants.slice(0, 5);
     }
-  } else if (restaurantsForAboutData.status === 'rejected') {
+  } else if (restaurantsForAboutData.status === "rejected") {
     const error = restaurantsForAboutData.reason;
-    console.error('[HomePage] Failed to fetch about restaurants:', {
+    console.error("[HomePage] Failed to fetch about restaurants:", {
       message: error?.message || String(error),
       code: error?.code,
       response: error?.response?.status,
@@ -197,7 +230,7 @@ export async function fetchHomePageData(): Promise<HomePageData> {
   }
 
   // Log summary of fetched data
-  console.log('[HomePage] Data fetch summary:', {
+  console.log("[HomePage] Data fetch summary:", {
     popularCities: popularCities.length,
     city1Restaurants: city1Restaurants.length,
     city2Restaurants: city2Restaurants.length,
@@ -218,15 +251,16 @@ export async function fetchHomePageData(): Promise<HomePageData> {
 }
 
 /**
- * Processes recent restaurants: filters for approved listings,
- * sorts by most recent listing date, and limits to 6
+ * Processes recent restaurants: filters for approved listings and limits to 6.
+ * Note: Backend already sorts by most recent approved listing's created_at date.
  */
 function processRecentRestaurants(restaurants: Restaurant[]): Restaurant[] {
   if (!Array.isArray(restaurants)) {
     return [];
   }
 
-  // Filter restaurants that have approved listings
+  // Filter restaurants that have approved listings and keep only approved listings
+  // Backend already sorts by most recent approved listing, so we maintain that order
   const restaurantsWithApprovedListings = restaurants
     .filter(
       (r: Restaurant) =>
@@ -239,18 +273,7 @@ function processRecentRestaurants(restaurants: Restaurant[]): Restaurant[] {
       listings: r.listings?.filter((l: Listing) => l.approved === true) || [],
     }));
 
-  // Sort by most recent listing's created_at date
-  const sorted = restaurantsWithApprovedListings.sort((a, b) => {
-    const aLatestListing = a.listings
-      ?.map((l) => new Date(l.created_at || 0).getTime())
-      .sort((x, y) => y - x)[0] || 0;
-    const bLatestListing = b.listings
-      ?.map((l) => new Date(l.created_at || 0).getTime())
-      .sort((x, y) => y - x)[0] || 0;
-    return bLatestListing - aLatestListing;
-  });
-
-  return sorted.slice(0, 6);
+  return restaurantsWithApprovedListings.slice(0, 6);
 }
 
 /**
