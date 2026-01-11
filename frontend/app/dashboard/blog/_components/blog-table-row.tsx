@@ -4,7 +4,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BlogPost } from "@/lib/types";
-import { Edit, Trash2, Eye, EyeOff, Star, StarOff } from "lucide-react";
+import { Edit, Trash2, Eye, EyeOff, Star } from "lucide-react";
 import { format } from "date-fns";
 
 interface BlogTableRowProps {

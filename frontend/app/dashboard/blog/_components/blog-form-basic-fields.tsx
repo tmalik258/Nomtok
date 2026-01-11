@@ -9,18 +9,18 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { UseFormReturn } from "react-hook-form";
+import { UseFormReturn, FieldValues, Path } from "react-hook-form";
 
-interface BlogFormBasicFieldsProps {
-  form: UseFormReturn<any>;
+interface BlogFormBasicFieldsProps<T extends FieldValues = FieldValues> {
+  form: UseFormReturn<T>;
 }
 
-export function BlogFormBasicFields({ form }: BlogFormBasicFieldsProps) {
+export function BlogFormBasicFields<T extends FieldValues = FieldValues>({ form }: BlogFormBasicFieldsProps<T>) {
   return (
     <>
       <FormField
         control={form.control}
-        name="title"
+        name={"title" as Path<T>}
         render={({ field }) => (
           <FormItem>
             <FormLabel>Title *</FormLabel>
@@ -34,7 +34,7 @@ export function BlogFormBasicFields({ form }: BlogFormBasicFieldsProps) {
 
       <FormField
         control={form.control}
-        name="excerpt"
+        name={"excerpt" as Path<T>}
         render={({ field }) => (
           <FormItem>
             <FormLabel>Excerpt</FormLabel>
@@ -52,7 +52,7 @@ export function BlogFormBasicFields({ form }: BlogFormBasicFieldsProps) {
 
       <FormField
         control={form.control}
-        name="content"
+        name={"content" as Path<T>}
         render={({ field }) => (
           <FormItem>
             <FormLabel>Content (Markdown) *</FormLabel>
@@ -71,7 +71,7 @@ export function BlogFormBasicFields({ form }: BlogFormBasicFieldsProps) {
 
       <FormField
         control={form.control}
-        name="cover_image_url"
+        name={"cover_image_url" as Path<T>}
         render={({ field }) => (
           <FormItem>
             <FormLabel>Cover Image URL</FormLabel>

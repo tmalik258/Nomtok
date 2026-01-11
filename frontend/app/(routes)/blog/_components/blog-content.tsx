@@ -14,7 +14,7 @@ interface BlogContentProps {
   initialCategories: BlogCategory[];
 }
 
-export function BlogContent({ initialBlogs, initialCategories }: BlogContentProps) {
+export function BlogContent({ initialCategories }: BlogContentProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -24,7 +24,6 @@ export function BlogContent({ initialBlogs, initialCategories }: BlogContentProp
 
   const {
     blogs,
-    total,
     page,
     totalPages,
     loading,

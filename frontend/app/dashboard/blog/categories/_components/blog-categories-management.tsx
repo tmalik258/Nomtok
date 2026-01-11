@@ -5,7 +5,6 @@ import { useAdminBlog } from "@/lib/hooks";
 import { useBlogCategories } from "@/lib/hooks/useBlogCategories";
 import { BlogCategory } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import ErrorCard from "@/components/error-card";
 import { DeleteConfirmationModal } from "@/components/delete-confirmation-modal";
 import { BlogCategoriesHeader } from "./blog-categories-header";

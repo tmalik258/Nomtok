@@ -21,41 +21,42 @@ export function BlogContent({ blog }: BlogContentProps) {
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                h1: ({ node, ...props }) => (
+                h1: ({ ...props }) => (
                   <h1 className="text-4xl font-bold mb-6 mt-8" {...props} />
                 ),
-                h2: ({ node, ...props }) => (
+                h2: ({ ...props }) => (
                   <h2 className="text-3xl font-bold mb-4 mt-6" {...props} />
                 ),
-                h3: ({ node, ...props }) => (
+                h3: ({ ...props }) => (
                   <h3 className="text-2xl font-bold mb-3 mt-5" {...props} />
                 ),
-                p: ({ node, ...props }) => (
+                p: ({ ...props }) => (
                   <p className="mb-4 leading-7" {...props} />
                 ),
-                ul: ({ node, ...props }) => (
+                ul: ({ ...props }) => (
                   <ul className="list-disc pl-6 mb-4 space-y-2" {...props} />
                 ),
-                ol: ({ node, ...props }) => (
+                ol: ({ ...props }) => (
                   <ol className="list-decimal pl-6 mb-4 space-y-2" {...props} />
                 ),
-                li: ({ node, ...props }) => (
+                li: ({ ...props }) => (
                   <li className="mb-1" {...props} />
                 ),
-                blockquote: ({ node, ...props }) => (
+                blockquote: ({ ...props }) => (
                   <blockquote className="border-l-4 border-orange-500 pl-4 italic my-4" {...props} />
                 ),
-                code: ({ node, ...props }) => (
+                code: ({ ...props }) => (
                   <code className="bg-muted px-2 py-1 rounded text-sm font-mono" {...props} />
                 ),
-                pre: ({ node, ...props }) => (
+                pre: ({ ...props }) => (
                   <pre className="bg-muted p-4 rounded-lg overflow-x-auto mb-4" {...props} />
                 ),
-                a: ({ node, ...props }) => (
+                a: ({ ...props }) => (
                   <a className="text-orange-500 hover:text-orange-600 underline" {...props} />
                 ),
-                img: ({ node, ...props }) => (
-                  <img className="rounded-lg my-4 w-full" {...props} />
+                img: ({ src, alt, ...props }) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={src} alt={alt || ""} className="rounded-lg my-4 w-full" {...props} />
                 ),
               }}
             >

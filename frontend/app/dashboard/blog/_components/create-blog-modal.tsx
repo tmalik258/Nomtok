@@ -28,8 +28,8 @@ const createBlogSchema = z.object({
   meta_title: z.string().max(255, 'Meta title must be less than 255 characters').optional(),
   meta_description: z.string().optional(),
   meta_keywords: z.string().optional(),
-  is_published: z.boolean().default(false),
-  is_featured: z.boolean().default(false),
+  is_published: z.boolean(),
+  is_featured: z.boolean(),
   category_ids: z.array(z.string()).optional(),
 });
 

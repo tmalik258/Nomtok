@@ -3,7 +3,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { BlogPost } from "@/lib/types";
 import { useBlogsPaginated, useAdminBlog } from "@/lib/hooks";
-import { useBlogCategories } from "@/lib/hooks/useBlogCategories";
 import { BlogFilters } from "./blog-filters";
 import { BlogEmptyState } from "./blog-empty-state";
 import { BlogTable } from "./blog-table";
@@ -28,14 +27,12 @@ export function BlogManagement() {
     setSearchQuery,
     setPublishedFilter,
     setFeaturedFilter,
-    setCategoryFilter,
     setSortBy,
     setSortOrder,
     params,
   } = useBlogsPaginated({ limit: 10 });
 
   const { deleteBlog, loading: deleteLoading } = useAdminBlog();
-  const { categories, loading: categoriesLoading } = useBlogCategories();
   
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [blogToDelete, setBlogToDelete] = useState<string | null>(null);
@@ -97,10 +94,6 @@ export function BlogManagement() {
   const handleFeaturedChange = useCallback((value: boolean | undefined) => {
     setFeaturedFilter(value);
   }, [setFeaturedFilter]);
-
-  const handleCategoryChange = useCallback((categoryId: string) => {
-    setCategoryFilter(categoryId === "all" ? undefined : categoryId);
-  }, [setCategoryFilter]);
 
   const handleSortByChange = useCallback((sort: string) => {
     setSortBy(sort);

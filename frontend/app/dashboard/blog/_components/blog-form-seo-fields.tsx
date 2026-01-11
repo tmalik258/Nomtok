@@ -9,20 +9,20 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { UseFormReturn } from "react-hook-form";
+import { UseFormReturn, FieldValues, Path } from "react-hook-form";
 
-interface BlogFormSEOFieldsProps {
-  form: UseFormReturn<any>;
+interface BlogFormSEOFieldsProps<T extends FieldValues = FieldValues> {
+  form: UseFormReturn<T>;
 }
 
-export function BlogFormSEOFields({ form }: BlogFormSEOFieldsProps) {
+export function BlogFormSEOFields<T extends FieldValues = FieldValues>({ form }: BlogFormSEOFieldsProps<T>) {
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-semibold">SEO Settings</h3>
 
       <FormField
         control={form.control}
-        name="meta_title"
+        name={"meta_title" as Path<T>}
         render={({ field }) => (
           <FormItem>
             <FormLabel>Meta Title</FormLabel>
@@ -36,7 +36,7 @@ export function BlogFormSEOFields({ form }: BlogFormSEOFieldsProps) {
 
       <FormField
         control={form.control}
-        name="meta_description"
+        name={"meta_description" as Path<T>}
         render={({ field }) => (
           <FormItem>
             <FormLabel>Meta Description</FormLabel>
@@ -54,7 +54,7 @@ export function BlogFormSEOFields({ form }: BlogFormSEOFieldsProps) {
 
       <FormField
         control={form.control}
-        name="meta_keywords"
+        name={"meta_keywords" as Path<T>}
         render={({ field }) => (
           <FormItem>
             <FormLabel>Meta Keywords</FormLabel>
