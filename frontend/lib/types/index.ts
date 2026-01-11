@@ -123,6 +123,36 @@ export interface Listing {
   updated_at: string;
 }
 
+export interface BlogCategory {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+}
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt?: string;
+  cover_image_url?: string;
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
+  is_published: boolean;
+  is_featured: boolean;
+  published_at?: string;
+  categories?: BlogCategory[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BlogsResponse {
+  blogs: BlogPost[];
+  total: number;
+}
+
 // Re-export organized types
 export * from './api';
 export * from './components';

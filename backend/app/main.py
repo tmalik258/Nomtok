@@ -35,6 +35,8 @@ from app.routes.admin.dashboard import router as dashboard_router
 from app.routes.geocoding import router as geocoding_router
 from app.routes.cache import router as cache_router
 from app.routes.youtube_metadata import router as youtube_metadata_router
+from app.routes.blog import router as blog_router
+from app.routes.admin.blog import router as admin_blog_router
 
 # Configure logging
 logger = setup_logger(__name__)
@@ -111,6 +113,8 @@ app.include_router(geocoding_router, prefix="/geocoding", tags=["geocoding"])
 app.include_router(dashboard_router, prefix="/admin/dashboard", tags=["admin"])
 app.include_router(cache_router, prefix="/cache", tags=["cache"])
 app.include_router(youtube_metadata_router, prefix="/youtube-metadata", tags=["youtube-metadata"])
+app.include_router(blog_router, prefix="/blog", tags=["blog"])
+app.include_router(admin_blog_router, prefix="/admin/blog", tags=["admin"])
 
 
 # Custom exception handler for validation errors

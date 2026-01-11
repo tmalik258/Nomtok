@@ -29,6 +29,7 @@ import {
   Menu,
   ChevronRight,
   HandPlatter,
+  FileEdit,
 } from "lucide-react";
 import { useAuth } from "@/lib/contexts/auth-context";
 import { signout } from "@/lib/actions/auth";
@@ -85,6 +86,11 @@ const sidebarItems = [
     title: "Influencers",
     href: "/dashboard/influencers",
     icon: Users,
+  },
+  {
+    title: "Blog",
+    href: "/dashboard/blog",
+    icon: FileEdit,
   },
 ];
 
