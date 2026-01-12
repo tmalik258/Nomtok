@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { MapPin, Home, Users, Menu, X } from 'lucide-react';
+import { MapPin, Home, Users, Menu, X, FileText } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -92,6 +92,22 @@ export function Navbar() {
                 Influencers
               </Link>
             </Button>
+            <Button
+              asChild
+              variant="ghost"
+              className={cn(
+                'flex items-center gap-2 cursor-pointer hover:bg-cream/30 hover:text-cream',
+                isActive('/blog') && 'bg-cream/30 text-cream'
+              )}
+            >
+              <Link
+                href="/blog"
+                aria-current={isActive('/blog') ? 'page' : undefined}
+              >
+                <FileText className="w-4 h-4" />
+                Blog
+              </Link>
+            </Button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -160,6 +176,23 @@ export function Navbar() {
                 >
                   <Users className="w-4 h-4" />
                   Influencers
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="ghost"
+                className={cn(
+                  'flex items-center gap-3 justify-start text-slate-300 hover:text-slate-200 hover:bg-orange-500/30 p-3 rounded-lg cursor-pointer',
+                  isActive('/blog') && 'bg-cream text-slate-200'
+                )}
+                onClick={closeMobileMenu}
+              >
+                <Link
+                  href="/blog"
+                  aria-current={isActive('/blog') ? 'page' : undefined}
+                >
+                  <FileText className="w-4 h-4" />
+                  Blog
                 </Link>
               </Button>
             </div>
