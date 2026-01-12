@@ -41,6 +41,7 @@ async def create_tag(
         
         new_tag = Tag(**tag.model_dump())
         db.add(new_tag)
+        await db.commit()
         await db.refresh(new_tag)
         # Invalidate cached tag lists/details to reflect new data
         CacheService("tags").invalidate_prefix("")
@@ -48,6 +49,7 @@ async def create_tag(
     except HTTPException:
         raise
     except IntegrityError as e:
+        await db.rollback()
         error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
         # Handle unique constraint violations on tag name
         if "duplicate key value violates unique constraint" in error_msg:
@@ -63,6 +65,7 @@ async def create_tag(
             detail="Invalid tag data provided"
         )
     except Exception as e:
+        await db.rollback()
         logger.error(f"Unexpected error creating tag: {e}")
         raise HTTPException(
             status_code=500, 
@@ -102,6 +105,7 @@ async def update_tag(
         for field, value in tag_update.model_dump(exclude_unset=True).items():
             setattr(existing_tag, field, value)
 
+        await db.commit()
         await db.refresh(existing_tag)
         # Invalidate cached tag lists/details and tag-related restaurants
         CacheService("tags").invalidate_prefix("")
@@ -109,6 +113,7 @@ async def update_tag(
     except HTTPException:
         raise
     except IntegrityError as e:
+        await db.rollback()
         error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
         # Handle unique constraint violations on tag name
         if "duplicate key value violates unique constraint" in error_msg:
@@ -124,6 +129,7 @@ async def update_tag(
             detail="Invalid tag data provided"
         )
     except Exception as e:
+        await db.rollback()
         logger.error(f"Failed to update tag: {e}")
         raise HTTPException(
             status_code=500,
@@ -148,6 +154,7 @@ async def delete_tag(
             raise HTTPException(status_code=404, detail="Tag not found")
 
         await db.execute(delete(Tag).filter(Tag.id == tag_id))
+        await db.commit()
         # Invalidate cached tag lists/details and tag-related restaurants
         CacheService("tags").invalidate_prefix("")
         
@@ -155,6 +162,7 @@ async def delete_tag(
     except HTTPException:
         raise
     except Exception as e:
+        await db.rollback()
         logger.error(f"Failed to delete tag: {e}")
         raise HTTPException(
             status_code=500,

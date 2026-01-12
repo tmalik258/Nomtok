@@ -92,6 +92,7 @@ async def create_restaurant(
         
         # Add to database
         db.add(new_restaurant)
+        await db.commit()
         await db.refresh(new_restaurant)
         
         logger.info(f"Successfully created restaurant: {new_restaurant.name} (ID: {new_restaurant.id})")
@@ -107,6 +108,7 @@ async def create_restaurant(
         # Re-raise HTTP exceptions (like 409 Conflict) as-is
         raise
     except IntegrityError as e:
+        await db.rollback()
         error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
         
         if "duplicate key value violates unique constraint" in error_msg:
@@ -127,12 +129,14 @@ async def create_restaurant(
             detail="Invalid restaurant data provided"
         )
     except ValueError as e:
+        await db.rollback()
         logger.error(f"Validation error creating restaurant: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid input data: {str(e)}"
         )
     except Exception as e:
+        await db.rollback()
         logger.error(f"Unexpected error creating restaurant: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -164,6 +168,8 @@ async def update_restaurant(
         for field, value in update_data.items():
             setattr(db_restaurant, field, value)
         
+        # Commit changes
+        await db.commit()
         await db.refresh(db_restaurant)
         
         # Trigger sitemap regeneration in background
@@ -174,6 +180,7 @@ async def update_restaurant(
             restaurant_id=db_restaurant.id
         )
     except IntegrityError as e:
+        await db.rollback()
         error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
         
         if "duplicate key value violates unique constraint" in error_msg:
@@ -196,6 +203,7 @@ async def update_restaurant(
     except HTTPException:
         raise
     except Exception as e:
+        await db.rollback()
         logger.error(f"Failed to update restaurant: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -224,6 +232,9 @@ async def delete_restaurant(
         await db.delete(db_restaurant)
         message = "Restaurant permanently deleted"
         
+        # Commit changes
+        await db.commit()
+        
         # Trigger sitemap regeneration in background
         asyncio.create_task(trigger_sitemap_regeneration())
         
@@ -234,6 +245,7 @@ async def delete_restaurant(
     except HTTPException:
         raise
     except Exception as e:
+        await db.rollback()
         logger.error(f"Failed to delete restaurant: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -280,6 +292,9 @@ async def update_restaurant_tags(
             restaurant_tag = RestaurantTag(restaurant_id=restaurant_id, tag_id=tag_id)
             db.add(restaurant_tag)
         
+        # Commit changes
+        await db.commit()
+        
         # Trigger sitemap regeneration in background (tags affect restaurant pages)
         asyncio.create_task(trigger_sitemap_regeneration())
         
@@ -290,6 +305,7 @@ async def update_restaurant_tags(
     except HTTPException:
         raise
     except Exception as e:
+        await db.rollback()
         logger.error(f"Failed to update restaurant tags: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -336,6 +352,9 @@ async def update_restaurant_cuisines(
             restaurant_cuisine = RestaurantCuisine(restaurant_id=restaurant_id, cuisine_id=cuisine_id)
             db.add(restaurant_cuisine)
         
+        # Commit changes
+        await db.commit()
+        
         # Trigger sitemap regeneration in background (cuisines affect restaurant pages)
         asyncio.create_task(trigger_sitemap_regeneration())
         
@@ -346,6 +365,7 @@ async def update_restaurant_cuisines(
     except HTTPException:
         raise
     except Exception as e:
+        await db.rollback()
         logger.error(f"Failed to update restaurant cuisines: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -374,6 +394,9 @@ async def restore_restaurant(
         # Restore by marking as active
         db_restaurant.is_active = True
         
+        # Commit changes
+        await db.commit()
+        
         # Trigger sitemap regeneration in background
         asyncio.create_task(trigger_sitemap_regeneration())
         
@@ -384,6 +407,7 @@ async def restore_restaurant(
     except HTTPException:
         raise
     except Exception as e:
+        await db.rollback()
         logger.error(f"Failed to restore restaurant: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
