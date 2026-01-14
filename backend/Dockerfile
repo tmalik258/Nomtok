@@ -4,6 +4,7 @@ WORKDIR /code
 
 # Install system dependencies including ffmpeg
 RUN apt-get update && apt-get install -y \
+curl \
 wget \
 gnupg \
 ca-certificates \
