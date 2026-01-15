@@ -110,6 +110,10 @@ export const useBlogsPaginated = (initialParams?: PaginatedBlogsParams) => {
     fetchBlogs(params);
   }, [params, fetchBlogs]);
 
+  const refetch = useCallback(() => {
+    fetchBlogs(params);
+  }, [fetchBlogs, params]);
+
   return {
     ...data,
     loading,
@@ -124,6 +128,6 @@ export const useBlogsPaginated = (initialParams?: PaginatedBlogsParams) => {
     setCategoryFilter,
     setSortBy,
     setSortOrder,
-    refetch: () => fetchBlogs(params)
+    refetch
   };
 };

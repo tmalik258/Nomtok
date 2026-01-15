@@ -76,7 +76,10 @@ export function BlogManagement() {
 
   const handleCreateSuccess = useCallback(() => {
     setCreateModalOpen(false);
-    refetch();
+    // Use setTimeout to ensure refetch happens after modal closes
+    setTimeout(() => {
+      refetch();
+    }, 100);
     toast.success("Blog post created successfully");
   }, [refetch]);
 

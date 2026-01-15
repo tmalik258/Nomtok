@@ -82,7 +82,6 @@ export function CreateBlogModal({
       
       await createBlog(blogData);
       
-      toast.success('Blog post created successfully!');
       form.reset();
       onClose();
       onSuccess?.();

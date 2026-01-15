@@ -29,7 +29,7 @@ export function BlogCard({ blog }: BlogCardProps) {
         )}
         <CardContent className="flex-1 p-6">
           <div className="flex flex-wrap gap-2 mb-3">
-            {blog.categories?.slice(0, 2).map((category) => (
+            {blog.categories?.map((category) => (
               <Badge key={category.id} variant="outline" className="text-xs">
                 {category.name}
               </Badge>

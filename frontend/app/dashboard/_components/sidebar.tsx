@@ -92,6 +92,11 @@ const sidebarItems = [
     href: "/dashboard/blog",
     icon: FileEdit,
   },
+  {
+    title: "Blog Categories",
+    href: "/dashboard/blog/categories",
+    icon: Tag,
+  },
 ];
 
 interface SidebarProps {
