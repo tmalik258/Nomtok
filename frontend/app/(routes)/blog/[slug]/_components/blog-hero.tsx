@@ -12,7 +12,7 @@ interface BlogHeroProps {
 
 export function BlogHero({ blog }: BlogHeroProps) {
   return (
-    <div className="relative flex items-center justify-center overflow-hidden py-10 rounded-lg">
+    <div className="relative min-h-[70vh] flex items-center justify-center overflow-hidden py-10 rounded-lg">
       {blog.cover_image_url ? (
         <div className="absolute inset-0">
           <Image
