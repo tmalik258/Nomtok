@@ -116,7 +116,7 @@ export function BlogManagement() {
     const newPublishedStatus = !blog.is_published;
     const newPublishedAt = newPublishedStatus 
       ? (blog.published_at || new Date().toISOString())
-      : null;
+      : undefined;
     
     optimisticallyUpdateBlog(id, {
       is_published: newPublishedStatus,
