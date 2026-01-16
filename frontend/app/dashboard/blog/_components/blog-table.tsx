@@ -15,12 +15,16 @@ interface BlogTableProps {
   blogs: BlogPost[];
   onEdit: (blog: BlogPost) => void;
   onDelete: (id: string) => void;
+  onTogglePublish: (id: string) => void;
+  isTogglingPublish?: string | null;
 }
 
 export function BlogTable({
   blogs,
   onEdit,
   onDelete,
+  onTogglePublish,
+  isTogglingPublish,
 }: BlogTableProps) {
   return (
     <Card className="p-0 glass-effect backdrop-blur-xl border-orange-500/20 shadow-lg">
@@ -55,6 +59,8 @@ export function BlogTable({
                 blog={blog}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onTogglePublish={onTogglePublish}
+                isTogglingPublish={isTogglingPublish === blog.id}
               />
             ))}
           </TableBody>

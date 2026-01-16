@@ -32,13 +32,14 @@ export function BlogManagement() {
     params,
   } = useBlogsPaginated({ limit: 10 });
 
-  const { deleteBlog, loading: deleteLoading } = useAdminBlog();
+  const { deleteBlog, togglePublishBlog, loading: deleteLoading } = useAdminBlog();
   
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [blogToDelete, setBlogToDelete] = useState<string | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [blogToEdit, setBlogToEdit] = useState<BlogPost | null>(null);
+  const [togglingPublishId, setTogglingPublishId] = useState<string | null>(null);
 
   // Memoized handlers to prevent unnecessary re-renders
   const handleSearch = useCallback((query: string) => {
@@ -105,6 +106,18 @@ export function BlogManagement() {
   const handleSortOrderChange = useCallback((order: "asc" | "desc") => {
     setSortOrder(order);
   }, [setSortOrder]);
+
+  const handleTogglePublish = useCallback(async (id: string) => {
+    setTogglingPublishId(id);
+    try {
+      await togglePublishBlog(id);
+      refetch();
+    } catch (error) {
+      console.error("Failed to toggle publish status:", error);
+    } finally {
+      setTogglingPublishId(null);
+    }
+  }, [togglePublishBlog, refetch]);
 
   // Memoized filter props to prevent unnecessary re-renders of BlogFilters
   const filterProps = useMemo(() => ({
@@ -177,6 +190,8 @@ export function BlogManagement() {
           blogs={blogs}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onTogglePublish={handleTogglePublish}
+          isTogglingPublish={togglingPublishId}
         />
       )}
 
