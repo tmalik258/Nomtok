@@ -3,6 +3,7 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BlogPost } from "@/lib/types";
-import { Edit, Trash2, Star, MoreVertical, CheckCircle, XCircle } from "lucide-react";
+import { Edit, Trash2, Star, MoreVertical } from "lucide-react";
 import { format } from "date-fns";
 
 interface BlogTableRowProps {
@@ -42,20 +43,28 @@ export function BlogTableRow({
         </div>
       </TableCell>
       <TableCell>
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <div
-              className={`h-3 w-3 rounded-full ${
-                blog.is_published ? "bg-green-500" : "bg-red-500"
-              }`}
-              title={blog.is_published ? "Published" : "Not Published"}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={blog.is_published}
+              onCheckedChange={() => onTogglePublish(blog.id)}
+              disabled={isTogglingPublish}
+              className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
+              aria-label={blog.is_published ? "Unpublish blog post" : "Publish blog post"}
             />
-            <span className="text-sm font-medium">
-              {blog.is_published ? "Published" : "Draft"}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">
+                {blog.is_published ? "Published" : "Draft"}
+              </span>
+              {blog.published_at && (
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(blog.published_at), "MMM d, yyyy")}
+                </span>
+              )}
+            </div>
           </div>
           {blog.is_featured && (
-            <Badge variant="default" className="bg-orange-500 hover:bg-orange-600 w-fit mt-1">
+            <Badge variant="default" className="bg-orange-500 hover:bg-orange-600 w-fit">
               <Star className="h-3 w-3 mr-1" />
               Featured
             </Badge>
@@ -115,29 +124,6 @@ export function BlogTableRow({
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onTogglePublish(blog.id)}
-                disabled={isTogglingPublish}
-                className="cursor-pointer"
-              >
-                {isTogglingPublish ? (
-                  <>
-                    <MoreVertical className="h-4 w-4 mr-2 animate-spin" />
-                    {blog.is_published ? "Unpublishing..." : "Publishing..."}
-                  </>
-                ) : blog.is_published ? (
-                  <>
-                    <XCircle className="h-4 w-4 mr-2 text-red-600" />
-                    Unpublish
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                    Publish
-                  </>
-                )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
