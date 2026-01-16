@@ -12,7 +12,7 @@ interface BlogHeroProps {
 
 export function BlogHero({ blog }: BlogHeroProps) {
   return (
-    <div className="relative min-h-[60vh] flex items-center justify-center overflow-hidden pt-20 rounded-lg">
+    <div className="relative flex items-center justify-center overflow-hidden py-10 rounded-lg">
       {blog.cover_image_url ? (
         <div className="absolute inset-0">
           <Image
@@ -38,24 +38,24 @@ export function BlogHero({ blog }: BlogHeroProps) {
             </Badge>
           ))}
           {blog.is_featured && (
-            <Badge className="bg-orange-500 text-white">
+            <Badge className="bg-orange-500 text-gray-900">
               Featured
             </Badge>
           )}
         </div>
         
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white drop-shadow-lg">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 drop-shadow-lg">
           {blog.title}
         </h1>
         
         {blog.excerpt && (
-          <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto drop-shadow-md">
+          <p className="text-xl md:text-2xl text-gray-900/90 mb-8 max-w-3xl mx-auto drop-shadow-md">
             {blog.excerpt}
           </p>
         )}
         
         {blog.published_at && (
-          <div className="flex items-center justify-center gap-2 text-white/80">
+          <div className="flex items-center justify-center gap-2 text-gray-900/80">
             <Calendar className="h-5 w-5" />
             <span className="text-lg">
               {format(new Date(blog.published_at), "MMMM d, yyyy")}
