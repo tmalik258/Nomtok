@@ -80,6 +80,7 @@ async def create_blog(
                 )
                 db.add(blog_post_category)
         
+        await db.commit()
         await db.refresh(new_blog)
         
         # Trigger sitemap regeneration in background
@@ -322,6 +323,7 @@ async def update_blog(
                 )
                 db.add(blog_post_category)
         
+        await db.commit()
         await db.refresh(db_blog)
         
         # Trigger sitemap regeneration in background
@@ -368,6 +370,7 @@ async def delete_blog(
         
         # Hard delete - remove from database
         await db.delete(db_blog)
+        await db.commit()
         
         # Trigger sitemap regeneration in background
         asyncio.create_task(trigger_sitemap_regeneration())
@@ -410,6 +413,7 @@ async def toggle_publish_blog(
         elif not db_blog.is_published:
             db_blog.published_at = None
         
+        await db.commit()
         await db.refresh(db_blog)
         
         # Trigger sitemap regeneration in background
@@ -448,6 +452,7 @@ async def toggle_feature_blog(
         
         db_blog.is_featured = not db_blog.is_featured
         
+        await db.commit()
         await db.refresh(db_blog)
         
         # Trigger sitemap regeneration in background
@@ -488,6 +493,7 @@ async def create_blog_category(
         
         new_category = BlogCategory(**category.model_dump())
         db.add(new_category)
+        await db.commit()
         await db.refresh(new_category)
         
         return BlogCategoryResponse.model_validate(new_category)
@@ -560,6 +566,7 @@ async def update_blog_category(
         for field, value in category_update.model_dump(exclude_unset=True).items():
             setattr(existing_category, field, value)
         
+        await db.commit()
         await db.refresh(existing_category)
         
         return BlogCategoryResponse.model_validate(existing_category)
@@ -598,6 +605,7 @@ async def delete_blog_category(
             )
         
         await db.execute(delete(BlogCategory).filter(BlogCategory.id == category_id))
+        await db.commit()
         
         return None
     except HTTPException:
