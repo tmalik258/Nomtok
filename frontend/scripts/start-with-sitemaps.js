@@ -81,6 +81,10 @@ async function startServer() {
     console.log('[startup] Received SIGINT, shutting down gracefully')
     child.kill('SIGINT')
   })
+  
+  // Wait a moment to ensure server is starting
+  await sleep(2000)
+  console.log('[startup] Next.js server process started, health checks should now pass')
 }
 
 async function run() {
@@ -90,13 +94,16 @@ async function run() {
     console.warn('[startup] Health check error (continuing anyway):', err?.message || err)
   }
   
-  try {
-    await main()
-  } catch (err) {
-    console.error('[startup] sitemap generation failed; starting server anyway:', err)
-  }
-  
+  // Start the server first so health checks can pass immediately
   await startServer()
+  
+  // Run sitemap generation in the background after a short delay
+  // This allows the server to start responding to health checks
+  setTimeout(() => {
+    main().catch((err) => {
+      console.error('[startup] sitemap generation failed (non-fatal):', err)
+    })
+  }, 5000) // Wait 5 seconds for server to be ready
 }
 
 run().catch((err) => {
