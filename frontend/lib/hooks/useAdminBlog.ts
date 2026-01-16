@@ -98,7 +98,7 @@ export function useAdminBlog() {
 
     try {
       await adminApi.put(`/blog/${blogId}/publish/`);
-      toast.success('Blog post publish status updated');
+      // Don't show toast here - let the component handle it after refetch
       return true;
     } catch (err: unknown) {
       const error = err as AxiosError<{ detail: string }>;

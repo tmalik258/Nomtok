@@ -114,6 +114,15 @@ export const useBlogsPaginated = (initialParams?: PaginatedBlogsParams) => {
     fetchBlogs(params);
   }, [fetchBlogs, params]);
 
+  const optimisticallyUpdateBlog = useCallback((blogId: string, updates: Partial<BlogPost>) => {
+    setData(prev => ({
+      ...prev,
+      blogs: prev.blogs.map(blog => 
+        blog.id === blogId ? { ...blog, ...updates } : blog
+      )
+    }));
+  }, []);
+
   return {
     ...data,
     loading,
@@ -128,6 +137,7 @@ export const useBlogsPaginated = (initialParams?: PaginatedBlogsParams) => {
     setCategoryFilter,
     setSortBy,
     setSortOrder,
-    refetch
+    refetch,
+    optimisticallyUpdateBlog
   };
 };

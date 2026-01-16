@@ -30,6 +30,7 @@ export function BlogManagement() {
     setSortBy,
     setSortOrder,
     params,
+    optimisticallyUpdateBlog,
   } = useBlogsPaginated({ limit: 10 });
 
   const { deleteBlog, togglePublishBlog, loading: deleteLoading } = useAdminBlog();
@@ -108,16 +109,41 @@ export function BlogManagement() {
   }, [setSortOrder]);
 
   const handleTogglePublish = useCallback(async (id: string) => {
+    const blog = blogs.find(b => b.id === id);
+    if (!blog) return;
+
+    // Optimistically update the UI immediately
+    const newPublishedStatus = !blog.is_published;
+    const newPublishedAt = newPublishedStatus 
+      ? (blog.published_at || new Date().toISOString())
+      : null;
+    
+    optimisticallyUpdateBlog(id, {
+      is_published: newPublishedStatus,
+      published_at: newPublishedAt,
+    });
+
     setTogglingPublishId(id);
+    
     try {
-      await togglePublishBlog(id);
-      refetch();
+      const success = await togglePublishBlog(id);
+      if (success) {
+        // Show success message after API call succeeds
+        toast.success(`Blog post ${newPublishedStatus ? 'published' : 'unpublished'} successfully`);
+        // Refetch in the background to ensure data consistency (silently)
+        refetch();
+      }
     } catch (error) {
+      // Revert optimistic update on error
+      optimisticallyUpdateBlog(id, {
+        is_published: blog.is_published,
+        published_at: blog.published_at,
+      });
       console.error("Failed to toggle publish status:", error);
     } finally {
       setTogglingPublishId(null);
     }
-  }, [togglePublishBlog, refetch]);
+  }, [togglePublishBlog, refetch, blogs, optimisticallyUpdateBlog]);
 
   // Memoized filter props to prevent unnecessary re-renders of BlogFilters
   const filterProps = useMemo(() => ({
