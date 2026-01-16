@@ -58,7 +58,7 @@ export function BlogDetailClient({ slug, initialBlog, renderHero = false }: Blog
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-full bg-cream">
       {renderHero && <BlogHero blog={displayBlog} />}
       <BlogContent blog={displayBlog} />
     </div>
