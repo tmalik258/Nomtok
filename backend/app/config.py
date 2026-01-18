@@ -171,3 +171,15 @@ FRONTEND_SITEMAP_SECRET = os.getenv("FRONTEND_SITEMAP_SECRET")
 COOKIE_EXTRACTION_WAIT_TIME = int(os.getenv("COOKIE_EXTRACTION_WAIT_TIME", "4"))  # seconds per page
 COOKIE_EXTRACTION_FINAL_WAIT = int(os.getenv("COOKIE_EXTRACTION_FINAL_WAIT", "6"))  # final wait
 COOKIE_EXTRACTION_MAX_RETRIES = int(os.getenv("COOKIE_EXTRACTION_MAX_RETRIES", "3"))  # retry attempts
+
+# SMTP configuration for contact form emails
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587") or "587")
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASS = os.getenv("SMTP_PASS", "")
+SMTP_FROM = os.getenv("SMTP_FROM", "")
+CONTACT_EMAILS = [
+    email.strip()
+    for email in (os.getenv("CONTACT_EMAILS", "nomtok12@gmail.com").split(","))
+    if email.strip()
+]

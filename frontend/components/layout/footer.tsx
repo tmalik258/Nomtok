@@ -24,6 +24,7 @@ const Footer = () => {
             <Link href="/restaurants" className="hover:underline">Restaurants</Link>
             <Link href="/influencers" className="hover:underline">Influencers</Link>
             <Link href="/blog" className="hover:underline">Blog</Link>
+            <Link href="/contact" className="hover:underline">Contact</Link>
           </nav>
 
           {/* Social Media Links */}
