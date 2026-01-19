@@ -94,16 +94,17 @@ async function run() {
     console.warn('[startup] Health check error (continuing anyway):', err?.message || err)
   }
   
-  // Start the server first so health checks can pass immediately
+  // Start sitemap generation first (validates backend readiness with real API calls)
+  // This ensures backend is fully ready to handle requests before server accepts them
+  const sitemapPromise = main().catch((err) => {
+    console.error('[startup] sitemap generation failed (non-fatal):', err)
+  })
+  
+  // Start server immediately (non-blocking, health checks can pass)
+  // Sitemaps continue in background, ensuring backend is ready when first requests arrive
   await startServer()
   
-  // Run sitemap generation in the background after a short delay
-  // This allows the server to start responding to health checks
-  setTimeout(() => {
-    main().catch((err) => {
-      console.error('[startup] sitemap generation failed (non-fatal):', err)
-    })
-  }, 5000) // Wait 5 seconds for server to be ready
+  // Sitemaps continue running in background
 }
 
 run().catch((err) => {
