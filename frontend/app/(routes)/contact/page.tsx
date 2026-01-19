@@ -12,8 +12,8 @@ export const dynamic = "force-dynamic";
 
 export default async function ContactPage() {
   return (
-    <div className="min-h-screen bg-cream py-12 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-cream py-12 my-auto px-4">
+      <div className="max-w-2xl m-auto">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
             Contact Us
