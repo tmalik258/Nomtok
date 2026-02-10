@@ -1209,16 +1209,17 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
                                     await JobService.append_error_message(job_session, job_id, msg_to_append)
                             except Exception as _update_err:
                                 logger.warning(f"Failed to append error message: {_update_err}")
-                        # Persist FAILED status and error_message for the video
+                        # Persist FAILED status and error_message for the video (use dedicated session to avoid closing pipeline's transaction)
                         try:
-                            v_stmt = select(Video).where(Video.id == video.id)
-                            v_res = await db.execute(v_stmt)
-                            v_obj = v_res.scalar_one_or_none()
-                            if v_obj:
-                                v_obj.status = VideoProcessingStatus.FAILED
-                                v_obj.error_message = msg_to_append or str(e)
-                                db.add(v_obj)
-                                await db.commit()
+                            async with AsyncSessionLocal() as persist_session:
+                                v_stmt = select(Video).where(Video.id == video.id)
+                                v_res = await persist_session.execute(v_stmt)
+                                v_obj = v_res.scalar_one_or_none()
+                                if v_obj:
+                                    v_obj.status = VideoProcessingStatus.FAILED
+                                    v_obj.error_message = msg_to_append or str(e)
+                                    persist_session.add(v_obj)
+                                    await persist_session.commit()
                         except Exception as _persist_err:
                             logger.warning(f"Failed to persist FAILED status for video {getattr(video, 'id', None)}: {_persist_err}")
                     except Exception:
