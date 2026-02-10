@@ -270,6 +270,8 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
     use_tor = False
     max_attempts = 4  # Increased to allow for multiple fallback strategies
     forced_cookie_refresh_done = False
+    # Format fallbacks when "Requested format is not available" (attempt 0 -> bestaudio/best, 1 -> bestaudio, 2+ -> best)
+    format_fallbacks = ["bestaudio/best", "bestaudio", "best"]
 
     for attempt in range(max_attempts):
         downloaded_file = None
@@ -279,8 +281,9 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
             with tempfile.NamedTemporaryFile(suffix=".%(ext)s", delete=False) as temp_file:
                 temp_output_template = temp_file.name
 
+            format_choice = format_fallbacks[min(attempt, len(format_fallbacks) - 1)]
             ydl_opts = {
-                "format": "bestaudio/best",
+                "format": format_choice,
                 "outtmpl": temp_output_template,
                 "quiet": False,  # Enable verbose output to see what's happening
                 "verbose": True,  # Enable verbose logging
@@ -540,7 +543,7 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
             ]
             await loop.run_in_executor(
                 None,
-                lambda: subprocess.run(ffmpeg_command, check=True, capture_output=True, text=True),
+                lambda: subprocess.run(ffmpeg_command, check=True, capture_output=True),
             )
 
             # Cleanup
@@ -671,6 +674,22 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                 await asyncio.sleep(delay)
                 continue
 
+            # Requested format not available: retry with next format in fallback list
+            format_unavailable = (
+                "requested format is not available" in err_l or "format is not available" in err_l
+            )
+            if format_unavailable and attempt < max_attempts - 1:
+                next_format = format_fallbacks[min(attempt + 1, len(format_fallbacks) - 1)]
+                logger.warning(
+                    f"=== FORMAT NOT AVAILABLE === retrying with format: {next_format}"
+                )
+                if downloaded_file and os.path.exists(downloaded_file):
+                    os.remove(downloaded_file)
+                if os.path.exists(final_output_path):
+                    os.remove(final_output_path)
+                await asyncio.sleep(1)
+                continue
+
             # Check if error might be due to outdated yt-dlp and trigger update
             # Only check on second-to-last or last attempt to allow retry after update
             err_l = err.lower()
@@ -708,12 +727,13 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
             raise PipelineError(cls.get("type", "yt_dlp_download"), err, details)
 
         except subprocess.CalledProcessError as e:
-            logger.error(f"FFmpeg conversion failed for {video_url}: {e.stderr}")
+            stderr_str = e.stderr.decode("utf-8", errors="replace") if e.stderr else ""
+            logger.error(f"FFmpeg conversion failed for {video_url}: {stderr_str}")
             if downloaded_file and os.path.exists(downloaded_file):
                 os.remove(downloaded_file)
             if os.path.exists(final_output_path):
                 os.remove(final_output_path)
-            details = {"video_url": video_url, "stderr": e.stderr}
+            details = {"video_url": video_url, "stderr": stderr_str}
             raise PipelineError("ffmpeg_failed", "FFmpeg conversion failed", details)
 
         except Exception as e:

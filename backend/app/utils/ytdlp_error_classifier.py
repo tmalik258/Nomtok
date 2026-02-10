@@ -21,4 +21,18 @@ def classify_ytdlp_error(text: str) -> dict:
             "type": "rate_limited",
             "hint": "Reduce concurrency, add delays, or use proxy rotation.",
         }
+    if "utf-8" in lower and "codec" in lower and "decode" in lower:
+        return {
+            "type": "decode_error",
+            "hint": "Subprocess output contained non-UTF-8 bytes; check FFmpeg/yt-dlp output or locale.",
+        }
+    if (
+        "requested format is not available" in lower
+        or "format is not available" in lower
+        or "use --list-formats" in lower
+    ):
+        return {
+            "type": "format_unavailable",
+            "hint": "Try a different format or use --list-formats to see available formats.",
+        }
     return {"type": "unknown", "hint": "See raw error message for details."}

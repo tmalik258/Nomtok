@@ -71,7 +71,7 @@ async def update_ytdlp() -> Tuple[bool, Optional[str]]:
 
             return True, message
         else:
-            error_msg = stderr.decode("utf-8") if stderr else "Unknown error"
+            error_msg = stderr.decode("utf-8", errors="replace") if stderr else "Unknown error"
             logger.error(f"yt-dlp update failed with return code {process.returncode}: {error_msg}")
             return False, f"Update failed: {error_msg}"
 
