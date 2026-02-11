@@ -1113,21 +1113,23 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
         if not videos:
             logger.info("No videos to process")
             if job_id:
-                result_data = {"message": "No videos to process", "total_videos": 0}
-                job_data = JobUpdateRequest(result_data=json.dumps(result_data))
-                await JobService.update_job(db, job_id, job_data)
+                async with AsyncSessionLocal() as job_session:
+                    result_data = {"message": "No videos to process", "total_videos": 0}
+                    job_data = JobUpdateRequest(result_data=json.dumps(result_data))
+                    await JobService.update_job(job_session, job_id, job_data)
             return {"message": "No videos to process", "total_videos": 0}
 
         logger.info(f"Selected {total_videos} videos for processing")
         
-        # Initialize job tracking
+        # Initialize job tracking (use dedicated session so pipeline db is never committed)
         if job_id:
-            await JobService.update_tracking_stats(db, job_id,
-                queue_size=total_videos,
-                items_in_progress=0,
-                failed_items=0
-            )
-            await JobService.update_progress(db, job_id, 0, total_videos)
+            async with AsyncSessionLocal() as job_session:
+                await JobService.update_tracking_stats(job_session, job_id,
+                    queue_size=total_videos,
+                    items_in_progress=0,
+                    failed_items=0
+                )
+                await JobService.update_progress(job_session, job_id, 0, total_videos)
 
         async def process_with_semaphore(video):
             nonlocal processed_videos, failed_videos, errors_list
@@ -1258,12 +1260,13 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
         }
         
         if job_id:
-            # Only update result_data and reset items_in_progress; error_messages appended during processing
-            job_data = JobUpdateRequest(
-                result_data=json.dumps(result_data)
-            )
-            await JobService.update_job(db, job_id, job_data)
-            await JobService.update_tracking_stats(db, job_id, items_in_progress=0)
+            # Only update result_data and reset items_in_progress (use dedicated session so pipeline db is never committed)
+            async with AsyncSessionLocal() as job_session:
+                job_data = JobUpdateRequest(
+                    result_data=json.dumps(result_data)
+                )
+                await JobService.update_job(job_session, job_id, job_data)
+                await JobService.update_tracking_stats(job_session, job_id, items_in_progress=0)
             
         # Return result with errors for admin route to act upon
         result_data["errors"] = errors_list
@@ -1271,7 +1274,8 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
     except Exception as e:
         logger.error(f"Error in pipeline: {e}")
         if job_id:
-            await JobService.update_tracking_stats(db, job_id, items_in_progress=0)
+            async with AsyncSessionLocal() as job_session:
+                await JobService.update_tracking_stats(job_session, job_id, items_in_progress=0)
         
         # Return error information instead of raising
         return {
