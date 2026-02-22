@@ -1061,15 +1061,22 @@ async def process_video(video: Video):
                 return True  # Return success value
             except Exception as e:
                 logger.error(f"Error processing video {video.youtube_video_id}: {e}")
-                # Set failure status and error message before propagating
+                # Persist FAILED status in a new session; do not use db here because a failed
+                # flush/execute elsewhere may have closed the current transaction
                 try:
-                    video.status = VideoProcessingStatus.FAILED
-                    video.error_message = str(e)
-                    db.add(video)
-                    await db.flush()
+                    async with AsyncSessionLocal() as persist_session:
+                        v_res = await persist_session.execute(
+                            select(Video).where(Video.id == video.id)
+                        )
+                        v_obj = v_res.scalar_one_or_none()
+                        if v_obj:
+                            v_obj.status = VideoProcessingStatus.FAILED
+                            v_obj.error_message = str(e)
+                            persist_session.add(v_obj)
+                            await persist_session.commit()
                 except Exception as _status_err:
-                    logger.warning(f"Failed to set video status to FAILED: {_status_err}")
-                raise  # Let the transaction rollback automatically
+                    logger.warning(f"Failed to persist FAILED status for video {video.youtube_video_id}: {_status_err}")
+                raise  # Let the outer transaction rollback automatically
 
 async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list] = None, job_id: Optional[uuid.UUID] = None):
     """Main pipeline to process videos with job tracking."""

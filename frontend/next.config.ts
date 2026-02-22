@@ -109,15 +109,8 @@ const nextConfig: NextConfig = {
     return []
   },
   async redirects() {
-    return [
-      {
-        // Redirect www to non-www (canonical is non-www)
-        source: '/:path*',
-        has: [{ type: 'host', value: 'www.nomtok.com' }],
-        destination: 'https://nomtok.com/:path*',
-        permanent: true, // This is a 301 redirect
-      },
-    ];
+    // www -> non-www is handled by Nginx (single hop, no Next.js redirect)
+    return [];
   },
 };
 
