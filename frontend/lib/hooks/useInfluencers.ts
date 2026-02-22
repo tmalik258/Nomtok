@@ -10,6 +10,7 @@ interface InfluencersParams {
   youtube_channel_id?: string;
   youtube_channel_url?: string;
   include_video_details?: boolean;
+  sort_by?: string;
   page?: number;
   limit?: number;
 }
@@ -119,6 +120,10 @@ export const useInfluencers = (initialParams?: InfluencersParams) => {
     updateParams({ name, page: 1 }); // Reset to first page when searching
   }, [updateParams]);
 
+  const setSortBy = useCallback((sort_by: string) => {
+    updateParams({ sort_by, page: 1 }); // Reset to first page when changing sort
+  }, [updateParams]);
+
   useEffect(() => {
     fetchInfluencers(params);
   }, [params, fetchInfluencers]);
@@ -132,6 +137,7 @@ export const useInfluencers = (initialParams?: InfluencersParams) => {
     updateParams,
     goToPage,
     setSearchQuery,
+    setSortBy,
     refetch: () => fetchInfluencers(params)
   };
 };

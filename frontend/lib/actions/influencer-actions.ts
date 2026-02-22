@@ -7,6 +7,7 @@ const influencerActions = {
     youtube_channel_id?: string;
     youtube_channel_url?: string;
     city?: string;
+    sort_by?: string;
     skip?: number;
     limit?: number;
     include_listings?: boolean;

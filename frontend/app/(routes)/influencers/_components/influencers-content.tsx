@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useInfluencers } from "@/lib/hooks";
-import { Influencer } from "@/lib/types";
 import InfluencersHero from "./influencers-hero";
 import { InfluencerSearchFilter } from "./influencer-search-filter";
 import InfluencersGrid from "./influencers-grid";
@@ -16,14 +15,15 @@ export default function InfluencersContent() {
 
   // Initialize search parameters from URL
   const searchQueryParam = searchParams.get("search") || "";
-  const sortByParam = searchParams.get("sortBy") || "default";
+  const sortByParam = searchParams.get("sortBy") || "";
   const countryParam = searchParams.get("country") || "";
+  const pageParam = Number(searchParams.get("page") || "1") || 1;
   
   const [searchQuery, setSearchQuery] = useState(searchQueryParam);
   const [sortBy, setSortBy] = useState(sortByParam);
   const [country, setCountry] = useState(countryParam);
-  const [filteredInfluencers, setFilteredInfluencers] = useState<Influencer[]>([]);
   
+  // Pass URL params to hook for server-side filtering/sorting
   const {
     influencers,
     loading,
@@ -31,9 +31,14 @@ export default function InfluencersContent() {
     page,
     totalPages,
     goToPage,
+    setSearchQuery: setBackendSearchQuery,
+    setSortBy: setBackendSortBy,
     refetch
   } = useInfluencers({
-    limit: 12
+    limit: 12,
+    page: pageParam,
+    name: searchQueryParam || undefined,
+    sort_by: sortByParam || undefined,
   });
 
   // Function to update URL with search query
@@ -101,64 +106,26 @@ export default function InfluencersContent() {
     refetch();
   };
 
-  // Sync local state with URL parameters
+  // Sync local state with URL parameters and trigger backend fetch
   useEffect(() => {
     setSearchQuery(searchQueryParam);
-  }, [searchQueryParam]);
+    setBackendSearchQuery(searchQueryParam);
+  }, [searchQueryParam, setBackendSearchQuery]);
 
   useEffect(() => {
     setSortBy(sortByParam);
-  }, [sortByParam]);
+    setBackendSortBy(sortByParam);
+  }, [sortByParam, setBackendSortBy]);
 
   useEffect(() => {
     setCountry(countryParam);
   }, [countryParam]);
 
-  // Set up filtered influencers
-  useEffect(() => {
-    if (influencers.length > 0) {
-      let filtered = [...influencers];
-
-      // Apply search filter - search only by influencer name
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        filtered = filtered.filter((influencer) => {
-          return influencer.name.toLowerCase().includes(query);
-        });
-      }
-
-      // Apply country filter - COMMENTED OUT for influencers list page
-      // Countries search functionality disabled for influencers list page
-      // if (country && country !== "") {
-      //   filtered = filtered.filter((influencer) => (influencer?.country === country));
-      // }
-
-      // Apply sorting
-      filtered.sort((a, b) => {
-        switch (sortBy) {
-          case "name":
-            return a.name.localeCompare(b.name);
-          case "subscribers":
-            return (b.subscriber_count || 0) - (a.subscriber_count || 0);
-          case "restaurants":
-            return (b.listings?.length || 0) - (a.listings?.length || 0);
-          case "recent":
-            return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
-          case "default":
-          default:
-            return 0;
-        }
-      });
-
-      setFilteredInfluencers(filtered);
-    }
-  }, [influencers, searchQuery, sortBy, country]);
-
   return (
     <div className="min-h-screen bg-cream p-2">
       <InfluencersHero 
         loading={loading}
-        influencers={filteredInfluencers}
+        influencers={influencers}
       />
       
       <div className="max-w-7xl mx-auto px-4 py-16 -mt-8 relative z-10">
@@ -179,7 +146,7 @@ export default function InfluencersContent() {
         <InfluencersGrid 
           loading={loading}
           error={error}
-          influencers={filteredInfluencers}
+          influencers={influencers}
           searchQuery={searchQuery}
           clearSearch={() => updateSearchQuery("")}
           onRefresh={handleRefresh}

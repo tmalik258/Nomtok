@@ -30,6 +30,7 @@ async def get_influencers(
     youtube_channel_id: str | None = None,
     youtube_channel_url: str | None = None,
     city: str | None = Query(None, description="Filter influencers by city (through restaurant listings)"),
+    sort_by: str | None = Query(None, description="Sort field: name, subscribers, recent, restaurants"),
     skip: int = 0,
     limit: int = 100,
     include_listings: Optional[bool] = Query(False, description="Include listings with influencers"),
@@ -113,6 +114,17 @@ async def get_influencers(
         # Distinct if city filter is applied to avoid duplicate influencers
         if city:
             query = query.distinct()
+
+        # Apply sorting
+        if sort_by == "name":
+            query = query.order_by(Influencer.name.asc())
+        elif sort_by == "subscribers":
+            query = query.order_by(Influencer.subscriber_count.desc().nullslast())
+        elif sort_by == "recent":
+            query = query.order_by(Influencer.created_at.desc())
+        else:
+            # Default sort by name
+            query = query.order_by(Influencer.name.asc())
 
         result = await db.execute(query.offset(skip).limit(limit))
         # Use unique() if city filter is not applied (to handle joinedload duplicates)
