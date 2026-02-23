@@ -141,13 +141,18 @@ export async function generateInfluencersSitemap(): Promise<void> {
 }
 
 export async function regenerateSitemapIndex(): Promise<void> {
-  const index = `<?xml version="1.0" encoding="UTF-8"?>
+  try {
+    console.log('[sitemaps] regenerating sitemap.xml index...')
+    const index = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <sitemap><loc>${SITE_URL}/sitemap-0.xml</loc></sitemap>
 <sitemap><loc>${SITE_URL}/restaurants-sitemap.xml</loc></sitemap>
 <sitemap><loc>${SITE_URL}/influencers-sitemap.xml</loc></sitemap>
 </sitemapindex>`
-  await writeXml('sitemap.xml', index)
+    await writeXml('sitemap.xml', index)
+  } catch (err) {
+    console.error('[sitemaps] Failed to regenerate sitemap.xml index:', err)
+  }
 }
 
 async function main(): Promise<void> {
