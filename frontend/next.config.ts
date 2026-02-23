@@ -71,8 +71,8 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Custom sitemaps: restaurants and influencers
-        source: '/(restaurants|influencers)-sitemap.xml',
+        // Custom sitemaps: restaurants, influencers, and blogs
+        source: '/(restaurants|influencers|blogs)-sitemap.xml',
         headers: [
           { key: 'Content-Type', value: 'application/xml' },
           {
@@ -94,19 +94,44 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
+    // Sitemap rewrites - serve dynamically generated sitemaps via API route
+    const sitemapRewrites = [
+      {
+        source: '/sitemap.xml',
+        destination: '/api/sitemaps/sitemap.xml',
+      },
+      {
+        source: '/sitemap-0.xml',
+        destination: '/api/sitemaps/sitemap-0.xml',
+      },
+      {
+        source: '/restaurants-sitemap.xml',
+        destination: '/api/sitemaps/restaurants-sitemap.xml',
+      },
+      {
+        source: '/influencers-sitemap.xml',
+        destination: '/api/sitemaps/influencers-sitemap.xml',
+      },
+      {
+        source: '/blogs-sitemap.xml',
+        destination: '/api/sitemaps/blogs-sitemap.xml',
+      },
+    ]
+
     // API routing configuration
     if (process.env.NODE_ENV === 'development') {
       // In development, proxy to local backend or Docker backend
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8030';
       return [
+        ...sitemapRewrites,
         {
           source: '/api/:path*',
           destination: `${backendUrl}/:path*/`
         }
       ]
     }
-    // In production (Vercel), API routes are handled by serverless functions
-    return []
+    // In production, only sitemap rewrites are needed
+    return sitemapRewrites
   },
   async redirects() {
     // www -> non-www is handled by Nginx (single hop, no Next.js redirect)
