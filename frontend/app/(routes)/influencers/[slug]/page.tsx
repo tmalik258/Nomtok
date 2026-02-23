@@ -18,8 +18,7 @@ export default async function InfluencerDetailPage({ params }: Props) {
   
   // Skip fetching during build phase - backend not accessible
   const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
-  const isDockerInternalUrl = base.includes('backend:') || base.includes('host.docker.internal');
-  const shouldSkipFetch = isNextBuildPhase || isDockerInternalUrl;
+  const shouldSkipFetch = isNextBuildPhase;
 
   if (!shouldSkipFetch) {
     try {
@@ -63,8 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   
   // Skip fetching during build phase - backend not accessible
   const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
-  const isDockerInternalUrl = base.includes('backend:') || base.includes('host.docker.internal');
-  const shouldSkipFetch = isNextBuildPhase || isDockerInternalUrl;
+  const shouldSkipFetch = isNextBuildPhase;
 
   // Fetch influencer data for metadata
   let influencer: Influencer | undefined;

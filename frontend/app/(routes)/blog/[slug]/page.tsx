@@ -17,8 +17,7 @@ export default async function BlogDetailPage({ params }: Props) {
   
   // Skip fetching during build phase - backend not accessible
   const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
-  const isDockerInternalUrl = base.includes('backend:') || base.includes('host.docker.internal');
-  const shouldSkipFetch = isNextBuildPhase || isDockerInternalUrl;
+  const shouldSkipFetch = isNextBuildPhase;
 
   if (!shouldSkipFetch) {
     try {
@@ -52,8 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   
   // Skip fetching during build phase - backend not accessible
   const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
-  const isDockerInternalUrl = base.includes('backend:') || base.includes('host.docker.internal');
-  const shouldSkipFetch = isNextBuildPhase || isDockerInternalUrl;
+  const shouldSkipFetch = isNextBuildPhase;
 
   let blog: BlogPost | undefined;
   

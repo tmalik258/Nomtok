@@ -46,8 +46,7 @@ export default async function BlogPage() {
   // Skip fetching during Next.js build phase - backend not accessible
   // Data will be fetched client-side via BlogContent component
   const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
-  const isDockerInternalUrl = base.includes('backend:') || base.includes('host.docker.internal');
-  const shouldSkipFetch = isNextBuildPhase || isDockerInternalUrl;
+  const shouldSkipFetch = isNextBuildPhase;
 
   if (!shouldSkipFetch) {
     try {

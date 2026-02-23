@@ -22,10 +22,9 @@ async function fetchAllRestaurantSlugs(): Promise<string[]> {
   // Skip fetching during Next.js build phase - backend not accessible
   // Pages will be generated on-demand via ISR when first requested
   const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
-  const isDockerInternalUrl = base.includes('backend:') || base.includes('host.docker.internal');
   
-  if (isNextBuildPhase || isDockerInternalUrl) {
-    console.log('[generateStaticParams] Skipping restaurant fetch (build phase or Docker URL)');
+  if (isNextBuildPhase) {
+    console.log('[generateStaticParams] Skipping restaurant fetch (build phase)');
     return [];
   }
 

@@ -20,10 +20,9 @@ async function fetchAll<T extends BaseItem>(
   // Skip fetching during Next.js build phase - backend not accessible
   // Sitemaps will be generated at container startup via start-with-sitemaps.js
   const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
-  const isDockerInternalUrl = API_URL.includes('backend:') || API_URL.includes('host.docker.internal')
   
-  if (isNextBuildPhase || isDockerInternalUrl) {
-    console.log(`[sitemaps] Skipping ${resource} fetch (build phase or Docker URL)`)
+  if (isNextBuildPhase) {
+    console.log(`[sitemaps] Skipping ${resource} fetch (build phase)`)
     return []
   }
 
