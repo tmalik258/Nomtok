@@ -40,10 +40,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
-      args: # Add this section
+      # Allow build container to access host network (for reaching running backend)
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
+      args:
         - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
         - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-        - NEXT_PUBLIC_API_URL=http://backend:8000
+        # Use host.docker.internal during build to reach the running backend at localhost:8030
+        - NEXT_PUBLIC_API_URL=http://host.docker.internal:8030
         - NEXT_PUBLIC_GA_ID=${NEXT_PUBLIC_GA_ID}
     container_name: nomtok_frontend_prod
     ports:

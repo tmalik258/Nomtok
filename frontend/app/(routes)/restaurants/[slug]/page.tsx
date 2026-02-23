@@ -22,17 +22,6 @@ async function fetchAllRestaurantSlugs(): Promise<string[]> {
   const LIMIT = 100; // Same as sitemap generation
   const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
 
-  // During Docker build, backend service isn't available yet
-  // Return empty array to allow build to complete (pages will be generated on-demand)
-  // NEXT_PHASE is only set during `next build`, not at runtime
-  const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
-  const isBackendUnavailable = base.includes('backend:') && isNextBuildPhase;
-  
-  if (isBackendUnavailable) {
-    console.log('[generateStaticParams] Skipping restaurant fetch during build (backend unavailable)');
-    return [];
-  }
-
   // Configure axios for build-time fetching
   const client = axios.create({
     baseURL: base,

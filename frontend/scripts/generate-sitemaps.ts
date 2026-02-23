@@ -17,21 +17,6 @@ async function fetchAll<T extends BaseItem>(
   resource: 'restaurants' | 'influencers',
   listKey: 'restaurants' | 'influencers'
 ): Promise<T[]> {
-  // Check multiple indicators for build-time context:
-  // 1. NEXT_PHASE is set during `next build`
-  // 2. CI environment variable is often set in CI/CD pipelines
-  // 3. During Docker build, there's no running container network
-  const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
-  const isCIEnvironment = process.env.CI === 'true'
-  const isBuildContext = isNextBuildPhase || isCIEnvironment
-  const isDockerInternalUrl = API_URL.includes('backend:')
-  
-  // During Docker build, backend service isn't available yet
-  // Return empty array to allow build to complete
-  if (isDockerInternalUrl && isBuildContext) {
-    console.log(`[sitemaps] Skipping ${resource} fetch during build (backend unavailable)`)
-    return []
-  }
 
   const results: T[] = []
   let skip = 0
