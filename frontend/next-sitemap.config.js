@@ -1,18 +1,24 @@
 const config = {
-  siteUrl: 'https://nomtok.com', // 👈 your live domain
-  generateRobotsTxt: true,       // also creates robots.txt automatically
+  siteUrl: 'https://nomtok.com',
+  generateRobotsTxt: true,
   changefreq: 'weekly',
   priority: 0.7,
+  exclude: [
+    '/dashboard',
+    '/dashboard/*',
+    '/login',
+    '/signup',
+    '/auth/*',
+  ],
   robotsTxtOptions: {
     additionalSitemaps: [
       'https://nomtok.com/restaurants-sitemap.xml',
       'https://nomtok.com/influencers-sitemap.xml',
     ],
-    // Exclude /dashboard from crawling
     policies: [
       {
-        userAgent: '*', // Apply the rule to all bots
-        disallow: ['/dashboard'], // Exclude /dashboard path
+        userAgent: '*',
+        disallow: ['/dashboard', '/dashboard/', '/login', '/signup', '/auth/'],
       },
     ],
   },
