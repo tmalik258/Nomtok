@@ -17,10 +17,21 @@ export const revalidate = 3600;
 
 // Fetch all restaurant slugs at build time for static generation
 async function fetchAllRestaurantSlugs(): Promise<string[]> {
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
+  
+  // Skip fetching during Next.js build phase - backend not accessible
+  // Pages will be generated on-demand via ISR when first requested
+  const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+  const isDockerInternalUrl = base.includes('backend:') || base.includes('host.docker.internal');
+  
+  if (isNextBuildPhase || isDockerInternalUrl) {
+    console.log('[generateStaticParams] Skipping restaurant fetch (build phase or Docker URL)');
+    return [];
+  }
+
   const slugs: string[] = [];
   let skip = 0;
   const LIMIT = 100; // Same as sitemap generation
-  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
 
   // Configure axios for build-time fetching
   const client = axios.create({

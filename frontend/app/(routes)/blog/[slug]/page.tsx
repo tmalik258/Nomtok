@@ -13,19 +13,26 @@ export const revalidate = 3600;
 export default async function BlogDetailPage({ params }: Props) {
   const { slug } = await params;
   let initialBlog: BlogPost | undefined;
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
   
-  try {
-    const getBlogCached = unstable_cache(
-      async () => {
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
-        const { data } = await axios.get(`${base}/blog/${slug}/`);
-        return data as BlogPost;
-      },
-      ["blog-detail", slug],
-      { revalidate: 3600 }
-    );
-    initialBlog = await getBlogCached();
-  } catch {}
+  // Skip fetching during build phase - backend not accessible
+  const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+  const isDockerInternalUrl = base.includes('backend:') || base.includes('host.docker.internal');
+  const shouldSkipFetch = isNextBuildPhase || isDockerInternalUrl;
+
+  if (!shouldSkipFetch) {
+    try {
+      const getBlogCached = unstable_cache(
+        async () => {
+          const { data } = await axios.get(`${base}/blog/${slug}/`);
+          return data as BlogPost;
+        },
+        ["blog-detail", slug],
+        { revalidate: 3600 }
+      );
+      initialBlog = await getBlogCached();
+    } catch {}
+  }
 
   return (
     <>
@@ -41,21 +48,28 @@ export default async function BlogDetailPage({ params }: Props) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
   
+  // Skip fetching during build phase - backend not accessible
+  const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+  const isDockerInternalUrl = base.includes('backend:') || base.includes('host.docker.internal');
+  const shouldSkipFetch = isNextBuildPhase || isDockerInternalUrl;
+
   let blog: BlogPost | undefined;
   
-  try {
-    const getBlogCached = unstable_cache(
-      async () => {
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
-        const { data } = await axios.get(`${base}/blog/${slug}/`);
-        return data as BlogPost;
-      },
-      ["blog-metadata", slug],
-      { revalidate: 3600 }
-    );
-    blog = await getBlogCached();
-  } catch {}
+  if (!shouldSkipFetch) {
+    try {
+      const getBlogCached = unstable_cache(
+        async () => {
+          const { data } = await axios.get(`${base}/blog/${slug}/`);
+          return data as BlogPost;
+        },
+        ["blog-metadata", slug],
+        { revalidate: 3600 }
+      );
+      blog = await getBlogCached();
+    } catch {}
+  }
 
   if (!blog) {
     return buildPageMetadata({

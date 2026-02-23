@@ -43,33 +43,41 @@ export default async function BlogPage() {
   let initialCategories: BlogCategory[] = [];
   const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
 
-  try {
-    const getCachedBlogs = unstable_cache(
-      async () => {
-        const { data } = await axios.get(`${base}/blog/`, {
-          params: { limit: 12, skip: 0 }
-        });
-        return data.blogs || [];
-      },
-      ["blog-list"],
-      { revalidate: 3600 }
-    );
+  // Skip fetching during Next.js build phase - backend not accessible
+  // Data will be fetched client-side via BlogContent component
+  const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+  const isDockerInternalUrl = base.includes('backend:') || base.includes('host.docker.internal');
+  const shouldSkipFetch = isNextBuildPhase || isDockerInternalUrl;
 
-    const getCachedCategories = unstable_cache(
-      async () => {
-        const { data } = await axios.get(`${base}/blog/categories/`);
-        return data || [];
-      },
-      ["blog-categories"],
-      { revalidate: 3600 }
-    );
+  if (!shouldSkipFetch) {
+    try {
+      const getCachedBlogs = unstable_cache(
+        async () => {
+          const { data } = await axios.get(`${base}/blog/`, {
+            params: { limit: 12, skip: 0 }
+          });
+          return data.blogs || [];
+        },
+        ["blog-list"],
+        { revalidate: 3600 }
+      );
 
-    [initialBlogs, initialCategories] = await Promise.all([
-      getCachedBlogs(),
-      getCachedCategories(),
-    ]);
-  } catch (error) {
-    console.error('[BlogPage] Error fetching blog data:', error);
+      const getCachedCategories = unstable_cache(
+        async () => {
+          const { data } = await axios.get(`${base}/blog/categories/`);
+          return data || [];
+        },
+        ["blog-categories"],
+        { revalidate: 3600 }
+      );
+
+      [initialBlogs, initialCategories] = await Promise.all([
+        getCachedBlogs(),
+        getCachedCategories(),
+      ]);
+    } catch (error) {
+      console.error('[BlogPage] Error fetching blog data:', error);
+    }
   }
 
   return (

@@ -14,32 +14,39 @@ export default async function InfluencerDetailPage({ params }: Props) {
   const { slug } = await params;
   let initialInfluencer: Influencer | undefined;
   let initialListings: Listing[] | undefined;
-  try {
-    const getInfluencerCached = unstable_cache(
-      async () => {
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
-        const { data } = await axios.get(`${base}/influencers/${slug}/`);
-        return data as Influencer;
-      },
-      ["influencer-detail", slug],
-      { revalidate: 3600 }
-    );
-    initialInfluencer = await getInfluencerCached();
-  } catch {}
-  try {
-    const getListingsCached = unstable_cache(
-      async () => {
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
-        const { data } = await axios.get(`${base}/listings/`, {
-          params: { influencer_slug: slug, approved_status: "Approved" }
-        });
-        return (data.listings ?? data) as Listing[];
-      },
-      ["influencer-listings", slug],
-      { revalidate: 3600 }
-    );
-    initialListings = await getListingsCached();
-  } catch {}
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
+  
+  // Skip fetching during build phase - backend not accessible
+  const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+  const isDockerInternalUrl = base.includes('backend:') || base.includes('host.docker.internal');
+  const shouldSkipFetch = isNextBuildPhase || isDockerInternalUrl;
+
+  if (!shouldSkipFetch) {
+    try {
+      const getInfluencerCached = unstable_cache(
+        async () => {
+          const { data } = await axios.get(`${base}/influencers/${slug}/`);
+          return data as Influencer;
+        },
+        ["influencer-detail", slug],
+        { revalidate: 3600 }
+      );
+      initialInfluencer = await getInfluencerCached();
+    } catch {}
+    try {
+      const getListingsCached = unstable_cache(
+        async () => {
+          const { data } = await axios.get(`${base}/listings/`, {
+            params: { influencer_slug: slug, approved_status: "Approved" }
+          });
+          return (data.listings ?? data) as Listing[];
+        },
+        ["influencer-listings", slug],
+        { revalidate: 3600 }
+      );
+      initialListings = await getListingsCached();
+    } catch {}
+  }
   return (
     <>
       {initialInfluencer && <div className="p-2">
@@ -52,40 +59,46 @@ export default async function InfluencerDetailPage({ params }: Props) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
   
+  // Skip fetching during build phase - backend not accessible
+  const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+  const isDockerInternalUrl = base.includes('backend:') || base.includes('host.docker.internal');
+  const shouldSkipFetch = isNextBuildPhase || isDockerInternalUrl;
+
   // Fetch influencer data for metadata
   let influencer: Influencer | undefined;
   let listings: Listing[] | undefined;
   
-  try {
-    const getInfluencerCached = unstable_cache(
-      async () => {
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
-        const { data } = await axios.get(`${base}/influencers/${slug}/`);
-        return data as Influencer;
-      },
-      ["influencer-metadata", slug],
-      { revalidate: 3600 }
-    );
-    influencer = await getInfluencerCached();
-  } catch {}
-
-  // Fetch listings to extract cities, cuisines, and tags
-  if (influencer) {
+  if (!shouldSkipFetch) {
     try {
-      const getListingsCached = unstable_cache(
+      const getInfluencerCached = unstable_cache(
         async () => {
-          const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
-          const { data } = await axios.get(`${base}/listings/`, {
-            params: { influencer_slug: slug, approved_status: "Approved", limit: 100 }
-          });
-          return (data.listings ?? data) as Listing[];
+          const { data } = await axios.get(`${base}/influencers/${slug}/`);
+          return data as Influencer;
         },
-        ["influencer-metadata-listings", slug],
+        ["influencer-metadata", slug],
         { revalidate: 3600 }
       );
-      listings = await getListingsCached();
+      influencer = await getInfluencerCached();
     } catch {}
+
+    // Fetch listings to extract cities, cuisines, and tags
+    if (influencer) {
+      try {
+        const getListingsCached = unstable_cache(
+          async () => {
+            const { data } = await axios.get(`${base}/listings/`, {
+              params: { influencer_slug: slug, approved_status: "Approved", limit: 100 }
+            });
+            return (data.listings ?? data) as Listing[];
+          },
+          ["influencer-metadata-listings", slug],
+          { revalidate: 3600 }
+        );
+        listings = await getListingsCached();
+      } catch {}
+    }
   }
 
   // Handle influencer not found

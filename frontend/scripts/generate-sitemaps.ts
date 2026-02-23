@@ -17,6 +17,15 @@ async function fetchAll<T extends BaseItem>(
   resource: 'restaurants' | 'influencers',
   listKey: 'restaurants' | 'influencers'
 ): Promise<T[]> {
+  // Skip fetching during Next.js build phase - backend not accessible
+  // Sitemaps will be generated at container startup via start-with-sitemaps.js
+  const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
+  const isDockerInternalUrl = API_URL.includes('backend:') || API_URL.includes('host.docker.internal')
+  
+  if (isNextBuildPhase || isDockerInternalUrl) {
+    console.log(`[sitemaps] Skipping ${resource} fetch (build phase or Docker URL)`)
+    return []
+  }
 
   const results: T[] = []
   let skip = 0
@@ -50,8 +59,8 @@ async function fetchAll<T extends BaseItem>(
     } catch (err) {
       // During build, log but don't fail - return empty results
       const error = err as { code?: string; message?: string }
-      if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
-        console.log(`[sitemaps] ${resource} fetch skipped (backend unavailable during build)`)
+      if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+        console.log(`[sitemaps] ${resource} fetch skipped (backend unavailable: ${error.code})`)
         break
       }
       console.error(`[sitemaps] ${resource} page fetch failed at skip=${skip}:`, err)
