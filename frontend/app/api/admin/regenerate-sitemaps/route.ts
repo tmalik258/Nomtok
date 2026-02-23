@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateRestaurantsSitemap, generateInfluencersSitemap } from '@/scripts/generate-sitemaps';
+import { generateRestaurantsSitemap, generateInfluencersSitemap, regenerateSitemapIndex } from '@/scripts/generate-sitemaps';
+
+// Force dynamic to prevent pre-rendering during build
+export const dynamic = 'force-dynamic';
 
 const SITEMAP_SECRET = process.env.SITEMAP_REGENERATION_SECRET;
 
@@ -21,6 +24,9 @@ export async function POST(request: NextRequest) {
       generateRestaurantsSitemap(),
       generateInfluencersSitemap()
     ]);
+    
+    // Also regenerate the sitemap index
+    await regenerateSitemapIndex();
 
     return NextResponse.json({
       success: true,

@@ -17,14 +17,18 @@ async function fetchAll<T extends BaseItem>(
   resource: 'restaurants' | 'influencers',
   listKey: 'restaurants' | 'influencers'
 ): Promise<T[]> {
-  // Check at function call time, not module load time
-  // NEXT_PHASE is only set during `next build`, not at runtime
+  // Check multiple indicators for build-time context:
+  // 1. NEXT_PHASE is set during `next build`
+  // 2. CI environment variable is often set in CI/CD pipelines
+  // 3. During Docker build, there's no running container network
   const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
-  const isBackendUnavailable = API_URL.includes('backend:') && isNextBuildPhase
-
+  const isCIEnvironment = process.env.CI === 'true'
+  const isBuildContext = isNextBuildPhase || isCIEnvironment
+  const isDockerInternalUrl = API_URL.includes('backend:')
+  
   // During Docker build, backend service isn't available yet
   // Return empty array to allow build to complete
-  if (isBackendUnavailable) {
+  if (isDockerInternalUrl && isBuildContext) {
     console.log(`[sitemaps] Skipping ${resource} fetch during build (backend unavailable)`)
     return []
   }
