@@ -14,8 +14,8 @@ const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8030').rep
 const LIMIT = Number(process.env.SITEMAP_PAGE_SIZE || 100)
 
 async function fetchAll<T extends BaseItem>(
-  resource: 'restaurants' | 'influencers',
-  listKey: 'restaurants' | 'influencers'
+  resource: 'restaurants' | 'influencers' | 'blog',
+  listKey: 'restaurants' | 'influencers' | 'blogs'
 ): Promise<T[]> {
   // Skip fetching during Next.js build phase - backend not accessible
   // Sitemaps will be generated at container startup via start-with-sitemaps.js
@@ -140,6 +140,20 @@ export async function generateInfluencersSitemap(): Promise<void> {
   }
 }
 
+export async function generateBlogsSitemap(): Promise<void> {
+  try {
+    const items = await fetchAll<BaseItem>('blog', 'blogs')
+    const urls = items
+      .filter((b) => !!b.slug)
+      .map((b) => urlXml(`/blog/${encodeURIComponent(b.slug!)}`, b.updated_at || b.created_at))
+    const xml = xmlHeader() + urls.join('') + xmlFooter()
+    await writeXml('blogs-sitemap.xml', xml)
+  } catch (err) {
+    console.error('[sitemaps] blogs generation failed:', err)
+    await writeXml('blogs-sitemap.xml', xmlHeader() + xmlFooter())
+  }
+}
+
 export async function regenerateSitemapIndex(): Promise<void> {
   try {
     console.log('[sitemaps] regenerating sitemap.xml index...')
@@ -148,6 +162,7 @@ export async function regenerateSitemapIndex(): Promise<void> {
 <sitemap><loc>${SITE_URL}/sitemap-0.xml</loc></sitemap>
 <sitemap><loc>${SITE_URL}/restaurants-sitemap.xml</loc></sitemap>
 <sitemap><loc>${SITE_URL}/influencers-sitemap.xml</loc></sitemap>
+<sitemap><loc>${SITE_URL}/blogs-sitemap.xml</loc></sitemap>
 </sitemapindex>`
     await writeXml('sitemap.xml', index)
   } catch (err) {
@@ -157,7 +172,7 @@ export async function regenerateSitemapIndex(): Promise<void> {
 
 async function main(): Promise<void> {
   console.log('[sitemaps] runtime generation start', { SITE_URL, API_URL, LIMIT })
-  await Promise.all([generateRestaurantsSitemap(), generateInfluencersSitemap()])
+  await Promise.all([generateRestaurantsSitemap(), generateInfluencersSitemap(), generateBlogsSitemap()])
   await regenerateSitemapIndex()
   console.log('[sitemaps] runtime generation complete')
 }

@@ -130,6 +130,20 @@ export async function generateInfluencersSitemap() {
   }
 }
 
+export async function generateBlogsSitemap() {
+  try {
+    const items = await fetchAll('blog', 'blogs')
+    const urls = items
+      .filter((b) => !!b.slug)
+      .map((b) => urlXml(`/blog/${encodeURIComponent(b.slug)}`, b.updated_at || b.created_at))
+    const xml = xmlHeader() + urls.join('') + xmlFooter()
+    await writeXml('blogs-sitemap.xml', xml)
+  } catch (err) {
+    console.error('[sitemaps] blogs generation failed:', err)
+    await writeXml('blogs-sitemap.xml', xmlHeader() + xmlFooter())
+  }
+}
+
 export async function regenerateSitemapIndex() {
   try {
     console.log('[sitemaps] regenerating sitemap.xml index...')
@@ -138,6 +152,7 @@ export async function regenerateSitemapIndex() {
 <sitemap><loc>${SITE_URL}/sitemap-0.xml</loc></sitemap>
 <sitemap><loc>${SITE_URL}/restaurants-sitemap.xml</loc></sitemap>
 <sitemap><loc>${SITE_URL}/influencers-sitemap.xml</loc></sitemap>
+<sitemap><loc>${SITE_URL}/blogs-sitemap.xml</loc></sitemap>
 </sitemapindex>`
     await writeXml('sitemap.xml', index)
   } catch (err) {
@@ -147,7 +162,7 @@ export async function regenerateSitemapIndex() {
 
 async function main() {
   console.log('[sitemaps] runtime generation start', { SITE_URL, API_URL, LIMIT })
-  await Promise.all([generateRestaurantsSitemap(), generateInfluencersSitemap()])
+  await Promise.all([generateRestaurantsSitemap(), generateInfluencersSitemap(), generateBlogsSitemap()])
   await regenerateSitemapIndex()
   console.log('[sitemaps] runtime generation complete')
 }
