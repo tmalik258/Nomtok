@@ -42,35 +42,43 @@ export default async function BlogPage() {
   let initialBlogs: BlogPost[] = [];
   let initialCategories: BlogCategory[] = [];
 
-  try {
-    const getCachedBlogs = unstable_cache(
-      async () => {
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
-        const { data } = await axios.get(`${base}/blog/`, {
-          params: { limit: 12, skip: 0 }
-        });
-        return data.blogs || [];
-      },
-      ["blog-list"],
-      { revalidate: 3600 }
-    );
+  // Check if we're in Next.js build phase where backend isn't available
+  // NEXT_PHASE is only set during `next build`, not at runtime
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
+  const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+  const isBackendUnavailable = base.includes('backend:') && isNextBuildPhase;
 
-    const getCachedCategories = unstable_cache(
-      async () => {
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8030";
-        const { data } = await axios.get(`${base}/blog/categories/`);
-        return data || [];
-      },
-      ["blog-categories"],
-      { revalidate: 3600 }
-    );
+  if (isBackendUnavailable) {
+    console.log('[BlogPage] Skipping fetch during build (backend unavailable)');
+  } else {
+    try {
+      const getCachedBlogs = unstable_cache(
+        async () => {
+          const { data } = await axios.get(`${base}/blog/`, {
+            params: { limit: 12, skip: 0 }
+          });
+          return data.blogs || [];
+        },
+        ["blog-list"],
+        { revalidate: 3600 }
+      );
 
-    [initialBlogs, initialCategories] = await Promise.all([
-      getCachedBlogs(),
-      getCachedCategories(),
-    ]);
-  } catch (error) {
-    console.error('[BlogPage] Error fetching blog data:', error);
+      const getCachedCategories = unstable_cache(
+        async () => {
+          const { data } = await axios.get(`${base}/blog/categories/`);
+          return data || [];
+        },
+        ["blog-categories"],
+        { revalidate: 3600 }
+      );
+
+      [initialBlogs, initialCategories] = await Promise.all([
+        getCachedBlogs(),
+        getCachedCategories(),
+      ]);
+    } catch (error) {
+      console.error('[BlogPage] Error fetching blog data:', error);
+    }
   }
 
   return (

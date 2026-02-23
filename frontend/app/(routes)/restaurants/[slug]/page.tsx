@@ -24,8 +24,9 @@ async function fetchAllRestaurantSlugs(): Promise<string[]> {
 
   // During Docker build, backend service isn't available yet
   // Return empty array to allow build to complete (pages will be generated on-demand)
-  const isBuildTime = process.env.NODE_ENV === 'production';
-  const isBackendUnavailable = base.includes('backend:') && isBuildTime;
+  // NEXT_PHASE is only set during `next build`, not at runtime
+  const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+  const isBackendUnavailable = base.includes('backend:') && isNextBuildPhase;
   
   if (isBackendUnavailable) {
     console.log('[generateStaticParams] Skipping restaurant fetch during build (backend unavailable)');

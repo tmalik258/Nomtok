@@ -13,9 +13,10 @@ const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8030').rep
 
 const LIMIT = Number(process.env.SITEMAP_PAGE_SIZE || 100)
 
-// Check if we're in a build context where backend might not be available
-const isBuildTime = process.env.NODE_ENV === 'production' && !process.env.RUNTIME_SITEMAP_GENERATION
-const isBackendUnavailable = API_URL.includes('backend:') && isBuildTime
+// Check if we're in Next.js build phase where backend isn't available
+// NEXT_PHASE is only set during `next build`, not at runtime
+const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
+const isBackendUnavailable = API_URL.includes('backend:') && isNextBuildPhase
 
 async function fetchAll<T extends BaseItem>(
   resource: 'restaurants' | 'influencers',
@@ -143,9 +144,16 @@ export async function generateInfluencersSitemap(): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  console.log('[sitemaps] start generation', { SITE_URL, API_URL, LIMIT })
+  console.log('[sitemaps] runtime generation start', { SITE_URL, API_URL, LIMIT })
   await Promise.all([generateRestaurantsSitemap(), generateInfluencersSitemap()])
-  console.log('[sitemaps] generation complete')
+  console.log('[sitemaps] runtime generation complete')
 }
 
-void main()
+// Only run when executed directly via CLI (npm run generate-sitemaps)
+// Don't run when imported by API route or start-with-sitemaps.js
+const isDirectExecution = process.argv[1]?.includes('generate-sitemaps')
+if (isDirectExecution) {
+  void main()
+}
+
+export default main
