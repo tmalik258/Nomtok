@@ -13,15 +13,15 @@ const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8030').rep
 
 const LIMIT = Number(process.env.SITEMAP_PAGE_SIZE || 100)
 
-// Check if we're in Next.js build phase where backend isn't available
-// NEXT_PHASE is only set during `next build`, not at runtime
-const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
-const isBackendUnavailable = API_URL.includes('backend:') && isNextBuildPhase
-
 async function fetchAll<T extends BaseItem>(
   resource: 'restaurants' | 'influencers',
   listKey: 'restaurants' | 'influencers'
 ): Promise<T[]> {
+  // Check at function call time, not module load time
+  // NEXT_PHASE is only set during `next build`, not at runtime
+  const isNextBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
+  const isBackendUnavailable = API_URL.includes('backend:') && isNextBuildPhase
+
   // During Docker build, backend service isn't available yet
   // Return empty array to allow build to complete
   if (isBackendUnavailable) {
@@ -143,9 +143,20 @@ export async function generateInfluencersSitemap(): Promise<void> {
   }
 }
 
+export async function regenerateSitemapIndex(): Promise<void> {
+  const index = `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<sitemap><loc>${SITE_URL}/sitemap-0.xml</loc></sitemap>
+<sitemap><loc>${SITE_URL}/restaurants-sitemap.xml</loc></sitemap>
+<sitemap><loc>${SITE_URL}/influencers-sitemap.xml</loc></sitemap>
+</sitemapindex>`
+  await writeXml('sitemap.xml', index)
+}
+
 async function main(): Promise<void> {
   console.log('[sitemaps] runtime generation start', { SITE_URL, API_URL, LIMIT })
   await Promise.all([generateRestaurantsSitemap(), generateInfluencersSitemap()])
+  await regenerateSitemapIndex()
   console.log('[sitemaps] runtime generation complete')
 }
 
