@@ -35,4 +35,14 @@ def classify_ytdlp_error(text: str) -> dict:
             "type": "format_unavailable",
             "hint": "Try a different format or use --list-formats to see available formats.",
         }
+    if (
+        "sockshttpsconnection" in lower
+        or ("connection to www.youtube.com timed out" in lower)
+        or ("timed out" in lower and "connect timeout" in lower)
+        or "transporterror" in lower
+    ):
+        return {
+            "type": "proxy_timeout",
+            "hint": "Proxy/SOCKS connection timed out. Set YTDLP_DISABLE_TOR_FOR_DOWNLOADS=true or retry without proxy.",
+        }
     return {"type": "unknown", "hint": "See raw error message for details."}

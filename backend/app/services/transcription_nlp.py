@@ -270,8 +270,8 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
     use_tor = False
     max_attempts = 4  # Increased to allow for multiple fallback strategies
     forced_cookie_refresh_done = False
-    # Format fallbacks when "Requested format is not available" (attempt 0 -> bestaudio/best, 1 -> bestaudio, 2+ -> best)
-    format_fallbacks = ["bestaudio/best", "bestaudio", "best"]
+    # Format fallbacks when "Requested format is not available"; None = let yt-dlp choose (last attempt)
+    format_fallbacks: list[Optional[str]] = ["bestaudio/best", "bestaudio", "best", None]
 
     for attempt in range(max_attempts):
         downloaded_file = None
@@ -283,7 +283,6 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
 
             format_choice = format_fallbacks[min(attempt, len(format_fallbacks) - 1)]
             ydl_opts = {
-                "format": format_choice,
                 "outtmpl": temp_output_template,
                 "quiet": False,  # Enable verbose output to see what's happening
                 "verbose": True,  # Enable verbose logging
@@ -306,6 +305,10 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                 "sleep_interval_requests": 1,
                 "sleep_interval_subtitles": 1,
             }
+            if format_choice is not None:
+                ydl_opts["format"] = format_choice
+            else:
+                logger.info(f"Attempt {attempt + 1}: No format specified; letting yt-dlp choose best available")
 
             # Ensure yt-dlp has a supported JS runtime for EJS-based extraction.
             # Without this, yt-dlp may warn and YouTube extraction can be incomplete/broken.
@@ -456,6 +459,14 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                         logger.info("First attempting extract_info with download=False")
                         info_no_download = ydl.extract_info(video_url, download=False)
                         logger.info(f"extract_info (no download) succeeded, info type: {type(info_no_download)}")
+                        formats = info_no_download.get("formats", []) if isinstance(info_no_download, dict) else []
+                        logger.info(f"Available formats count: {len(formats)}")
+                        if formats:
+                            sample = [
+                                {"format_id": f.get("format_id"), "ext": f.get("ext"), "vcodec": f.get("vcodec"), "acodec": f.get("acodec")}
+                                for f in formats[:5]
+                            ]
+                            logger.info(f"First few formats (id/ext/vcodec/acodec): {sample}")
                         
                         # Now try with download=True
                         logger.info("Now attempting extract_info with download=True")
@@ -574,6 +585,23 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                 logger.warning("Google/YouTube is blocking video downloads from Tor IP. Retrying without Tor proxy...")
                 use_tor = False
                 # Cleanup and retry without Tor
+                if downloaded_file and os.path.exists(downloaded_file):
+                    os.remove(downloaded_file)
+                if os.path.exists(final_output_path):
+                    os.remove(final_output_path)
+                await asyncio.sleep(2)
+                continue
+
+            # Detect SOCKS/Tor connection timeout; retry without Tor so downloads use direct or YTDLP_PROXY
+            is_socks_timeout = (
+                "sockshttpsconnection" in err_l
+                or "connection to www.youtube.com timed out" in err_l
+                or ("timed out" in err_l and "connect timeout" in err_l)
+            )
+            if is_socks_timeout and use_tor and attempt < max_attempts - 1:
+                logger.warning("=== TOR/SOCKS TIMEOUT DETECTED === Connection to YouTube timed out via proxy")
+                logger.warning("Retrying without Tor proxy (direct or YTDLP_PROXY)...")
+                use_tor = False
                 if downloaded_file and os.path.exists(downloaded_file):
                     os.remove(downloaded_file)
                 if os.path.exists(final_output_path):
@@ -738,10 +766,26 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
 
         except Exception as e:
             logger.error(f"Unexpected error for {video_url}: {e}")
-            
+            err_str = str(e).lower()
+
+            # SOCKS/Tor timeout (may surface as generic Exception from executor)
+            is_socks_timeout = (
+                "sockshttpsconnection" in err_str
+                or "connection to www.youtube.com timed out" in err_str
+                or ("timed out" in err_str and "connect timeout" in err_str)
+            )
+            if is_socks_timeout and use_tor and attempt < max_attempts - 1:
+                logger.warning("=== TOR/SOCKS TIMEOUT (unexpected) === Retrying without Tor proxy...")
+                use_tor = False
+                if downloaded_file and os.path.exists(downloaded_file):
+                    os.remove(downloaded_file)
+                if os.path.exists(final_output_path):
+                    os.remove(final_output_path)
+                await asyncio.sleep(2)
+                continue
+
             # Check if error might be due to outdated yt-dlp and trigger update
             # Only check on second-to-last or last attempt to allow retry after update
-            err_str = str(e).lower()
             should_update = (
                 "http error 403" in err_str
                 or "http error 429" in err_str
