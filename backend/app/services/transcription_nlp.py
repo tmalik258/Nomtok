@@ -752,6 +752,12 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                 "raw": err,
                 "hint": cls.get("hint"),
             }
+            if cls.get("type") == "no_media_formats":
+                logger.warning(
+                    "yt-dlp reported no_media_formats (only images / no playable media). "
+                    "Treating this video as having no downloadable audio/video streams."
+                )
+                raise PipelineError("no_media_formats", err, details)
             raise PipelineError(cls.get("type", "yt_dlp_download"), err, details)
 
         except subprocess.CalledProcessError as e:
@@ -1127,6 +1133,7 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
     start_time = time.time()
     processed_videos = 0
     failed_videos = 0
+    skipped_no_media = 0
     errors_list: list[dict] = []
     
     try:
@@ -1183,7 +1190,7 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
                 await JobService.update_progress(job_session, job_id, 0, total_videos)
 
         async def process_with_semaphore(video):
-            nonlocal processed_videos, failed_videos, errors_list
+            nonlocal processed_videos, failed_videos, skipped_no_media, errors_list
             
             async with semaphore:
                 try:
@@ -1220,16 +1227,13 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
                     return True
                     
                 except Exception as e:
-                    failed_videos += 1
-                    if job_id:
-                        async with AsyncSessionLocal() as job_session:
-                            await JobService.update_tracking_stats(job_session, job_id, failed_items=failed_videos)
                     logger.error(f"Error processing video {video.id}: {e}")
                     # Collect structured error info
                     try:
                         if isinstance(e, PipelineError):
+                            err_type = e.error_type
                             err_info = {
-                                "type": e.error_type,
+                                "type": err_type,
                                 "message": str(e),
                                 "video_id": getattr(video, "youtube_video_id", None),
                                 "details": e.details or {},
@@ -1262,19 +1266,36 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
                                     await JobService.append_error_message(job_session, job_id, msg_to_append)
                             except Exception as _update_err:
                                 logger.warning(f"Failed to append error message: {_update_err}")
-                        # Persist FAILED status and error_message for the video (use dedicated session to avoid closing pipeline's transaction)
-                        try:
-                            async with AsyncSessionLocal() as persist_session:
-                                v_stmt = select(Video).where(Video.id == video.id)
-                                v_res = await persist_session.execute(v_stmt)
-                                v_obj = v_res.scalar_one_or_none()
-                                if v_obj:
-                                    v_obj.status = VideoProcessingStatus.FAILED
-                                    v_obj.error_message = msg_to_append or str(e)
-                                    persist_session.add(v_obj)
-                                    await persist_session.commit()
-                        except Exception as _persist_err:
-                            logger.warning(f"Failed to persist FAILED status for video {getattr(video, 'id', None)}: {_persist_err}")
+                        # Decide whether this is a hard failure or a soft no_media_formats skip
+                        is_no_media = isinstance(e, PipelineError) and getattr(e, "error_type", "") == "no_media_formats"
+                        if is_no_media:
+                            skipped_no_media += 1
+                            logger.info(
+                                f"Video {video.id} ({getattr(video, 'youtube_video_id', None)}) "
+                                "has no downloadable media formats; counting as skipped, not failed."
+                            )
+                        else:
+                            failed_videos += 1
+                            if job_id:
+                                async with AsyncSessionLocal() as job_session:
+                                    await JobService.update_tracking_stats(
+                                        job_session, job_id, failed_items=failed_videos
+                                    )
+                            # Persist FAILED status and error_message for the video (use dedicated session to avoid closing pipeline's transaction)
+                            try:
+                                async with AsyncSessionLocal() as persist_session:
+                                    v_stmt = select(Video).where(Video.id == video.id)
+                                    v_res = await persist_session.execute(v_stmt)
+                                    v_obj = v_res.scalar_one_or_none()
+                                    if v_obj:
+                                        v_obj.status = VideoProcessingStatus.FAILED
+                                        v_obj.error_message = msg_to_append or str(e)
+                                        persist_session.add(v_obj)
+                                        await persist_session.commit()
+                            except Exception as _persist_err:
+                                logger.warning(
+                                    f"Failed to persist FAILED status for video {getattr(video, 'id', None)}: {_persist_err}"
+                                )
                     except Exception:
                         # Fallback minimal error record
                         errors_list.append({
@@ -1282,6 +1303,9 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
                             "message": str(e),
                             "video_id": getattr(video, "youtube_video_id", None),
                         })
+                    # For no_media_formats, treat as successful (soft skip) so the job is not marked failed.
+                    if isinstance(e, PipelineError) and getattr(e, "error_type", "") == "no_media_formats":
+                        return True
                     return e
 
         # Process videos concurrently
@@ -1305,6 +1329,7 @@ async def transcription_nlp_pipeline(db: AsyncSession, video_ids: Optional[list]
             "videos_processed": successful,
             "total_videos": total_videos,
             "failed_videos": failed,
+            "skipped_no_media": skipped_no_media,
             "processing_time_minutes": (time.time() - start_time) / 60,
             "concurrency_limit": 5,
             "error_summary": summary,

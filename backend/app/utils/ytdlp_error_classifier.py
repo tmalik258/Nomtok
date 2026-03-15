@@ -36,6 +36,17 @@ def classify_ytdlp_error(text: str) -> dict:
             "hint": "Try a different format or use --list-formats to see available formats.",
         }
     if (
+        "only images are available for download" in lower
+        or (
+            "formats have been skipped as they are missing a url" in lower
+            and "sabr streaming" in lower
+        )
+    ):
+        return {
+            "type": "no_media_formats",
+            "hint": "Only image/thumbnail formats are available; no audio/video streams to download.",
+        }
+    if (
         "sockshttpsconnection" in lower
         or ("connection to www.youtube.com timed out" in lower)
         or ("timed out" in lower and "connect timeout" in lower)
