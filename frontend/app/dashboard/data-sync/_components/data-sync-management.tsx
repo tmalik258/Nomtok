@@ -14,7 +14,7 @@ import { JobCard } from "./job-card";
 import { useDashboardRealtime } from "@/lib/contexts/dashboard-realtime-context";
 
 export function DataSyncManagement() {
-  const { data: jobs, isLoading, error, refetch } = useJobs();
+  const { data: jobs, isLoading, error, refetch, refetchSilent } = useJobs();
   const { triggerYouTubeScraping, triggerNLPProcessing, refreshYouTubeCookies, getYouTubeCookiesStatus, uploadYouTubeCookies } = useDataSync();
   const { cancelJob } = useJobActions();
   const [triggering, setTriggering] = useState<string | null>(null);
@@ -24,10 +24,10 @@ export function DataSyncManagement() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Refresh jobs when any realtime job event occurs
+  // Refresh jobs when any realtime job event occurs (silent: no full-page loading)
   useEffect(() => {
-    refetch();
-  }, [version, refetch]);
+    refetchSilent();
+  }, [version, refetchSilent]);
 
   useEffect(() => {
     (async () => {
@@ -46,8 +46,8 @@ export function DataSyncManagement() {
         await triggerNLPProcessing();
         toast.success("NLP processing job started");
       }
-      // Refetch jobs after triggering
-      setTimeout(() => refetch(), 1000);
+      // Refetch jobs after triggering (silent to avoid full-page loading)
+      setTimeout(() => refetchSilent(), 1000);
     } catch (error) {
       console.error("Failed to trigger job:", error);
       toast.error("Failed to trigger job", { description: error instanceof Error ? error.message : String(error) });
@@ -61,7 +61,7 @@ export function DataSyncManagement() {
     try {
       await refreshYouTubeCookies();
       toast.success("Refresh YouTube cookies job started");
-      setTimeout(() => refetch(), 1000);
+      setTimeout(() => refetchSilent(), 1000);
       const status = await getYouTubeCookiesStatus();
       if (status) setCookiesAge(status.age_hours);
     } catch (error) {
@@ -259,7 +259,7 @@ export function DataSyncManagement() {
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
-          <JobsTable jobs={jobs} onRefresh={refetch} />
+          <JobsTable jobs={jobs} onRefresh={refetchSilent} />
         </TabsContent>
 
         <TabsContent value="running" className="space-y-4">

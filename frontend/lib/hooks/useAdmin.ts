@@ -31,6 +31,16 @@ export const useJobs = (params?: {
     }
   }, [params]);
 
+  const fetchJobsSilent = useCallback(async () => {
+    setError(null);
+    try {
+      const data = await adminActions.getJobs(params);
+      setJobs(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
+    }
+  }, [params]);
+
   useEffect(() => {
     fetchJobs();
   }, [fetchJobs]);
@@ -39,7 +49,8 @@ export const useJobs = (params?: {
     data: jobs,
     isLoading: loading,
     error,
-    refetch: fetchJobs
+    refetch: fetchJobs,
+    refetchSilent: fetchJobsSilent
   };
 };
 
