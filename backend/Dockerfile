@@ -66,11 +66,8 @@ COPY . .
 
 # Copy ops scripts for daily updates
 COPY ops/auto-update-ytdlp.sh /usr/local/bin/auto-update-ytdlp
-RUN chmod +x /usr/local/bin/auto-update-ytdlp
-
-# Create update script for yt-dlp
-RUN echo '#!/bin/bash\nset -e\npip install --no-cache-dir --upgrade --pre "yt-dlp[default]"' > /usr/local/bin/update-ytdlp && \
-    chmod +x /usr/local/bin/update-ytdlp
+COPY ops/update-ytdlp.sh /usr/local/bin/update-ytdlp
+RUN chmod +x /usr/local/bin/auto-update-ytdlp /usr/local/bin/update-ytdlp
 
 # Create logs directory and register cron job for daily updates at 03:15
 RUN mkdir -p /code/logs && \

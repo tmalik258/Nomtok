@@ -64,13 +64,10 @@ COPY . .
 
 # Copy ops scripts
 COPY ops/auto-update-ytdlp.sh /usr/local/bin/auto-update-ytdlp
+COPY ops/update-ytdlp.sh /usr/local/bin/update-ytdlp
 COPY ops/start-prod.sh /usr/local/bin/start-prod.sh
 COPY ops/notify_email.py /usr/local/bin/notify_email.py
-RUN chmod +x /usr/local/bin/auto-update-ytdlp /usr/local/bin/start-prod.sh
-
-# Provide in-container update helper for scheduled or manual updates
-RUN echo '#!/bin/bash\nset -e\npip install --no-cache-dir --upgrade --pre "yt-dlp[default]"' > /usr/local/bin/update-ytdlp && \
-    chmod +x /usr/local/bin/update-ytdlp
+RUN chmod +x /usr/local/bin/auto-update-ytdlp /usr/local/bin/update-ytdlp /usr/local/bin/start-prod.sh
 
 # Register cron job (runs at 03:15 daily)
 RUN echo '15 3 * * * root /usr/local/bin/auto-update-ytdlp >> /code/logs/yt-dlp-updater.log 2>&1' > /etc/cron.d/yt-dlp-updater && \

@@ -268,10 +268,11 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
 
     # Multiple attempts: try different strategies for bot detection and geo-restrictions
     use_tor = False
-    max_attempts = 4  # Increased to allow for multiple fallback strategies
+    # One extra attempt after exhausting format fallbacks + optional yt-dlp upgrade
     forced_cookie_refresh_done = False
-    # Format fallbacks when "Requested format is not available"; None = let yt-dlp choose (last attempt)
-    format_fallbacks: list[Optional[str]] = ["bestaudio/best", "bestaudio", "best", None]
+    # Prefer letting yt-dlp pick first; then audio-only fallbacks (YouTube often drops specific itags)
+    format_fallbacks: list[Optional[str]] = [None, "bestaudio/best", "bestaudio", "best"]
+    max_attempts = len(format_fallbacks) + 1
 
     for attempt in range(max_attempts):
         downloaded_file = None
@@ -281,7 +282,9 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
             with tempfile.NamedTemporaryFile(suffix=".%(ext)s", delete=False) as temp_file:
                 temp_output_template = temp_file.name
 
-            format_choice = format_fallbacks[min(attempt, len(format_fallbacks) - 1)]
+            format_choice = (
+                format_fallbacks[attempt] if attempt < len(format_fallbacks) else None
+            )
             ydl_opts = {
                 "outtmpl": temp_output_template,
                 "quiet": False,  # Enable verbose output to see what's happening
@@ -331,23 +334,19 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                 if POT_DISABLE_INNERTUBE:
                     extractor_args["youtubepot-bgutilscript"] += ";disable_innertube=1"
             
-            # Add player client configuration with fallback strategies
-            player_client = YTDLP_PLAYER_CLIENT
-            if attempt == 0:
-                # First attempt: Use configured player client
+            # Add player client configuration with fallback strategies (reset after format round / post-update)
+            client_phase = attempt if attempt < len(format_fallbacks) else 0
+            if client_phase == 0:
                 if YTDLP_PLAYER_CLIENT:
                     extractor_args["youtube"] = f"player-client={YTDLP_PLAYER_CLIENT}"
                     logger.info(f"Attempt {attempt + 1}: Using configured player client: {YTDLP_PLAYER_CLIENT}")
-            elif attempt == 1:
-                # Second attempt: Try android client
+            elif client_phase == 1:
                 extractor_args["youtube"] = "player-client=android"
                 logger.info(f"Attempt {attempt + 1}: Using android player client as fallback")
-            elif attempt == 2:
-                # Third attempt: Try ios client
+            elif client_phase == 2:
                 extractor_args["youtube"] = "player-client=ios"
                 logger.info(f"Attempt {attempt + 1}: Using ios player client as fallback")
-            elif attempt >= 3:
-                # Fourth+ attempt: Try web client
+            else:
                 extractor_args["youtube"] = "player-client=web"
                 logger.info(f"Attempt {attempt + 1}: Using web player client as fallback")
             
@@ -702,21 +701,32 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                 await asyncio.sleep(delay)
                 continue
 
-            # Requested format not available: retry with next format in fallback list
+            # Requested format not available: next format, then yt-dlp upgrade + one more try
             format_unavailable = (
-                "requested format is not available" in err_l or "format is not available" in err_l
+                "requested format is not available" in err_l
+                or "format is not available" in err_l
+                or "use --list-formats" in err_l
             )
-            if format_unavailable and attempt < max_attempts - 1:
-                next_format = format_fallbacks[min(attempt + 1, len(format_fallbacks) - 1)]
-                logger.warning(
-                    f"=== FORMAT NOT AVAILABLE === retrying with format: {next_format}"
-                )
+            if format_unavailable:
                 if downloaded_file and os.path.exists(downloaded_file):
                     os.remove(downloaded_file)
                 if os.path.exists(final_output_path):
                     os.remove(final_output_path)
-                await asyncio.sleep(1)
-                continue
+                if attempt < len(format_fallbacks) - 1:
+                    next_format = format_fallbacks[attempt + 1]
+                    logger.warning(
+                        f"=== FORMAT NOT AVAILABLE === retrying with format: {next_format}"
+                    )
+                    await asyncio.sleep(1)
+                    continue
+                logger.warning(
+                    "=== FORMAT NOT AVAILABLE === exhausted format fallbacks; updating yt-dlp and retrying"
+                )
+                update_success, update_message = await update_ytdlp()
+                if update_success:
+                    logger.info(f"yt-dlp updated after format error: {update_message}")
+                    await asyncio.sleep(2)
+                    continue
 
             # Check if error might be due to outdated yt-dlp and trigger update
             # Only check on second-to-last or last attempt to allow retry after update
@@ -789,6 +799,31 @@ async def download_audio(video_url: str, video: Video) -> Optional[str]:
                     os.remove(final_output_path)
                 await asyncio.sleep(2)
                 continue
+
+            format_unavailable_exc = (
+                "requested format is not available" in err_str
+                or "format is not available" in err_str
+                or "use --list-formats" in err_str
+            )
+            if format_unavailable_exc:
+                if downloaded_file and os.path.exists(downloaded_file):
+                    os.remove(downloaded_file)
+                if os.path.exists(final_output_path):
+                    os.remove(final_output_path)
+                if attempt < len(format_fallbacks) - 1:
+                    logger.warning(
+                        "=== FORMAT NOT AVAILABLE (unexpected) === retrying with next format selector"
+                    )
+                    await asyncio.sleep(1)
+                    continue
+                logger.warning(
+                    "=== FORMAT NOT AVAILABLE (unexpected) === exhausted fallbacks; updating yt-dlp"
+                )
+                update_success, update_message = await update_ytdlp()
+                if update_success:
+                    logger.info(f"yt-dlp updated after format error: {update_message}")
+                    await asyncio.sleep(2)
+                    continue
 
             # Check if error might be due to outdated yt-dlp and trigger update
             # Only check on second-to-last or last attempt to allow retry after update

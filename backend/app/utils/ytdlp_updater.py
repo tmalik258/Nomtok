@@ -1,5 +1,6 @@
 import asyncio
 import subprocess
+import sys
 from typing import Tuple, Optional
 from app.utils.logging import setup_logger
 
@@ -39,8 +40,10 @@ async def update_ytdlp() -> Tuple[bool, Optional[str]]:
             logger.warning(f"Could not get current yt-dlp version: {e}")
             current_version = "unknown"
 
-        # Run pip install --upgrade --pre yt-dlp[default]
+        # Use same interpreter as the app (pip may be missing from PATH in some environments)
         process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-m",
             "pip",
             "install",
             "--no-cache-dir",

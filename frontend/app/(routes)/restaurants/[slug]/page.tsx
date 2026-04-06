@@ -338,7 +338,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     influencer,
   ].filter(Boolean) as string[];
 
-  return buildPageMetadata({
+  // Noindex thin pages: those with no approved listing containing Background or Our Reflection content
+  const hasReviewContent = restaurant.listings?.some(
+    (l) =>
+      l.approved === true &&
+      (l.review_sections?.history_context?.trim() ||
+        l.review_sections?.nomtok_reflection?.trim())
+  ) ?? false;
+
+  const metadata = buildPageMetadata({
     title,
     description,
     path: `/restaurants/${slug}`,
@@ -346,4 +354,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     keywords,
     imageUrl,
   });
+
+  if (!hasReviewContent) {
+    metadata.robots = { index: false, follow: true };
+  }
+
+  return metadata;
 }
