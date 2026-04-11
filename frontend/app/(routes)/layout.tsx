@@ -3,7 +3,7 @@ import ErrorBoundary from "@/components/error-boundary";
 import Footer from "@/components/layout/footer";
 import type { Metadata } from "next";
 import { buildPageMetadata } from "@/lib/seo/utils";
-import Script from "next/script";
+// import Script from "next/script";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -11,7 +11,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       <Navbar />
       <ErrorBoundary>
         <div>{children}</div>
-        <Script id="falcon-ai-widget">
+        {/* <Script id="falcon-ai-widget">
           {`
           window.FalconConfig = { 
             theme: "#ff5100", 
@@ -24,7 +24,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           s.parentNode.insertBefore(g,s);
           }(document,"script"));
         `}
-        </Script>
+        </Script> */}
       </ErrorBoundary>
       <Footer />
     </>
