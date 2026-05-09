@@ -12,9 +12,9 @@ WORKDIR /app
 # Install pnpm globally
 RUN npm install -g pnpm
 
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+# Copy package files (pnpm-workspace.yaml carries onlyBuiltDependencies allowlist)
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile && pnpm approve-builds --all
 
 # Rebuild the source code only when needed
 FROM base AS builder
