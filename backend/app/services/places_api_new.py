@@ -7,141 +7,200 @@ Documentation: https://developers.google.com/maps/documentation/places/web-servi
 """
 import httpx
 from typing import Optional, Dict, Any, List
+
 from fastapi import HTTPException, status
+
 from app.config import GOOGLE_MAPS_API_KEY, PLACES_BASE_URL
 from app.models.restaurant import BusinessStatus
+from app.services.places_cache_store import (
+    CACHE_KIND_PLACE_DETAILS,
+    CACHE_KIND_REVIEWS,
+    CACHE_KIND_TEXT_SEARCH,
+    places_cache_try_get_json,
+    places_cache_put_json,
+    variant_from_sorted_fields,
+    variant_from_text_query,
+)
 from app.utils.logging import setup_logger
 
-# Setup logging
 logger = setup_logger(__name__)
 
+# Narrow Text Search fields (avoid X-Goog-FieldMask: * billing)
+DEFAULT_SEARCH_TEXT_FIELDS = [
+    "places.id",
+    "places.displayName",
+    "places.formattedAddress",
+    "places.location",
+    "places.rating",
+    "places.businessStatus",
+    "places.types",
+    "places.priceLevel",
+    "places.editorialSummary",
+    "places.websiteUri",
+    "places.currentOpeningHours",
+    "places.secondaryOpeningHours",
+    "places.regularOpeningHours",
+    "places.openingHours",
+    "places.internationalPhoneNumber",
+    "places.nationalPhoneNumber",
+    "places.addressComponents",
+    "places.photos",
+]
 
 
-# Common headers for Places API
-def get_headers():
+def _places_headers(field_mask: Optional[str] = None) -> Dict[str, str]:
+    api_key = GOOGLE_MAPS_API_KEY or ""
+    headers: Dict[str, str] = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": api_key,
+        "User-Agent": "Nomtok/1.0",
+    }
+    if field_mask is not None:
+        headers["X-Goog-FieldMask"] = field_mask
+    return headers
+
+
+def _photo_headers() -> Dict[str, str]:
+    api_key = GOOGLE_MAPS_API_KEY or ""
     return {
         "Content-Type": "application/json",
-        "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
-        "X-Goog-FieldMask": "*",  # Default to all fields, can be overridden
-        "User-Agent": "Nomtok/1.0"
+        "X-Goog-Api-Key": api_key,
+        "User-Agent": "Nomtok/1.0",
     }
 
+
 async def search_text(
-    query: str, 
+    query: str,
     location_bias: Optional[Dict[str, Any]] = None,
-    fields: Optional[List[str]] = None
+    fields: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """
     Search for places using Text Search endpoint.
-    
-    Args:
-        query: The search query
-        location_bias: Optional location bias parameters
-        fields: Optional list of field masks to include in response
-    
-    Returns:
-        Dictionary containing search results
+
+    Uses an explicit field mask (never *) and optional response cache.
     """
     logger.info(f"Places API text search: {query}")
-    
-    # Prepare request payload
-    payload = {"textQuery": query}
+
+    field_list = fields if fields is not None else DEFAULT_SEARCH_TEXT_FIELDS
+    field_mask = ",".join(field_list)
+    variant = variant_from_text_query(query)
+    cached = await places_cache_try_get_json("", CACHE_KIND_TEXT_SEARCH, variant)
+    if cached and isinstance(cached.get("places"), list):
+        logger.info(
+            "Places text search cache hit: %d places",
+            len(cached["places"]),
+        )
+        return {"status": "OK", "places": cached["places"]}
+
+    payload: Dict[str, Any] = {"textQuery": query}
     if location_bias:
         payload["locationBias"] = location_bias
-    
-    # Prepare headers with field masks if provided
-    headers = get_headers()
-    if fields:
-        headers["X-Goog-FieldMask"] = ",".join(fields)
-    
+
+    headers = _places_headers(field_mask)
+
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.post(
                 f"{PLACES_BASE_URL}/places:searchText",
                 headers=headers,
-                json=payload
+                json=payload,
             )
-            
+
             if response.status_code != 200:
-                logger.error(f"Places API text search error: {response.status_code}, {response.text}")
+                logger.error(
+                    f"Places API text search error: {response.status_code}, {response.text}"
+                )
                 return {"status": "ERROR", "places": []}
-            
+
             data = response.json()
-            logger.info(f"Places API text search success: found {len(data.get('places', []))} places")
-            return {"status": "OK", "places": data.get("places", [])}
-            
+            places = data.get("places", [])
+            logger.info(f"Places API text search success: found {len(places)} places")
+            await places_cache_put_json("", CACHE_KIND_TEXT_SEARCH, variant, {"places": places})
+            return {"status": "OK", "places": places}
+
     except Exception as e:
         logger.error(f"Places API text search exception: {e}")
         return {"status": "ERROR", "places": []}
 
+
 async def get_place_details(
-    place_id: str, 
-    fields: Optional[List[str]] = None
+    place_id: str,
+    fields: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """
     Get place details using Place Details endpoint.
-    
-    Args:
-        place_id: The Google Place ID
-        fields: Optional list of field masks to include in response
-    
-    Returns:
-        Dictionary containing place details
+
+    `fields` is required (never sends FieldMask '*').
     """
+    if fields is None or len(fields) == 0:
+        raise ValueError("get_place_details requires a non-empty fields list")
+
     logger.info(f"Places API place details: {place_id}")
-    
-    # Prepare headers with field masks if provided
-    headers = get_headers()
-    if fields:
-        headers["X-Goog-FieldMask"] = ",".join(fields)
-    
+
+    variant = variant_from_sorted_fields(fields)
+    cached = await places_cache_try_get_json(place_id, CACHE_KIND_PLACE_DETAILS, variant)
+    if cached:
+        logger.info("Places details cache hit for %s", place_id[:48])
+        return {"status": "OK", "place": cached}
+
+    field_mask = ",".join(fields)
+    headers = _places_headers(field_mask)
+
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.get(
                 f"{PLACES_BASE_URL}/places/{place_id}",
-                headers=headers
+                headers=headers,
             )
-            
+
             if response.status_code != 200:
-                logger.error(f"Places API place details error: {response.status_code}, {response.text}")
+                logger.error(
+                    f"Places API place details error: {response.status_code}, {response.text}"
+                )
                 return {"status": "ERROR", "place": None}
-            
+
             data = response.json()
+            await places_cache_put_json(place_id, CACHE_KIND_PLACE_DETAILS, variant, data)
             return {"status": "OK", "place": data}
-            
+
     except Exception as e:
         logger.error(f"Places API place details exception: {e}")
         return {"status": "ERROR", "place": None}
 
+
 async def get_place_photos(
     place_id: str,
-    max_photos: int = 1
+    max_photos: int = 1,
+    merged_place: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     """
-    Get photo details for a place.
-    
-    Args:
-        place_id: The Google Place ID
-        max_photos: Maximum number of photos to return
-    
-    Returns:
-        List of photo details with media URLs
+    Resolve photo media URLs for a place.
+
+    If `merged_place` already includes `photos` (e.g. from Text Search or Details),
+    skips an extra Place Details request.
     """
     logger.info(f"Places API fetching photos for: {place_id}")
-    
-    # First get place details with photos field
-    try:
-        details_result = await get_place_details(place_id=place_id, fields=["id", "photos"])
-        if details_result["status"] != "OK" or not details_result.get("place"):
-            logger.error(f"Places API photos error: failed to fetch details for {place_id}")
-            return []
 
-        data = details_result["place"]
-        photos = (data.get("photos") or [])[:max_photos]
+    try:
+        photos_block: Optional[List[Dict[str, Any]]] = None
+        if merged_place and merged_place.get("photos"):
+            photos_block = merged_place["photos"]
+        else:
+            details_result = await get_place_details(
+                place_id=place_id, fields=["id", "photos"]
+            )
+            if details_result["status"] != "OK" or not details_result.get("place"):
+                logger.error(
+                    f"Places API photos error: failed to fetch details for {place_id}"
+                )
+                return []
+            photos_block = details_result["place"].get("photos")
+
+        photos = (photos_block or [])[:max_photos]
         if not photos:
             logger.info(f"No photos found for place: {place_id}")
             return []
-        
+
         logger.info(f"Found {len(photos)} photos for place: {place_id}")
 
         result_photos: List[Dict[str, Any]] = []
@@ -151,13 +210,17 @@ async def get_place_photos(
                 continue
             media_url = await get_photo_media(place_id, photo_name)
             if media_url:
-                result_photos.append({
-                    "name": photo_name,
-                    "media_url": media_url,
-                    "width": photo.get("widthPx"),
-                    "height": photo.get("heightPx"),
-                    "author_attribution": (photo.get("authorAttributions") or [{}])[0].get("displayName")
-                })
+                result_photos.append(
+                    {
+                        "name": photo_name,
+                        "media_url": media_url,
+                        "width": photo.get("widthPx"),
+                        "height": photo.get("heightPx"),
+                        "author_attribution": (photo.get("authorAttributions") or [{}])[0].get(
+                            "displayName"
+                        ),
+                    }
+                )
         return result_photos
 
     except Exception as e:
@@ -182,10 +245,8 @@ async def get_photo_media(
     Returns:
         URL to the photo media or None if not found
     """
-    headers = get_headers()
-    if "X-Goog-FieldMask" in headers:
-        del headers["X-Goog-FieldMask"]
-    
+    headers = _photo_headers()
+
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.get(
@@ -272,116 +333,129 @@ async def geocode_address(
         logger.error(f"Geocoding exception: {e}")
         return {"status": "ERROR", "location": None}
 
+def _format_reviews_from_place_api(
+    data: Dict[str, Any], place_id: str, language: str, max_reviews: int
+) -> Dict[str, Any]:
+    all_reviews = data.get("reviews", [])
+    rating = data.get("rating", 0)
+    user_ratings_count = data.get("userRatingCount", 0)
+
+    logger.info(
+        f"Raw API response: {len(all_reviews)} reviews returned for place: {place_id}"
+    )
+    if len(all_reviews) > 0:
+        logger.debug(f"Sample review structure: {all_reviews[0]}")
+
+    formatted_reviews: List[Dict[str, Any]] = []
+    for idx, review in enumerate(all_reviews):
+        author_attribution = review.get("authorAttribution", {})
+        review_text = review.get("text", {})
+
+        review_text_str = ""
+        if isinstance(review_text, dict):
+            review_text_str = review_text.get("text", "")
+        elif isinstance(review_text, str):
+            review_text_str = review_text
+
+        formatted_review = {
+            "author_name": author_attribution.get("displayName", "Anonymous"),
+            "author_url": author_attribution.get("uri"),
+            "language": language,
+            "profile_photo_url": author_attribution.get("photoUri", ""),
+            "rating": review.get("rating", 0),
+            "relative_time_description": review.get("relativePublishTimeDescription", ""),
+            "text": review_text_str,
+            "time": review.get("publishTime", ""),
+        }
+        formatted_reviews.append(formatted_review)
+        logger.debug(
+            f"Processed review {idx + 1}/{len(all_reviews)}: {formatted_review['author_name']}"
+        )
+
+    formatted_reviews.sort(
+        key=lambda x: (x.get("time") or "", x.get("rating", 0)),
+        reverse=True,
+    )
+    formatted_reviews = formatted_reviews[:max_reviews]
+
+    if len(all_reviews) < max_reviews:
+        logger.warning(
+            f"Google API returned only {len(all_reviews)} reviews (requested {max_reviews}). "
+            f"This is a Google API limitation - maximum 5 reviews per request."
+        )
+
+    logger.info(
+        f"Processed {len(all_reviews)} reviews from Google API, "
+        f"returning {len(formatted_reviews)} reviews (requested max: {max_reviews}) for place: {place_id}"
+    )
+
+    return {
+        "status": "OK",
+        "reviews": formatted_reviews,
+        "rating": rating,
+        "user_ratings_total": user_ratings_count,
+    }
+
+
 async def get_reviews(
     place_id: str,
     language: str = "en",
-    max_reviews: int = 6
+    max_reviews: int = 6,
 ) -> Dict[str, Any]:
     """
     Get reviews for a place using Place Details.
-    
-    NOTE: Google Places API (New) has a hard limit of 5 reviews per request.
-    This is a Google API limitation that cannot be changed. Even if max_reviews
-    is set to 6, Google will only return a maximum of 5 reviews.
-    
-    Args:
-        place_id: The Google Place ID
-        language: The language code for reviews
-        max_reviews: Maximum number of reviews to return (Google API limits to 5)
-    
-    Returns:
-        Dictionary with reviews and rating information
+
+    Responses are cached in `places_cache` (see `places_cache_store`).
     """
     logger.info(f"Places API getting reviews for: {place_id}")
-    
-    # Set field mask to include only reviews and rating
-    headers = get_headers()
-    headers["X-Goog-FieldMask"] = "reviews,rating,userRatingCount"
-    
+
+    reviews_variant = ""
+    cached_payload = await places_cache_try_get_json(
+        place_id, CACHE_KIND_REVIEWS, reviews_variant
+    )
+    if cached_payload:
+        logger.info("Places reviews cache hit for %s", place_id[:48])
+        return _format_reviews_from_place_api(
+            cached_payload, place_id, language, max_reviews
+        )
+
+    headers = _places_headers("reviews,rating,userRatingCount")
+
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.get(
                 f"{PLACES_BASE_URL}/places/{place_id}",
-                headers=headers
+                headers=headers,
             )
-            
+
             if response.status_code != 200:
-                logger.error(f"Places API reviews error: {response.status_code}, {response.text}")
-                return {"status": "ERROR", "reviews": [], "rating": 0, "user_ratings_total": 0}
-            
-            data = response.json()
-            # Get all available reviews from the API response
-            all_reviews = data.get("reviews", [])
-            rating = data.get("rating", 0)
-            user_ratings_count = data.get("userRatingCount", 0)
-            
-            # Log raw review count from API for debugging
-            logger.info(
-                f"Raw API response: {len(all_reviews)} reviews returned for place: {place_id}"
-            )
-            if len(all_reviews) > 0:
-                logger.debug(f"Sample review structure: {all_reviews[0]}")
-            
-            # Format reviews to match existing schema
-            # Process ALL reviews returned by Google API
-            formatted_reviews = []
-            for idx, review in enumerate(all_reviews):
-                # Extract review data with safe defaults
-                author_attribution = review.get("authorAttribution", {})
-                review_text = review.get("text", {})
-                
-                # Handle both dict and string formats for review text
-                review_text_str = ""
-                if isinstance(review_text, dict):
-                    review_text_str = review_text.get("text", "")
-                elif isinstance(review_text, str):
-                    review_text_str = review_text
-                
-                formatted_review = {
-                    "author_name": author_attribution.get("displayName", "Anonymous"),
-                    "author_url": author_attribution.get("uri"),
-                    "language": language,
-                    "profile_photo_url": author_attribution.get("photoUri", ""),
-                    "rating": review.get("rating", 0),
-                    "relative_time_description": review.get("relativePublishTimeDescription", ""),
-                    "text": review_text_str,
-                    "time": review.get("publishTime", "")
-                }
-                formatted_reviews.append(formatted_review)
-                logger.debug(f"Processed review {idx + 1}/{len(all_reviews)}: {formatted_review['author_name']}")
-            
-            # Sort by publish time (most recent first)
-            # Use a fallback for reviews without time (sort them last)
-            formatted_reviews.sort(
-                key=lambda x: (x.get("time") or "", x.get("rating", 0)), 
-                reverse=True
-            )
-            
-            # Limit to max_reviews after sorting
-            formatted_reviews = formatted_reviews[:max_reviews]
-            
-            # Google Places API (New) has a hard limit of 5 reviews
-            if len(all_reviews) < max_reviews:
-                logger.warning(
-                    f"Google API returned only {len(all_reviews)} reviews (requested {max_reviews}). "
-                    f"This is a Google API limitation - maximum 5 reviews per request."
+                logger.error(
+                    f"Places API reviews error: {response.status_code}, {response.text}"
                 )
-            
-            logger.info(
-                f"Processed {len(all_reviews)} reviews from Google API, "
-                f"returning {len(formatted_reviews)} reviews (requested max: {max_reviews}) for place: {place_id}"
-            )
-            
-            return {
-                "status": "OK",
-                "reviews": formatted_reviews,
-                "rating": rating,
-                "user_ratings_total": user_ratings_count
-            }
-            
+                return {"status": "ERROR", "reviews": [], "rating": 0, "user_ratings_total": 0}
+
+            data = response.json()
+            await places_cache_put_json(place_id, CACHE_KIND_REVIEWS, reviews_variant, data)
+            return _format_reviews_from_place_api(data, place_id, language, max_reviews)
+
     except Exception as e:
         logger.error(f"Places API reviews exception: {e}")
         return {"status": "ERROR", "reviews": [], "rating": 0, "user_ratings_total": 0}
+
+
+async def warm_reviews_cache(place_id: str) -> None:
+    """Prefetch and cache Google reviews for a place (fire-and-forget safe)."""
+    if not place_id:
+        return
+    try:
+        await get_reviews(place_id)
+        logger.info("Warmed Google reviews cache for place_id prefix=%s", place_id[:32])
+    except Exception as exc:
+        logger.warning(
+            "Google reviews cache warmup failed for place_id prefix=%s: %s",
+            place_id[:32],
+            exc,
+        )
 
 async def validate_restaurant(entities: dict) -> dict:
     """
@@ -414,7 +488,7 @@ async def validate_restaurant(entities: dict) -> dict:
         # Extract photo URL using new photo media endpoint
         photo_url = None
         try:
-            photos = await get_place_photos(place["id"], max_photos=1)
+            photos = await get_place_photos(place["id"], max_photos=1, merged_place=place)
             if photos:
                 photo_url = photos[0]["media_url"]
                 logger.info(f"Found photo for {place.get('displayName', {}).get('text')}: {photo_url}")
@@ -572,7 +646,7 @@ async def fetch_restaurant_details(
         # Extract photo URL
         photo_url = None
         try:
-            photos = await get_place_photos(place["id"], max_photos=1)
+            photos = await get_place_photos(place["id"], max_photos=1, merged_place=place)
             if photos:
                 photo_url = photos[0]["media_url"]
                 logger.info(f"Found photo: {photo_url}")

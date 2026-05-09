@@ -1,3 +1,4 @@
+from .places_cache import PlacesCache
 from .influencer import Influencer
 from .job import Job
 from .listing import Listing

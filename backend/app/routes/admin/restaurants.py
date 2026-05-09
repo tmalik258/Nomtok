@@ -18,6 +18,7 @@ from app.api_schema.admin_restaurants import (
     RestaurantResponse as AdminRestaurantResponse
 )
 from app.services.google_places_service import fetch_restaurant_details_from_google
+from app.services.places_api_new import warm_reviews_cache
 from app.utils.logging import setup_logger
 from app.utils.sitemap_trigger import trigger_sitemap_regeneration
 import asyncio
@@ -99,7 +100,10 @@ async def create_restaurant(
         
         # Trigger sitemap regeneration in background
         asyncio.create_task(trigger_sitemap_regeneration())
-        
+        place_key = new_restaurant.google_place_id
+        if place_key:
+            asyncio.create_task(warm_reviews_cache(place_key))
+
         return AdminRestaurantResponse(
             message="Restaurant created successfully",
             restaurant_id=new_restaurant.id

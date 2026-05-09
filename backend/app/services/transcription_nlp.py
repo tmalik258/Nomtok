@@ -18,7 +18,10 @@ from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
 
 # Import Places API (New) client for migration
-from app.services.places_api_new import validate_restaurant as validate_restaurant_new
+from app.services.places_api_new import (
+    validate_restaurant as validate_restaurant_new,
+    warm_reviews_cache,
+)
 
 from fastapi import HTTPException
 
@@ -1026,6 +1029,9 @@ async def store_restaurant_and_listing(
             logger.info(
                 f"Stored restaurant {restaurant.name}, tags, and listing for video {video.youtube_video_id}"
             )
+            gid = validated.get("google_place_id")
+            if gid:
+                asyncio.create_task(warm_reviews_cache(gid))
         else:
             logger.warning(
                 f"Skipped storing restaurant and listing for video {video.youtube_video_id} (invalid)"
