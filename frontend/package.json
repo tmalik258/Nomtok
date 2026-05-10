@@ -74,5 +74,13 @@
     "tsx": "^4.0.0",
     "tw-animate-css": "^1.3.6",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@tailwindcss/oxide",
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

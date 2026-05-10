@@ -12,9 +12,14 @@ WORKDIR /app
 # Install pnpm globally
 RUN npm install -g pnpm
 
-# Copy package files (pnpm-workspace.yaml carries onlyBuiltDependencies allowlist)
+# Copy package files (package.json carries pnpm.onlyBuiltDependencies allowlist)
 COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile && pnpm approve-builds --all
+
+# strict-builds=false makes ignored builds a warning instead of an exit-1 error,
+# then pnpm rebuild executes the allowed native build scripts (sharp, esbuild, oxide, unrs-resolver)
+RUN pnpm config set strict-builds false \
+ && pnpm install --frozen-lockfile \
+ && pnpm rebuild
 
 # Rebuild the source code only when needed
 FROM base AS builder
