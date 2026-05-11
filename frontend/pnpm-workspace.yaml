@@ -1,4 +1,4 @@
-strict-builds: false
+dangerouslyAllowAllBuilds: true
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - esbuild
